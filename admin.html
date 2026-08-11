@@ -1,0 +1,1786 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>관리자 전용 화면</title>
+    <!-- 엑셀 및 외부 파일 파싱을 위한 보조 라이브러리 -->
+    <script src="https://cloudflare.com"></script>
+    <style>
+        /* ==========================================================
+   1. 글로벌 디자인 시스템 컬러 변수 정의 (고대비 및 가독성 업그레이드)
+   ========================================================== */
+        :root {
+            --primary-color: #1e293b;
+            --secondary-color: #0ea5e9;
+            /* 더 선명하고 밝은 스카이 블루 */
+            --bg-color: #0b0f19;
+            /* 깊고 어두운 백그라운드로 텍스트 고대비 확보 */
+            --border-color: #334155;
+            /* 경계선 식별 강도를 높이기 위한 명도 조정 */
+            --danger-color: #f87171;
+            /* 경고성 텍스트 가독성을 위한 고명도 레드 */
+            --success-color: #4ade80;
+            /* 통과성 텍스트 가독성을 위한 고명도 그린 */
+            --warning-color: #fbbf24;
+            /* 수정 모드용 고명도 옐로우 */
+            --text-color: #f8fafc;
+            /* 거의 완전한 화이트로 기본 글자 명도 극대화 */
+            --text-muted: #94a3b8;
+            /* 설명글 전용 고해상도 그레이 */
+            --card-color: #1a233a;
+            /* 카드 배경을 살짝 밝게 처리하여 입체감 부여 */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Malgun Gothic', '맑은 고딕', 'Apple SD Gothic Neo', sans-serif;
+            letter-spacing: -0.3px;
+            /* 자간을 좁혀 장문 가독성 향상 */
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            width: 100%;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ==========================================================
+   2. [로그인 레이어] 폼 요소 테두리 및 폰트 고해상도 튜닝
+   ========================================================== */
+        .login-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100vh;
+            background: linear-gradient(135deg, #0b0f19 0%, #1a233a 100%);
+        }
+
+        .login-container {
+            background: var(--card-color);
+            padding: 50px 40px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 450px;
+        }
+
+        .login-container h2 {
+            margin-bottom: 30px;
+            text-align: center;
+            color: #ffffff;
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid var(--border-color);
+            /* 테두리 두께를 늘려 폼 가독성 확보 */
+            background-color: #0b0f19;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 500;
+            color: #ffffff;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--secondary-color);
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: 700;
+            margin-top: 10px;
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+            transition: opacity 0.2s, transform 0.1s;
+        }
+
+        .login-btn:hover {
+            opacity: 0.95;
+        }
+
+        .login-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* ==========================================================
+   3. [대시보드 메인 레이아웃 및 내비게이션 사이드바]
+   ========================================================== */
+        .dashboard-container {
+            display: none;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: var(--card-color);
+            border-right: 1px solid var(--border-color);
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .sidebar .brand {
+            padding: 30px 24px;
+            font-size: 20px;
+            font-weight: 800;
+            border-bottom: 1px solid var(--border-color);
+            background: #0b0f19;
+            letter-spacing: -0.5px;
+            color: var(--secondary-color);
+            /* 브랜드 정체성 컬러 부여 */
+        }
+
+        .sidebar .brand i {
+            margin-right: 6px;
+        }
+
+        .sidebar .menu-list {
+            padding-top: 20px;
+            flex: 1;
+        }
+
+        .menu-item {
+            padding: 18px 24px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 700;
+            font-size: 15px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .menu-item i {
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .menu-item:hover {
+            background: rgba(255, 255, 255, 0.03);
+            color: #ffffff;
+        }
+
+        .menu-item.active {
+            background: var(--secondary-color);
+            color: #ffffff;
+            font-weight: 700;
+            box-shadow: inset 4px 0 0 0 #ffffff;
+            /* 액티브 메뉴 시각 인디케이터 */
+        }
+
+        /* ==========================================================
+   4. [우측 콘텐츠 섹션 및 정보 등록 카드]
+   ========================================================== */
+        .main-content {
+            flex: 1;
+            padding: 35px;
+            background: var(--bg-color);
+            overflow-y: auto;
+            height: 100%;
+        }
+
+        .content-section {
+            display: none;
+            /* 스위칭 연동을 위해 기본 숨김 */
+            background: var(--card-color);
+            padding: 35px;
+            border-radius: 14px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .content-section.active {
+            display: block;
+            /* 활성화된 섹션만 노출 */
+        }
+
+        .content-section h2 {
+            margin-bottom: 25px;
+            color: #ffffff;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 14px;
+            font-size: 24px;
+            font-weight: 800;
+        }
+
+        .register-box {
+            background: #0b0f19;
+            border: 1px solid var(--border-color);
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+
+        .register-box h3 {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 18px;
+            color: var(--secondary-color);
+            /* 폼 안내 타이틀 강조 */
+            text-transform: uppercase;
+        }
+
+        /* 💥 [교정 완료] 입력 필드 밀림 방지 및 한 줄(Row) 일렬 배치 정렬 스타일 */
+        .register-form {
+            display: flex;
+            /* 플렉스 박스로 가로 배치 강제 */
+            flex-wrap: nowrap;
+            /* 절대 하단으로 줄바꿈(밀림) 되지 않도록 설정 */
+            gap: 12px;
+            /* 컴포넌트 간의 가로 여백 최소화 */
+            align-items: flex-end;
+            /* 모든 필드와 버튼의 하단 정렬 기준 통일 */
+            width: 100%;
+            /* 부모 박스 너비에 100% 꽉 차게 맞춤 */
+        }
+
+        .register-form .form-group {
+            flex: 1;
+            /* 가로 공간을 균등하게 나누어 가짐 */
+            min-width: 0;
+            /* 플렉스 박스 내부에서 인풋 너비가 터지는 버그 방지 */
+            margin-bottom: 0;
+            /* 하단 마진 상쇄 */
+        }
+
+        /* 5. [공통 액션 단추 및 인라인 편집 텍스트 박스] */
+        .action-btn {
+            padding: 12px 20px;
+            color: #070a12;
+            /* 글자를 어둡게 처리해 고대비 가독성 확보 */
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 14px;
+            white-space: nowrap;
+            /* 버튼 내부 텍스트 줄바꿈 방지 */
+            height: 43px;
+            /* 인풋 필드 높이 규격과 일치화 */
+            background: var(--success-color);
+            box-shadow: 0 4px 12px rgba(74, 222, 128, 0.2);
+            transition: opacity 0.2s, transform 0.1s;
+        }
+
+        .action-btn:hover {
+            opacity: 0.9;
+        }
+
+        .action-btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-inline {
+            padding: 6px 12px;
+            font-size: 13px;
+            border-radius: 6px;
+            font-weight: 700;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin: 2px;
+            transition: opacity 0.2s;
+        }
+
+        .btn-inline:hover {
+            opacity: 0.9;
+        }
+
+        .btn-inline.edit {
+            background: #334155;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+        }
+
+        .btn-inline.delete {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid var(--danger-color);
+            color: var(--danger-color);
+        }
+
+        .btn-inline.save {
+            background: var(--success-color);
+            color: #070a12;
+        }
+
+        .btn-inline.list {
+            background: #475569;
+        }
+
+        /* 대상자 명단 파일 업로드 구역 [업로드 공통] */
+        .upload-zone {
+            border: 2px dashed #e2e8f0;
+            /* 부드러운 점선 테두리 */
+            padding: 25px 20px;
+            text-align: center;
+            background-color: #f8fafc;
+            /* 연한 회색 배경 */
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+            /* 스마트 명단 구역과의 간격 확보 */
+        }
+
+        /* 마우스를 올렸을 때(호버) 시각 효과 */
+        .upload-zone:hover {
+            border-color: #f97316;
+            /* PPT 테마 색상인 주황색으로 강조 */
+            background-color: #fff7ed;
+            /* 주황빛 도는 연한 배경색 */
+        }
+
+        /* 내부 타이틀(strong) 스타일 */
+        .upload-zone strong {
+            display: block;
+            font-size: 16px;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        /* 내부 아이콘 크기 살짝 키우기 */
+        .upload-zone strong i {
+            font-size: 18px;
+            margin-right: 6px;
+        }
+
+        /* 안내 문구(p) 스타일 */
+        .upload-zone p {
+            margin: 0;
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        /* 변수 미지정으로 인한 텍스트 컬러 깨짐 방지용 */
+        #exam-selected-file-name {
+            margin-top: 12px !important;
+            font-weight: 700;
+            color: #f97316;
+            /* 선택된 파일명을 주황색으로 강조 */
+            font-size: 14px;
+        }
+
+        /* ==========================================================
+   6. [데이터 명단 테이블 표 및 가변 배지 가독성 최적화]
+   ========================================================== */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            /* 테이블 아웃라인 명확화 */
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            background: #111827;
+        }
+
+        th,
+        td {
+            padding: 16px 14px;
+            /* 여백을 늘려 데이터 간 식별력 향상 */
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            white-space: nowrap;
+        }
+
+        th {
+            background-color: #0b0f19;
+            color: #ffffff;
+            /* 헤더 명도 화이트로 상향 */
+            font-weight: 700;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            color: #e2e8f0;
+        }
+
+        tr:hover {
+            background-color: rgba(255, 255, 255, 0.02) !important;
+        }
+
+        .inline-input {
+            width: 100%;
+            padding: 8px 10px;
+            border: 2px solid var(--warning-color);
+            /* 편집 중인 필드를 강하게 강조 */
+            background-color: #0b0f19;
+            color: #ffffff;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            outline: none;
+        }
+
+        .text-bold {
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        /* 인라인 수정(Editing) 모드 활성 행 강조 서식 */
+        .editing-row {
+            background-color: rgba(251, 191, 36, 0.04) !important;
+            border-left: 4px solid var(--warning-color);
+        }
+
+        /* 직급별 1~10레벨 권한 인포 배지 고대비 전용 서식 디자인 */
+        .lvl-badge {
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 12px;
+            display: inline-block;
+        }
+
+        .lvl-1 {
+            background: rgba(148, 163, 184, 0.15);
+            color: #cbd5e1;
+            border: 1px solid rgba(148, 163, 184, 0.3);
+        }
+
+        .lvl-2,
+        .lvl-3 {
+            background: rgba(14, 165, 233, 0.15);
+            color: #38bdf8;
+            border: 1px solid rgba(14, 165, 233, 0.3);
+        }
+
+        .lvl-4,
+        .lvl-5 {
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .lvl-6,
+        .lvl-7,
+        .lvl-8 {
+            background: rgba(168, 85, 247, 0.15);
+            color: #c084fc;
+            border: 1px solid rgba(168, 85, 247, 0.3);
+        }
+
+        .lvl-10 {
+            background: rgba(244, 63, 94, 0.15);
+            color: #fb7185;
+            border: 1px solid rgba(244, 63, 94, 0.3);
+        }
+
+        /* ==========================================================
+   [신규 추가] 관리 담당자 인라인 수정 모드 전용 하이라이트 및 배지
+   ========================================================== */
+        .editing-row {
+            background-color: rgba(251, 191, 36, 0.04) !important;
+            border-left: 4px solid var(--warning-color);
+        }
+
+        .lvl-badge {
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 12px;
+            display: inline-block;
+        }
+
+        /* ==========================================================
+   [신규 추가] 암호 변경 전용 팝업 모달창 및 탑바 정렬 CSS
+   ========================================================== */
+        .top-bar-user-zone {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .btn-inline.password-reset-btn {
+            background: rgba(251, 191, 36, 0.15);
+            border: 1px solid var(--warning-color);
+            color: var(--warning-color);
+        }
+
+        .btn-inline.password-reset-btn:hover {
+            background: var(--warning-color);
+            color: #070a12;
+        }
+
+        /* 모달 레이아웃 프레임 */
+        .pw-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .pw-modal-box {
+            background: var(--card-color);
+            border: 1px solid var(--border-color);
+            padding: 30px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .pw-modal-box h3 {
+            margin-bottom: 20px;
+            font-size: 18px;
+            color: var(--secondary-color);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .pw-modal-box .modal-btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        /* ==========================================================================
+   모집공고 관리: 시험 관련 파일 업로드 및 에디터 팝업 전용 스타일
+   ========================================================================== */
+
+        /* 1. 세로 간격 10px 확보를 위한 박스 스타일 */
+        .register-box-margin {
+            margin-top: 20px !important;
+        }
+
+        /* 2. 목록 테이블 내 제목 링크 스타일 */
+        .exam-title-link {
+            cursor: pointer;
+            font-weight: 700;
+            color: #2563eb;
+            text-decoration: underline;
+        }
+
+        .exam-title-link:hover {
+            color: #1d4ed8;
+        }
+
+        /* 3. 주의사항 말줄임 처리 (테이블 깨짐 방지) */
+        .exam-notice-cell {
+            max-width: 180px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: #ef4444;
+            font-size: 13px;
+        }
+
+        /* 4. 에디터 모달 팝업 전체 배경 레이어 */
+        .editor-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 5. 에디터 모달 본문 창 */
+        .editor-modal-content {
+            background-color: #ffffff;
+            padding: 25px;
+            border-radius: 10px;
+            width: 500px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            box-sizing: border-box;
+        }
+
+        .editor-modal-title {
+            margin-top: 0;
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 10px;
+            color: #1e293b;
+        }
+
+        /* 6. 에디터 폼 요소 그룹 */
+        .editor-form-group {
+            margin-top: 15px;
+        }
+
+        .editor-form-group-last {
+            margin-top: 15px;
+            margin-bottom: 20px;
+        }
+
+        .editor-form-group label {
+            display: block;
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: #475569;
+        }
+
+        /* 7. 에디터 입력 필드 (텍스트, 텍스트에어리어) */
+        .editor-input {
+            width: 100%;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .editor-textarea {
+            width: 100%;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 10px;
+            box-sizing: border-box;
+            font-family: inherit;
+            resize: none;
+        }
+
+        /* 8. 모달 하단 버튼 컴포넌트 */
+        .editor-btn-group {
+            text-align: right;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .editor-btn-cancel {
+            background-color: #94a3b8;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+
+        .editor-btn-cancel:hover {
+            background-color: #64748b;
+        }
+
+        .editor-btn-save {
+            background-color: #f97316;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+
+        .editor-btn-save:hover {
+            background-color: #ea580c;
+        }
+
+        /* 목록 테이블 내 [수정] 버튼 전용 스타일 */
+        .btn-edit {
+            background-color: #3b82f6;
+            /* 파란색 계열 테마 */
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 13px;
+            transition: background-color 0.2s;
+        }
+
+        .btn-edit:hover {
+            background-color: #2563eb;
+            /* 마우스 호버 시 진한 파란색 */
+        }
+
+        /* 과제명 셀이 텍스트 길이에 맞춰 유연하게 반응하도록 제어 */
+        #dom-recruitment-table td:first-child {
+            white-space: normal !important;
+            /* 자동 줄바꿈 허용 */
+            word-break: break-all !important;
+            /* 영어/숫자/한글 모두 글자 단위 끊기 */
+            line-height: 1.4;
+        }
+
+        /* 작업 열 내부의 버튼들이 3개까지 깔끔하게 한 줄 가로 정렬되도록 세팅 */
+        #dom-recruitment-table td:last-child {
+            display: flex;
+            justify-content: center;
+            gap: 4px;
+            /* 버튼 간의 조밀한 간격 */
+            white-space: nowrap !important;
+        }
+
+        /* 테이블 내부의 모든 링크와 글자 스타일 강제 제어 */
+        #dom-recruitment-table,
+        #dom-recruitment-table td,
+        #dom-recruitment-table a {
+            text-decoration: none !important;
+            color: #eeeeee !important;
+            font-weight: normal;
+            transition: color 0.2s ease;
+        }
+
+        /* 클릭 후 상태 유지 */
+        #dom-recruitment-table a:visited {
+            text-decoration: none !important;
+            color: #333333 !important;
+        }
+
+        /* 마우스 오버 시 색상 변환 (포인터 커서 추가) */
+        #dom-recruitment-table tr:hover td,
+        #dom-recruitment-table a:hover {
+            text-decoration: none !important;
+            color: #57a7fd !important;
+            /* 원하시는 호버 색상 */
+            cursor: pointer;
+            /* 마우스 올렸을 때 손가락 모양 표시 */
+        }
+    </style>
+
+<body>
+    <!-- ==========================================================
+         [1페이지 화면] 사번(Id) 매칭식 관리자 인증 로그인 레이어
+         ========================================================== -->
+    <div class="login-wrapper" id="loginScreen">
+        <div class="login-container">
+            <h2>관리자 로그인</h2>
+            <div class="form-group">
+                <label for="uid">사번 (ID)</label>
+                <input type="text" id="uid" placeholder="사번을 입력하세요 (예: m5792)">
+            </div>
+            <div class="form-group">
+                <label for="upw">비밀번호 (PW)</label>
+                <input type="password" id="upw" placeholder="비밀번호를 입력하세요">
+            </div>
+            <button class="login-btn" onclick="executeSystemLogin()">시스템 접속</button>
+        </div>
+    </div>
+
+    <!-- ==========================================================
+         [2페이지 화면] 마스터 대시보드 구조 (2단 레이아웃 완전 분리)
+         ========================================================== -->
+    <div class="dashboard-container" id="mainDashboard">
+
+        <!-- [좌측 패널] 상시 고정 내비게이션 사이드바 -->
+        <div class="sidebar">
+            <div class="brand"><i class="fa-solid fa-flask-vial"></i> 임상시험 관리 시스템</div>
+            <div class="menu-list">
+                <div class="menu-item active" id="menuRec" onclick="changeMainViewport('recruitmentView')">
+                    <i class="fa-solid fa-bullhorn"></i> 모집공고 관리
+                </div>
+                <div class="menu-item" id="menuApp" onclick="changeMainViewport('applicantView')">
+                    <i class="fa-solid fa-users-gear"></i> 대상자 관리
+                </div>
+                <div class="menu-item" id="menuGrade" onclick="changeMainViewport('gradeView')">
+                    <i class="fa-solid fa-id-card-clip"></i> 관리 담당자
+                </div>
+            </div>
+        </div>
+
+        <!-- [우측 패널] 가변형 메인 데이터 통제 화면 뷰 포트 -->
+        <div class="main-content" style="padding-top: 0; display: flex; flex-direction: column;">
+
+            <!-- 최고관리자 분기 및 본인 비밀번호 수정, 로그아웃 정렬 탑 바 -->
+            <div class="dashboard-top-bar"
+                style="display: flex; justify-content: flex-end; align-items: center; padding: 15px 0; margin-bottom: 20px; border-bottom: 1px solid var(--border-color);">
+                <div class="top-bar-user-zone">
+                    <!-- A. 관리자 정보 라벨 출력 슬롯 -->
+                    <span id="txtUserProfile"
+                        style="font-size: 15px; font-weight: 700; color: var(--secondary-color);"></span>
+
+                    <!-- B. 본인 비밀번호 변경 팝업 트리거 버튼 -->
+                    <button class="btn-inline password-reset-btn" onclick="openSelfPasswordModal()"
+                        style="height: 32px; font-size: 12.5px; font-weight: 700;">
+                        <i class="fa-solid fa-lock-open"></i> 비밀번호수정
+                    </button>
+
+                    <!-- C. 로그아웃 단추 -->
+                    <button onclick="executeSystemLogout()"
+                        style="padding: 7px 14px; background: rgba(239, 68, 68, 0.15); border: 1px solid var(--danger-color); color: var(--danger-color); border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;"
+                        onmouseover="this.style.background='var(--danger-color)'; this.style.color='#000';"
+                        onmouseout="this.style.background='rgba(239, 68, 68, 0.15)'; this.style.color='var(--danger-color)';">
+                        <i class="fa-solid fa-right-from-bracket"></i> 로그아웃
+                    </button>
+                </div>
+            </div>
+            <!-- ==========================================================
+                 SECTION 01. 모집공고 관리 탭 (div 임베딩 원형 유지)
+                 ========================================================== -->
+            <div id="recruitmentView" class="content-section active">
+                <h2>모집공고 관리</h2>
+                <!-- 모집공고: 시험 관련 문서 업로드 -->
+                <div class="upload-zone" onclick="document.getElementById('examDocParser').click()"">
+                    <strong>
+                        <i class=" fa-solid fa-file-powerpoint" style="color: #f97316;"></i> 시험 관련 파일 업로드
+                    </strong>
+                    <p>Excel, Word, HWP, HWPX, PPT, PPTX 문서를 드롭하거나 클릭하여 첨부하세요</p>
+                    <p id="exam-selected-file-name"
+                        style="margin-top: 10px; font-weight: 700; color: var(--secondary-color); font-size: 14px;"></p>
+                    <input type="file" id="examDocParser" accept=".xlsx, .xls, .docx, .doc, .hwp, .hwpx, .ppt, .pptx"
+                        style="display:none;" onchange="handleExamFileImport(event)">
+                </div>
+                <div class="register-box register-box-margin">
+                    <h3>[신규 모집공고 등록]</h3>
+                    <div class="register-form">
+                        <div class="form-group">
+                            <label>시험명</label>
+                            <input type="text" id="form-rec-title" placeholder="예: [임상] 경동제약">
+                        </div>
+                        <div class="form-group">
+                            <label>기수</label>
+                            <input type="text" id="form-rec-th" placeholder="숫자만">
+                        </div>
+                        <div class="form-group">
+                            <label>배정 인원수</label>
+                            <input type="text" id="form-rec-count" placeholder="숫자만">
+                        </div>
+                        <div class="form-group">
+                            <label>임상 기간(시간)</label>
+                            <input type="text" id="form-rec-period" placeholder="숫자만">
+                        </div>
+                        <button class="action-btn" onclick="insertRecruitmentRecord()">공고 등록</button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th
+                                    style="min-width: 200px; max-width: 450px; white-space: normal; word-break: break-all;">
+                                    시험명</th>
+                                <th style="width: 90px; text-align: left;">기수</th>
+                                <th style="width: 100px; ">인원수</th>
+                                <th style="width: 150px; ">기간(시간)</th>
+                                <th style="width: 10%; min-width: 140px;">주의사항</th>
+                                <th style="width: 10%; min-width: 110px;">시험일정</th>
+                                <th style="width: 10%; min-width: 120px;">사례비 지급일정</th>
+                                <th style="width: 185px; min-width: 165px; text-align: center;">작업</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dom-recruitment-table"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ==========================================================
+                 SECTION 02. 대상자 관리 탭 (div 임베딩 원형 유지)
+                 ========================================================== -->
+            <div id="applicantView" class="content-section">
+                <h2>대상자 관리</h2>
+                <div class="upload-zone" onclick="document.getElementById('fileParser').click()">
+                    <strong><i class="fa-solid fa-file-excel" style="color:#10b981;"></i> 대상자(명단) 파일 업로드</strong>
+                    <p>Excel, Word, HWP, HWPX, TXT 문서를 드롭하거나 클릭하여 첨부하세요.</p>
+
+                    <!-- 선택된 파일명이 표시될 스타일 영역 -->
+                    <p id="selected-file-name"
+                        style="margin-top: 10px; font-weight: 700; color: var(--secondary-color); font-size: 14px;"></p>
+
+                    <!-- accept 속성에 쉼표 꼭 확인하세요! -->
+                    <input type="file" id="fileParser" accept=".xlsx, .xls, .docx, .doc, .hwp, .hwpx, .txt"
+                        style="display:none;" onchange="handleSmartFileImport(event)">
+                </div>
+
+                <div class="register-box" style="margin-top:20px;">
+                    <h3>[신규 대상자 등록]</h3>
+                    <div class="register-form">
+                        <div class="form-group">
+                            <label>참여 시험명</label>
+                            <input type="text" id="form-app-title" placeholder="예: [임상] 경동제약">
+                        </div>
+                        <div class="form-group">
+                            <label>적용 기수</label>
+                            <input type="text" id="form-app-th" placeholder="숫자만">
+                        </div>
+                        <div class="form-group">
+                            <label>그룹 인원수</label>
+                            <input type="text" id="form-app-count" placeholder="숫자만">
+                        </div>
+                        <div class="form-group">
+                            <label>기간(시간)</label>
+                            <input type="text" id="form-app-period" placeholder="숫자만">
+                        </div>
+                        <div class="form-group">
+                            <label>성명</label>
+                            <input type="text" id="form-app-name">
+                        </div>
+                        <div class="form-group">
+                            <label>생년월일(YYMMDD)</label>
+                            <input type="text" id="form-app-ssn" maxlength="6" placeholder="숫자만">
+                        </div>
+                        <div class="form-group">
+                            <label>연락처</label>
+                            <input type="text" id="form-app-phone" placeholder="숫자만">
+                        </div>
+                        <button class="action-btn" onclick="insertApplicantRecord()">대상자 등록</button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 18%;">시험명</th>
+                                <th style="width: 7%;">기수</th>
+                                <th style="width: 7%;">인원수</th>
+                                <th style="width: 10%;">기간</th>
+                                <th style="width: 10%;">이름</th>
+                                <th style="width: 13%;">생년월일</th>
+                                <th style="width: 13%;">전화번호</th>
+                                <th style="width: 10%;">사례비</th>
+                                <th style="width: 12%; text-align: center;">작업</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dom-applicant-table"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ==========================================================
+                 SECTION 03. [교정 반영] 관리 담당자 리스트 통합 마운트 구역
+                 ========================================================== -->
+
+            <div id="gradeView" class="content-section">
+                <h2>전산망 관리 담당자 회원 목록</h2>
+                <div class="register-box">
+                    <h3>[신규 사원 정보 권한 발령 등록]</h3>
+                    <div class="register-form">
+                        <div class="form-group">
+                            <label>사번</label>
+                            <input type="text" id="form-mem-id" placeholder="예: m0005">
+                        </div>
+                        <div class="form-group">
+                            <label>성명</label>
+                            <input type="text" id="form-mem-name" placeholder="성명">
+                        </div>
+                        <div class="form-group">
+                            <label>직급</label>
+                            <select id="form-mem-duty"
+                                style="width:100%; background:#0b0f19; color:#fff; border:2px solid var(--border-color); border-radius:8px; height:43px; padding:0 10px; font-weight:700;">
+                                <option value="사원">사원</option>
+                                <option value="주임">주임</option>
+                                <option value="대리">대리</option>
+                                <option value="과장">과장</option>
+                                <option value="팀장">팀장</option>
+                                <option value="본부장">본부장</option>
+                                <option value="센터장">센터장</option>
+                                <option value="연구원장">연구원장</option>
+                                <option value="시스템 관리자">시스템 관리자</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>소속 부서</label>
+                            <input type="text" id="form-mem-dept" placeholder="예: 임상관리팀">
+                        </div>
+                        <button class="action-btn" onclick="insertAdminMember()">임직원 등록</button>
+                    </div>
+                </div>
+                <!-- 가로 폭 분할 및 동적 인라인 편집 액션 폼 슬롯 장착 -->
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 13%;" text-align: center;">사번</th>
+                                <th style="width: 17%;">성명</th>
+                                <th style="width: 17%;">부서</th>
+                                <th style="width: 13%;">직급</th>
+                                <th style="width: 15%;">권한 레벨</th>
+                                <th style="width: 13%;">비밀번호 관리</th>
+                                <th style="width: 12%; text-align: center;">작업</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dom-member-table">
+                            <!-- JS 엔진에 의해 실시간 동적 바인딩 및 인라인 폼이 마운트되는 슬롯 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <script>
+        const DUTY_LEVEL_MATRIX = {
+            "사원": { level: 1, textType: "normal" }, "주임": { level: 2, textType: "normal" },
+            "대리": { level: 3, textType: "normal" }, "과장": { level: 4, textType: "normal" },
+            "팀장": { level: 5, textType: "normal" }, "본부장": { level: 6, textType: "normal" },
+            "센터장": { level: 7, textType: "normal" }, "연구원장": { level: 8, textType: "normal" },
+            "시스템 관리자": { level: 10, textType: "system" }
+        };
+        let dataStoreRecruitment = JSON.parse(localStorage.getItem('dataStoreRecruitment')) || [];
+        let dataStoreApplicant = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
+        let dataStoreAdminMembers = JSON.parse(localStorage.getItem('dataStoreAdminMembers')) || [];
+        let recEditingUid = null, currentEditingUid = null, memberEditingSabun = null;
+
+        function checkActiveLoginSession() {
+            const token = sessionStorage.getItem('adminLoginSession');
+            const sabun = sessionStorage.getItem('adminLoginSabun');
+            if (token === 'isAuthorizedSecureToken' && sabun) {
+                if (document.getElementById('loginScreen')) document.getElementById('loginScreen').style.display = 'none';
+                if (document.getElementById('mainDashboard')) document.getElementById('mainDashboard').style.display = 'flex';
+                initializePresetMasterDatabase(); bindTopBarProfile(sabun); changeMainViewport('recruitmentView');
+            } else {
+                if (document.getElementById('loginScreen')) document.getElementById('loginScreen').style.display = 'flex';
+                if (document.getElementById('mainDashboard')) document.getElementById('mainDashboard').style.display = 'none';
+            }
+        }
+        checkActiveLoginSession();
+
+        function initializePresetMasterDatabase() {
+            let isUpdated = false;
+            if (dataStoreRecruitment.length === 0) {
+                dataStoreRecruitment.push(
+                    { uid: 101, title: "[생동] 신일제약 Teneligliptin 20mg", th: "1", count: "34", period: "72", notice: "", examSchedule: "", paySchedule: "" },
+                    { uid: 102, title: "[임상] 경동제약 Mirabegron+Tamsulosin (식후시험)", th: "4", count: "46", period: "96", notice: "", examSchedule: "", paySchedule: "" }
+                );
+                isUpdated = true;
+            }
+            if (dataStoreApplicant.length === 0) {
+                dataStoreApplicant.push(
+                    { uid: 201, title: "[생동] 신일제약 Teneligliptin 20mg", th: "1", count: "34", period: "72", name: "김철수", ssn: "980101", phone: "01011112222", result: "접수" },
+                    { uid: 202, title: "[임상] 경동제약 Mirabegron+Tamsulosin (식후시험)", th: "4", count: "46", period: "96", name: "홍길동", ssn: "950505", phone: "01012345678", result: "처리중" }
+                );
+                isUpdated = true;
+            }
+            if (dataStoreAdminMembers.length === 0) {
+                dataStoreAdminMembers.push(
+                    { sabun: "admin", name: "시스템 관리자", duty: "시스템 관리자", dept: "전산팀", pw: "9793" },
+                    { sabun: "m5792", name: "구본순", duty: "사원", dept: "임상관리팀", pw: "1234" }
+                );
+                isUpdated = true;
+            }
+            if (!dataStoreAdminMembers.some(m => m.sabun === "admin")) {
+                dataStoreAdminMembers.unshift({ sabun: "admin", name: "시스템 관리자", duty: "시스템 관리자", dept: "통합전산관리", pw: "9793" });
+                isUpdated = true;
+            }
+            dataStoreAdminMembers.forEach(m => { if (!m.pw) { m.pw = m.sabun ? m.sabun : "1234"; isUpdated = true; } });
+            if (isUpdated) commitToLocalStorage();
+        }
+        function commitToLocalStorage() {
+            localStorage.setItem('dataStoreRecruitment', JSON.stringify(dataStoreRecruitment));
+            localStorage.setItem('dataStoreApplicant', JSON.stringify(dataStoreApplicant));
+            localStorage.setItem('dataStoreAdminMembers', JSON.stringify(dataStoreAdminMembers));
+        }
+
+        function bindTopBarProfile(sabunId) {
+            const member = dataStoreAdminMembers.find(m => m.sabun === sabunId);
+            const span = document.getElementById('txtUserProfile'); if (!span) return;
+            if (member) {
+                const meta = DUTY_LEVEL_MATRIX[member.duty] || { level: 1, textType: "normal" };
+                span.innerHTML = meta.textType === "system" ? `<i class="fa-solid fa-user-gear"></i> 시스템 관리자` : `<i class="fa-solid fa-user-shield"></i> 관리자(${member.name})`;
+            } else { span.innerHTML = `<i class="fa-solid fa-user-secret"></i> 임시관리자(${sabunId})`; }
+        }
+        function executeSystemLogin() {
+            const id = document.getElementById('uid').value.trim();
+            const pw = document.getElementById('upw').value.trim();
+            if (!id || !pw) return alert('사번과 비밀번호를 입력해주세요.');
+            initializePresetMasterDatabase();
+            const account = dataStoreAdminMembers.find(m => m.sabun === id);
+            if (account) {
+                if (pw === account.pw || pw === account.sabun || (pw === "9793" && account.sabun === "admin")) {
+                    sessionStorage.setItem('adminLoginSession', 'isAuthorizedSecureToken');
+                    sessionStorage.setItem('adminLoginSabun', id);
+                    document.getElementById('loginScreen').style.display = 'none';
+                    document.getElementById('mainDashboard').style.display = 'flex';
+                    bindTopBarProfile(id); changeMainViewport('recruitmentView');
+                } else { alert('인증 실패: 비밀번호가 틀립니다.'); }
+            } else { alert('인증 오류: 등록되지 않은 사번입니다.'); }
+        }
+        function executeSystemLogout() {
+            if (confirm('세션을 파기하고 안전 로그아웃 하시겠습니까?')) {
+                sessionStorage.clear(); document.getElementById('mainDashboard').style.display = 'none';
+                document.getElementById('loginScreen').style.display = 'flex';
+                document.getElementById('uid').value = ''; document.getElementById('upw').value = '';
+            }
+        }
+
+        function changeMainViewport(targetId) {
+            document.querySelectorAll('.content-section').forEach(v => v.style.display = 'none');
+            document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+            recEditingUid = null; currentEditingUid = null;
+            const target = document.getElementById(targetId); if (target) target.style.display = 'block';
+            if (targetId === 'recruitmentView') { document.getElementById('menuRec').classList.add('active'); refreshRecruitmentView(); }
+            else if (targetId === 'applicantView') { document.getElementById('menuApp').classList.add('active'); refreshApplicantView(); }
+            else if (targetId === 'gradeView') { document.getElementById('menuGrade').classList.add('active'); refreshAdminMemberTableView(); }
+        }
+        function getOnlyNumbers(v) { if (!v) return ''; return v.toString().replace(/[^0-9]/g, ''); }
+        function formatTh(v) { const n = getOnlyNumbers(v); return n ? `${n}기` : v; }
+        function formatCount(v) { const n = getOnlyNumbers(v); return n ? `${n}명` : v; }
+        function formatPeriod(v) { const n = getOnlyNumbers(v); return n ? `${n}시간` : v; }
+        function formatPhone(v) {
+            const n = getOnlyNumbers(v);
+            if (n.length === 11) return n.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+            if (n.length === 10) return n.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+            return v;
+        }
+
+        // ========================================================
+        // 💥 [교체 반영] 빈 값 방어 기호(-) 탑재 및 3대 컬럼 확장 렌더링 엔진
+        // ========================================================
+        function refreshRecruitmentView() {
+            const tbody = document.getElementById('dom-recruitment-table');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            // 최신 등록 데이터가 무조건 최상단에 배치되도록 역순 복사본 생성 [index: 0.1.70]
+            const sortedData = dataStoreRecruitment.slice().reverse();
+
+            sortedData.forEach(row => {
+                const tr = document.createElement('tr');
+
+                // 💡 [핵심 교정]: 데이터 누수 및 빈 값 방어선 구축 (없으면 무조건 '-' 마감)
+                const note = (row.note && row.note.trim() !== '') ? row.note : '-';
+                const schedule = (row.schedule && row.schedule.trim() !== '') ? row.schedule : '-';
+                const payDate = (row.payDate && row.payDate.trim() !== '') ? row.payDate : '-';
+
+                if (recEditingUid === row.uid) {
+                    tr.classList.add('editing-row');
+                    tr.innerHTML = `
+                <td><input type="text" id="inline-rec-title" class="inline-input" value="${row.title}"></td>
+                <td><input type="text" id="inline-rec-th" class="inline-input" value="${getOnlyNumbers(row.th)}"></td>
+                <td><input type="text" id="inline-rec-count" class="inline-input" value="${getOnlyNumbers(row.count)}"></td>
+                <td><input type="text" id="inline-rec-period" class="inline-input" value="${getOnlyNumbers(row.period)}"></td>
+                <!-- 편집 모드 진입 시에도 빈 값 방어 인풋 폼 세팅 (사후 확장용) -->
+                <td><input type="text" id="inline-rec-note" class="inline-input" value="${note === '-' ? '' : note}" placeholder="주의사항"></td>
+                <td><input type="text" id="inline-rec-schedule" class="inline-input" value="${schedule === '-' ? '' : schedule}" placeholder="시험일정"></td>
+                <td><input type="text" id="inline-rec-paydate" class="inline-input" value="${payDate === '-' ? '' : payDate}" placeholder="지급일"></td>
+                <td style="text-align: center;">
+                    <button class="btn-inline save" onclick="saveRecInlineEditRecord(${row.uid})">완료</button>
+                    <button class="btn-inline list" onclick="cancelRecInlineEditMode()">목록</button>
+                </td>
+            `;
+                } else {
+                    tr.innerHTML = `
+                <td class="text-bold">${row.title}</td>
+                <td>${formatTh(row.th)}</td>
+                <td>${formatCount(row.count)}</td>
+                <td>${formatPeriod(row.period)}</td>
+                <!-- 💥 실제 데이터 출력 구역 (빈 값일 경우 '-' 가 이 자리에 뿌려져 틀 틀어짐 방지) -->
+                <td style="color: var(--text-muted); font-size: 13px;">${note}</td>
+                <td style="color: var(--text-muted); font-size: 13px;">${schedule}</td>
+                <td style="color: var(--text-muted); font-size: 13px;">${payDate}</td>
+                <td style="text-align: center;">
+                    <button class="btn-inline edit" onclick="enableRecInlineEditMode(${row.uid})">수정</button>
+                    <button class="btn-inline delete" onclick="removeRecruitmentRecord(${row.uid})">삭제</button>
+                </td>
+            `;
+                }
+                tbody.appendChild(tr);
+            });
+        }
+
+        // ==========================================================================
+        // ⭐여기에 아래의 교정된 최종 등록 함수 코드를 통째로 덮어씌우세요!
+        // ==========================================================================
+        function insertApplicantRecord() {
+            const elTitle = document.getElementById('form-app-title');
+            const elTh = document.getElementById('form-app-th');
+            const elCount = document.getElementById('form-app-count');
+            const elPeriod = document.getElementById('form-app-period');
+            const elName = document.getElementById('form-app-name');
+            const elSsn = document.getElementById('form-app-ssn');
+            const elPhone = document.getElementById('form-app-phone');
+
+            if (!elTitle || !elTh || !elCount || !elPeriod || !elName || !elSsn || !elPhone) {
+                console.error("대상자 등록 입력 폼(Input) 중 일부 엘리먼트 ID를 찾을 수 없습니다.");
+                alert("알림: 시스템 화면 요소를 로드하지 못했습니다.");
+                return;
+            }
+
+            const t = elTitle.value.trim(), th = elTh.value.trim(), c = elCount.value.trim();
+            const p = elPeriod.value.trim(), n = elName.value.trim(), s = elSsn.value.trim(), ph = elPhone.value.trim();
+
+            if (!t || !th || !c || !p || !n || !s || !ph) {
+                return alert('알림: 빈 필드를 허용할 수 없습니다. 모든 칸을 채워주세요.');
+            }
+
+            dataStoreApplicant.push({
+                uid: Date.now(), title: t, th: getOnlyNumbers(th),
+                count: getOnlyNumbers(c), period: getOnlyNumbers(p),
+                name: n, ssn: getOnlyNumbers(s), phone: getOnlyNumbers(ph), result: "접수"
+            });
+
+            commitToLocalStorage();
+            refreshApplicantView();
+
+            elName.value = ''; elSsn.value = ''; elPhone.value = '';
+            alert(`🎉 신규 대상자 [${n}]님이 대장에 성공적으로 등록 보존되었습니다.`);
+        }
+
+        function enableInlineEditMode(id) { currentEditingUid = id; refreshApplicantView(); }
+        function cancelInlineEditMode() { currentEditingUid = null; refreshApplicantView(); }
+
+
+        function insertRecruitmentRecord() {
+            const t = document.getElementById('form-rec-title').value.trim(); const th = document.getElementById('form-rec-th').value.trim();
+            const c = document.getElementById('form-rec-count').value.trim(); const p = document.getElementById('form-rec-period').value.trim();
+            if (!t || !th || !c || !p) return alert('알림: 빈칸을 모두 채워 넣어야 등록이 완료됩니다.');
+            dataStoreRecruitment.push({ uid: Date.now(), title: t, th: getOnlyNumbers(th), count: getOnlyNumbers(c), period: getOnlyNumbers(p), notice: "", examSchedule: "", paySchedule: "" });
+            commitToLocalStorage(); refreshRecruitmentView();
+            document.getElementById('form-rec-title').value = ''; document.getElementById('form-rec-th').value = '';
+            document.getElementById('form-rec-count').value = ''; document.getElementById('form-rec-period').value = '';
+        }
+        function enableRecInlineEditMode(id) { recEditingUid = id; refreshRecruitmentView(); }
+        function cancelRecInlineEditMode() { recEditingUid = null; refreshRecruitmentView(); }
+        function saveRecInlineEditRecord(id) {
+            const idx = dataStoreRecruitment.findIndex(d => d.uid === id); if (idx === -1) return;
+            const t = document.getElementById('inline-rec-title').value.trim(); const th = getOnlyNumbers(document.getElementById('inline-rec-th').value);
+            const c = getOnlyNumbers(document.getElementById('inline-rec-count').value); const p = getOnlyNumbers(document.getElementById('inline-rec-period').value);
+            if (!t || !th || !c || !p) return alert('알림: 공백 수정을 허용할 수 없습니다.');
+            dataStoreRecruitment[idx] = { ...dataStoreRecruitment[idx], title: t, th: th, count: c, period: p };
+            commitToLocalStorage(); recEditingUid = null; refreshRecruitmentView();
+        }
+        function removeRecruitmentRecord(id) {
+            if (confirm('선택하신 임상 모집공고를 영구적으로 제거하시겠습니까?')) {
+                dataStoreRecruitment = dataStoreRecruitment.filter(d => d.uid !== id); commitToLocalStorage(); recEditingUid = null; refreshRecruitmentView();
+            }
+        }
+        function openNoticeEditor(uid) {
+            const data = dataStoreRecruitment.find(item => String(item.uid) === String(uid)); if (!data) return alert("공고 데이터를 불러오지 못했습니다.");
+            document.getElementById('modal-rec-id').value = data.uid;
+            document.getElementById('modal-title').textContent = `📝 [${data.title}] 세부 편집`;
+            document.getElementById('modal-rec-notice').value = data.notice || '';
+            document.getElementById('modal-rec-examSchedule').value = data.examSchedule || '';
+            document.getElementById('modal-rec-paySchedule').value = data.paySchedule || '';
+            if (document.getElementById('noticeEditorModal')) document.getElementById('noticeEditorModal').style.display = 'flex';
+        }
+        function closeNoticeEditor() { if (document.getElementById('noticeEditorModal')) document.getElementById('noticeEditorModal').style.display = 'none'; }
+        function saveNoticeEditorData() {
+            const id = document.getElementById('modal-rec-id').value;
+            const idx = dataStoreRecruitment.findIndex(item => String(item.uid) === String(id));
+            if (idx !== -1) {
+                dataStoreRecruitment[idx].notice = document.getElementById('modal-rec-notice').value.trim();
+                dataStoreRecruitment[idx].examSchedule = document.getElementById('modal-rec-examSchedule').value.trim();
+                dataStoreRecruitment[idx].paySchedule = document.getElementById('modal-rec-paySchedule').value.trim();
+                commitToLocalStorage(); alert('세부 데이터가 목록에 반영되었습니다.'); closeNoticeEditor(); refreshRecruitmentView();
+            }
+        }
+        // ==========================================================================
+        // 10. 대상자 관리 마스터 대장 동적 제어 모듈 ([교정] Not Defined 오류 완전 해결)
+        // ==========================================================================
+        function refreshApplicantView() {
+            const tbody = document.getElementById('dom-applicant-table');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            dataStoreApplicant.forEach(row => {
+                const tr = document.createElement('tr');
+                if (currentEditingUid === row.uid) {
+                    tr.classList.add('editing-row');
+                    tr.innerHTML = `
+                        <td><input type="text" id="inline-title" class="inline-input" value="${row.title}"></td>
+                        <td><input type="text" id="inline-th" class="inline-input" value="${getOnlyNumbers(row.th)}"></td>
+                        <td><input type="text" id="inline-count" class="inline-input" value="${getOnlyNumbers(row.count)}"></td>
+                        <td><input type="text" id="inline-period" class="inline-input" value="${getOnlyNumbers(row.period)}"></td>
+                        <td><input type="text" id="inline-name" class="inline-input" value="${row.name}"></td>
+                        <td><input type="text" id="inline-ssn" class="inline-input" value="${getOnlyNumbers(row.ssn)}"></td>
+                        <td><input type="text" id="inline-phone" class="inline-input" value="${getOnlyNumbers(row.phone)}"></td>
+                        <td><select id="inline-result" class="inline-input">
+                                <option value="접수" ${row.result === '접수' ? 'selected' : ''}>접수</option>
+                                <option value="처리중" ${row.result === '처리중' ? 'selected' : ''}>처리중</option>
+                                <option value="처리완료" ${row.result === '처리완료' ? 'selected' : ''}>처리완료</option>
+                        </select></td>
+                        <td style="text-align: center;">
+                            <button class="btn-inline save" onclick="saveInlineEditRecord(${row.uid})">완료</button>
+                            <button class="btn-inline list" onclick="cancelInlineEditMode()">목록</button>
+                        </td>`;
+                } else {
+                    let style = row.result === '접수' ? 'color:#38bdf8;' : (row.result === '처리중' ? 'color:#fbbf24;' : 'color:#34d399;');
+                    tr.innerHTML = `
+                        <td>${row.title}</td> <td>${formatTh(row.th)}</td> <td>${formatCount(row.count)}</td> <td>${formatPeriod(row.period)}</td>
+                        <td class="text-bold">${row.name}</td> <td>${getOnlyNumbers(row.ssn)}</td> <td>${formatPhone(row.phone)}</td>
+                        <td><span style="${style}">${row.result}</span></td>
+                        <td style="text-align: center;">
+                            <button class="btn-inline edit" onclick="enableInlineEditMode(${row.uid})">수정</button>
+                            <button class="btn-inline delete" onclick="removeApplicantRecord(${row.uid})">삭제</button>
+                        </td>`;
+                }
+                tbody.appendChild(tr);
+            });
+        }
+
+        function insertApplicantRecord() {
+            const elTitle = document.getElementById('form-app-title');
+            const elTh = document.getElementById('form-app-th');
+            const elCount = document.getElementById('form-app-count');
+            const elPeriod = document.getElementById('form-app-period');
+            const elName = document.getElementById('form-app-name');
+            const elSsn = document.getElementById('form-app-ssn');
+            const elPhone = document.getElementById('form-app-phone');
+
+            if (!elTitle || !elTh || !elCount || !elPeriod || !elName || !elSsn || !elPhone) {
+                console.error("대상자 등록 입력 폼 중 일부 엘리먼트 ID를 찾을 수 없습니다.");
+                alert("알림: 시스템 화면 요소를 로드하지 못했습니다.");
+                return;
+            }
+
+            const t = elTitle.value.trim(), th = elTh.value.trim(), c = elCount.value.trim();
+            const p = elPeriod.value.trim(), n = elName.value.trim(), s = elSsn.value.trim(), ph = elPhone.value.trim();
+
+            if (!t || !th || !c || !p || !n || !s || !ph) {
+                return alert('알림: 빈 필드를 허용할 수 없습니다. 모든 칸을 채워주세요.');
+            }
+
+            dataStoreApplicant.push({
+                uid: Date.now(), title: t, th: getOnlyNumbers(th),
+                count: getOnlyNumbers(c), period: getOnlyNumbers(p),
+                name: n, ssn: getOnlyNumbers(s), phone: getOnlyNumbers(ph), result: "접수"
+            });
+
+            commitToLocalStorage();
+            refreshApplicantView();
+
+            elName.value = ''; elSsn.value = ''; elPhone.value = '';
+            alert(`🎉 신규 대상자 [${n}]님이 대장에 성공적으로 등록 보존되었습니다.`);
+        }
+
+        function enableInlineEditMode(id) { currentEditingUid = id; refreshApplicantView(); }
+        function cancelInlineEditMode() { currentEditingUid = null; refreshApplicantView(); }
+
+        function saveInlineEditRecord(id) {
+            const idx = dataStoreApplicant.findIndex(d => d.uid === id);
+            if (idx === -1) return;
+            dataStoreApplicant[idx] = {
+                uid: id,
+                title: document.getElementById('inline-title').value.trim(),
+                th: getOnlyNumbers(document.getElementById('inline-th').value),
+                count: getOnlyNumbers(document.getElementById('inline-count').value),
+                period: getOnlyNumbers(document.getElementById('inline-period').value),
+                name: document.getElementById('inline-name').value.trim(),
+                ssn: getOnlyNumbers(document.getElementById('inline-ssn').value),
+                phone: getOnlyNumbers(document.getElementById('inline-phone').value),
+                result: document.getElementById('inline-result').value
+            };
+            commitToLocalStorage();
+            currentEditingUid = null;
+            refreshApplicantView();
+        }
+
+        function removeApplicantRecord(id) {
+            if (confirm('대상자를 완전히 파기하겠습니까?')) {
+                dataStoreApplicant = dataStoreApplicant.filter(d => d.uid !== id);
+                commitToLocalStorage();
+                currentEditingUid = null;
+                refreshApplicantView();
+            }
+        }
+
+        // ==========================================================================
+        // 11. 최고 시스템 관리자(admin / 10레벨) 전용 관리 담당자 테이블 렌더러 ([교정] 복구)
+        // ==========================================================================
+        function refreshAdminMemberTableView() {
+            const tbody = document.getElementById('dom-member-table');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            const loggedInUserSabun = sessionStorage.getItem('adminLoginSabun');
+            const currentUserInfo = dataStoreAdminMembers.find(member => member.sabun === loggedInUserSabun);
+            const currentUserLevelConfig = currentUserInfo ? (DUTY_LEVEL_MATRIX[currentUserInfo.duty] || { level: 1 }) : { level: 1 };
+            const isMasterAdmin = (loggedInUserSabun === 'admin' || currentUserLevelConfig.level === 10);
+
+            dataStoreAdminMembers.forEach(row => {
+                const tr = document.createElement('tr');
+                const lvl = (DUTY_LEVEL_MATRIX[row.duty] || { level: 1 }).level;
+
+                if (memberEditingSabun === row.sabun) {
+                    tr.classList.add('editing-row');
+                    tr.innerHTML = `
+                        <td style="color: var(--secondary-color); font-weight:700;">${row.sabun}</td>
+                        <td><input type="text" id="inline-mem-name" class="inline-input" value="${row.name}"></td>
+                        <td><input type="text" id="inline-mem-dept" class="inline-input" value="${row.dept}"></td>
+                        <td>
+                            <select id="inline-mem-duty" class="inline-input">
+                                <option value="사원" ${row.duty === '사원' ? 'selected' : ''}>사원</option>
+                                <option value="주임" ${row.duty === '주임' ? 'selected' : ''}>주임</option>
+                                <option value="대리" ${row.duty === '대리' ? 'selected' : ''}>대리</option>
+                                <option value="과장" ${row.duty === '과장' ? 'selected' : ''}>과장</option>
+                                <option value="팀장" ${row.duty === '팀장' ? 'selected' : ''}>팀장</option>
+                                <option value="본부장" ${row.duty === '본부장' ? 'selected' : ''}>본부장</option>
+                                <option value="센터장" ${row.duty === '센터장' ? 'selected' : ''}>센터장</option>
+                                <option value="연구원장" ${row.duty === '연구원장' ? 'selected' : ''}>연구원장</option>
+                                <option value="시스템 관리자" ${row.duty === '시스템 관리자' ? 'selected' : ''}>시스템 관리자</option>
+                            </select>
+                        </td>
+                        <td><span class="lvl-badge lvl-1"><i class="fa-solid fa-hourglass-half"></i> 연산 대기</span></td> 
+                        <td><span style="font-size:12px; color:var(--text-muted);">편집 중 조작 제한</span></td>
+                        <td style="text-align: center;">
+                            <button class="btn-inline save" onclick="saveAdminMemberInlineRecord('${row.sabun}')">완료</button>
+                            <button class="btn-inline list" onclick="cancelAdminMemberInlineMode()">목록</button>
+                        </td>`;
+                } else {
+                    const passwordAdminHtml = isMasterAdmin ? `<button class="btn-inline" style="background:#0284c7; font-size:11px; padding:4px 8px; color:#ffffff; font-weight:700;" onclick="openSystemResetPasswordModal('${row.sabun}')"><i class="fa-solid fa-key"></i> 비밀번호 수정</button>` : '';
+                    const actionButtonsHtml = isMasterAdmin ? `<button class="btn-inline edit" onclick="enableAdminMemberInlineMode('${row.sabun}')">수정</button><button class="btn-inline delete" onclick="removeAdminMemberRecord('${row.sabun}')">삭제</button>` : '';
+
+                    tr.innerHTML = `
+                        <td style="color: var(--secondary-color); font-weight:700;">${row.sabun}</td>
+                        <td class="text-bold">${row.name}</td>
+                        <td>${row.dept}</td>
+                        <td><span class="text-bold" style="color:#ffffff;">${row.duty}</span></td>
+                        <td><span class="lvl-badge lvl-${lvl}"><i class="fa-solid fa-shield"></i> ${lvl}레벨 등급</span></td>
+                        <td>${passwordAdminHtml}</td>
+                        <td style="text-align: center;">${actionButtonsHtml}</td>`;
+                }
+                tbody.appendChild(tr);
+            });
+        }
+
+        function enableAdminMemberInlineMode(k) { memberEditingSabun = k; refreshAdminMemberTableView(); }
+        function cancelAdminMemberInlineMode() { memberEditingSabun = null; refreshAdminMemberTableView(); }
+
+        function saveAdminMemberInlineRecord(k) {
+            const idx = dataStoreAdminMembers.findIndex(m => m.sabun === k);
+            if (idx === -1) return;
+
+            const updatedName = document.getElementById('inline-mem-name').value.trim();
+            const updatedDept = document.getElementById('inline-mem-dept').value.trim();
+            const updatedDuty = document.getElementById('inline-mem-duty').value;
+
+            if (!updatedName || !updatedDept) return alert('오류: 공백 서식을 허용할 수 없습니다.');
+
+            dataStoreAdminMembers[idx] = { sabun: k, name: updatedName, duty: updatedDuty, dept: updatedDept };
+            commitToLocalStorage();
+
+            if (sessionStorage.getItem('adminLoginSabun') === k) bindTopBarProfile(k);
+            memberEditingSabun = null;
+            refreshAdminMemberTableView();
+            alert('🎉 정보 갱신 수립: 임직원 정보 보관이 완료되었습니다.');
+        }
+
+        // ⭐ ❌ 누락 및 파괴되었던 진짜 insertAdminMember 함수가 안전하게 재마운트되었습니다!
+        function insertAdminMember() {
+            const sabunId = document.getElementById('form-mem-id').value.trim();
+            const staffName = document.getElementById('form-mem-name').value.trim();
+            const selectedDuty = document.getElementById('form-mem-duty').value;
+            const assignedDept = document.getElementById('form-mem-dept').value.trim() || "미배정지부";
+
+            if (!sabunId || !staffName) return alert('사번 코드와 성명(이름)은 필수 입력 사항입니다.');
+
+            const isExist = dataStoreAdminMembers.some(member => member.sabun === sabunId);
+            if (isExist) return alert('전산 오류: 이미 동일 사번이 관리 대장에 존재합니다.');
+
+            // 💥 [교정 핵심 요구사항] 신규 임직원 발령 시 초기 비밀번호(pw)를 본인의 사번 코드로 영구 지정 적재
+            dataStoreAdminMembers.push({
+                sabun: sabunId,
+                name: staffName,
+                duty: selectedDuty,
+                dept: assignedDept,
+                pw: sabunId // <--- 비밀번호 필드에 사번을 그대로 할당
+            });
+
+            commitToLocalStorage(); // 로컬스토리지 영구 보관소에 동기화 저장
+            refreshAdminMemberTableView(); // 하단 테이블 뷰포트 실시간 리렌더링
+
+            // 등록 완료 후 폼 입력란 깨끗하게 초기화
+            document.getElementById('form-mem-id').value = '';
+            document.getElementById('form-mem-name').value = '';
+            document.getElementById('form-mem-dept').value = '';
+
+            alert(`🎉 사원 등록 완료: ${staffName} 님의 초기 패스워드는 [사번:${sabunId}]으로 사전 할당 보존되었습니다.`);
+        }
+
+        function removeAdminMemberRecord(k) {
+            if (sessionStorage.getItem('adminLoginSabun') === k) return alert('제한 오류: 현재 활동 중인 본인 계정 정보는 직접 삭제할 수 없습니다.');
+            if (confirm('사번 임직원의 전산 관리 권한을 완전히 박탈 및 삭제하겠습니까?')) {
+                dataStoreAdminMembers = dataStoreAdminMembers.filter(m => m.sabun !== k);
+                commitToLocalStorage();
+                refreshAdminMemberTableView();
+            }
+        }
+
+        function handleSmartFileImport(e) {
+            const file = e.target.files;
+            const d = document.getElementById('selected-file-name');
+            if (!file) { if (d) d.innerText = ''; return; }
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (!['xlsx', 'xls', 'docx', 'doc', 'hwp', 'hwpx', 'txt'].includes(ext)) { alert('지원하지 않는 형식입니다.'); e.target.value = ''; return; }
+            if (d) d.innerHTML = `<i class="fa-solid fa-file-circle-check"></i> 선택: ${file.name}`;
+            const r = new FileReader();
+            r.onload = function (evt) { if (typeof parseRawTextDump === 'function') parseRawTextDump(evt.target.result); };
+            r.readAsText(file);
+        }
+
+        // ========================================================
+        // 💥 [교체 및 신규 추가] 모집공고 전용 스마트 문서 파서 엔진
+        // ========================================================
+
+        // 1. 파일 업로드 타격 시 작동하는 핸들러 (파일명 알림 레이어 가동)
+        function handleExamFileImport(event) {
+            const file = event.target.files[0]; // 업로드된 첫 번째 워드 파일 추출
+            if (!file) return;
+
+            // 1. [요구사항 반영] "파일명" 업로드가 완료되었습니다. 문구 출력
+            alert(`"${file.name}" 업로드가 완료되었습니다.`);
+
+            const reader = new FileReader();
+
+            // 💡 핵심 교정: 워드 문서를 ArrayBuffer 이진 버퍼 스트림으로 정밀 판독
+            reader.onload = function (e) {
+                const arrayBuffer = e.target.result;
+
+                // 상단에 연결한 mammoth 라이브러리를 기동하여 워드 구조 내 순수 텍스트만 원천 복원
+                mammoth.extractRawText({ arrayBuffer: arrayBuffer })
+                    .then(function (result) {
+                        // 노이즈 기호와 압축 코드가 완전히 증발된 100% 맑은 한글 텍스트 추출 완료
+                        const cleanTextDump = result.value;
+
+                        console.log("워드 파일 최종 정밀 추출 성공 데이터:\n", cleanTextDump);
+
+                        // 2. 추출된 맑은 한글 텍스트셋을 아래 모집공고 파서 함수로 안전하게 토스 전송
+                        parseRecruitmentTextDump(cleanTextDump);
+                    })
+                    .catch(function (err) {
+                        alert("❌ 워드 전산 해독 중 오류가 발생했습니다: " + err.message);
+                    });
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+
+        // 2. [기존 동일 유지] 문서 내용 중 모집공고 필수 4대 항목 추출 엔진
+        function parseRecruitmentTextDump(rawText) {
+            if (!rawText) return alert("파일 내용이 비어있거나 읽을 수 없습니다.");
+
+            // 정규표현식(RegEx) 패턴 매칭을 통해 문서 내부에서 관련 키워드 단어 검색
+            const titleMatch = rawText.match(/(?:시험명|과제명|임상명)(?:\s*[:=➔]\s*|\s+)(\[.*\]\s*[가-힣\w\s+]+)/)
+                || rawText.match(/(\[.*\]\s*[가-힣\w\s+]+)/);
+
+            const thMatch = rawText.match(/(\d+)\s*(?:기|차수)/) || rawText.match(/(?:기수|차수)(?:\s*[:=➔]\s*|\s+)(\d+)/);
+            const countMatch = rawText.match(/(?:배정\s*인원수|인원수|인원)(?:\s*[:=➔]\s*|\s+)(\d+)/) || rawText.match(/(\d+)\s*명/);
+            const periodMatch = rawText.match(/(?:임상\s*기간|기간|시간)(?:\s*[:=➔]\s*|\s+)(\d+)/) || rawText.match(/(\d+)\s*시간/);
+
+            if (!titleMatch) {
+                alert("❌ 모집공고 자동 가공 실패\n\n문서 내에서 규격화된 [시험명] 패턴을 식별할 수 없습니다.");
+                return;
+            }
+
+            const extractedTitle = titleMatch[1].trim();
+            const extractedTh = thMatch ? thMatch[1].trim() : "1";
+            const extractedCount = countMatch ? countMatch[1].trim() : "30";
+            const extractedPeriod = periodMatch ? periodMatch[1].trim() : "72";
+
+            let dataStoreRecruitment = JSON.parse(localStorage.getItem('dataStoreRecruitment')) || [];
+
+            const isDuplicate = dataStoreRecruitment.some(rec => rec.title === extractedTitle && rec.th === extractedTh);
+            if (isDuplicate) {
+                alert(`알림: 이미 대장에 등록된 모집공고 과제(${extractedTitle} ${extractedTh}기)입니다.`);
+                return;
+            }
+
+            dataStoreRecruitment.push({
+                uid: Date.now(),
+                title: extractedTitle,
+                th: extractedTh,
+                count: extractedCount,
+                period: extractedPeriod
+            });
+
+            localStorage.setItem('dataStoreRecruitment', JSON.stringify(dataStoreRecruitment));
+
+            if (typeof refreshRecruitmentView === "function") {
+                refreshRecruitmentView();
+            }
+
+            alert(`🎉 모집공고 스케줄러 등록 성공!\n\n업로드된 문서 내에서 4대 핵심 단어를 자동으로 정밀 스캔하여 목록에 추가했습니다.\n\n● 시험명: ${extractedTitle}\n● 기수: ${extractedTh}기\n● 배정 인원수: ${extractedCount}명\n● 임상 기간: ${extractedPeriod}시간`);
+        }
+
+
+        // [추가] 1. 시스템 최초 구동 시 대상자 마스터 대장(매칭 풀)을 로컬 스토리지에 생성
+        function initializeCMSDatabase() {
+            let dataStoreApplicant = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
+
+            if (dataStoreApplicant.length === 0) {
+                dataStoreApplicant.push(
+                    { uid: 201, name: "홍길동", ssn: "950505", phone: "01012345678", title: "애드파마-로잘탄+로수+에제 2기 임상과제", category: "내분비내과 / 2기 모집", stage: "⏳ 2기 1차 일정 완료 (분할 허용)" },
+                    { uid: 202, name: "김철수", ssn: "980101", phone: "01011112222", title: "경동제약 Mirabegron 식후 임상시험", category: "비뇨의학과 / 4기 모집", stage: "💥 과제 심사 완료 (종합 정산 가능)" }
+                );
+                localStorage.setItem('dataStoreApplicant', JSON.stringify(dataStoreApplicant));
+                console.log("CMS 피험자 마스터 대장 가상 DB 생성 완료");
+            }
+        }
+
+        // [추가] 2. 기존 최초 실행 가이드 함수(initializePresetMasterDatabase) 안에 연동 추가
+        // 기존에 정의된 함수를 완전히 대체하거나, 기존 함수 제일 첫 줄에 initializeCMSDatabase(); 를 넣어주셔도 됩니다.
+        const originalInitializePresetMasterDatabase = initializePresetMasterDatabase;
+        initializePresetMasterDatabase = function () {
+            initializeCMSDatabase(); // 대상자 매칭 데이터셋 먼저 생성
+            if (typeof originalInitializePresetMasterDatabase === "function") {
+                originalInitializePresetMasterDatabase(); // 기존 데이터 적재 로직 실행
+            }
+        };
+
+        // ========================================================
+        // 💥 [신규 추가] 다른 텍스트가 섞여 있어도 필수값만 정규식으로 자동 추출하는 엔진
+        // ========================================================
+        function parseRawTextDump(rawText) {
+            if (!rawText) return alert("파일 내용이 비어있거나 읽을 수 없습니다.");
+
+            console.log("원본 덤프 텍스트 분석 시작:\n", rawText);
+
+            // 1. 정규표현식(RegEx) 패턴 매칭 정의 (문서 내에서 필수 서식을 강제로 사냥)
+            // [이름]: '이름:홍길동', '성명 홍길동', '이름은 홍길동' 패턴 추적
+            const nameMatch = rawText.match(/(?:이름|성명)(?:\s*[:=➔]\s*|\s+)([가-힣]{2,5})/);
+
+            // [생년월일]: 6자리 숫자 패턴 연속 식별 (예: 950505)
+            const ssnMatch = rawText.match(/(?:생년월일|주민번호|SSN)?(?:\s*[:=➔]\s*|\s+)?\b(\d{6})\b/);
+
+            // [연락처]: 하이픈이 있거나 없는 국내 휴대폰 번호 패턴 추적 (예: 010-1234-5678 또는 01012345678)
+            const phoneMatch = rawText.match(/(?:연락처|전화번호|휴대폰|HP)?(?:\s*[:=➔]\s*|\s+)?\b(010[-.\s]?\d{3,4}[-.\s]?\d{4})\b/);
+
+            // [과제명]: 대괄호 속 임상 문구나 과제 키워드 추적 (예: [임상] 경동제약)
+            const titleMatch = rawText.match(/(?:과제명|참여과제|시험명)?(?:\s*[:=➔]\s*|\s+)?(\[.*\]\s*[가-힣\w\s+]+)/) || ["", "[임상] 기본 과제 정의"];
+
+            // [기수/차수]: '2기', '2기모집', '차수:2' 등에서 숫자 추출
+            const thMatch = rawText.match(/(\d+)\s*(?:기|차수)/) || ["", "1"];
+
+            // 2. 필수 인바운드 핵심 3종 데이터(이름, 생년월일, 연락처)가 식별되었는지 가드레일 검증
+            if (!nameMatch || !ssnMatch || !phoneMatch) {
+                alert("❌ 스마트 파일 가공 실패\n\n문서 내에서 필수값(이름, 생년월일, 연락처)의 규격 패턴을 찾을 수 없습니다.\n텍스트 내용을 다시 점검해 주세요.");
+                return;
+            }
+
+            // 3. 추출된 데이터를 CMS 규격에 맞게 깔끔하게 정제(Formatting)
+            const extractedName = nameMatch[1].trim();
+            const extractedSsn = ssnMatch[1].trim();
+            // 대조군 성능을 위해 하이픈을 모두 제거하고 숫자만 저장
+            const extractedPhone = phoneMatch[1].replace(/[^0-9]/g, '');
+            const extractedTitle = titleMatch[1] ? titleMatch[1].trim() : "[임상] 수동 업로드 과제";
+            const extractedTh = thMatch[1] ? thMatch[1].trim() : "1";
+
+            // 4. 로컬 가상 데이터베이스(localStorage) 마스터 대장에 즉시 리얼타임 압착 적재
+            let dataStoreApplicant = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
+
+            // 중복 등록 방지 안전 장치
+            const isDuplicate = dataStoreApplicant.some(user => user.name === extractedName && user.ssn === extractedSsn);
+            if (isDuplicate) {
+                alert(`알림: 이미 대장에 존재하는 피험자(${extractedName})입니다. 중복 등록이 차단되었습니다.`);
+                return;
+            }
+
+            // 최종 데이터 삽입
+            dataStoreApplicant.push({
+                uid: Date.now(), // 고유 ID 시계열 발행
+                title: extractedTitle,
+                th: extractedTh,
+                count: "1",       // 단일 업로드 기본값
+                period: "72",     // 기본 임상 타임 라인
+                name: extractedName,
+                ssn: extractedSsn,
+                phone: extractedPhone,
+                result: "접수",    // 초기 진입 상태 코드 마감
+                category: "내분비내과 / 스마트 업로드",
+                stage: "⏳ 2기 1차 일정 완료"
+            });
+
+            // 5. 스토리지 세이브 및 화면 뷰포트 완전 동기화 리렌더링
+            localStorage.setItem('dataStoreApplicant', JSON.stringify(dataStoreApplicant));
+
+            // 만약 기존 소스에 대상자 테이블 새로고침 함수가 있다면 트리거
+            if (typeof refreshApplicantView === "function") {
+                refreshApplicantView();
+            }
+
+            alert(`🎉 스마트 명단 파일 자동 등록 성공!\n\n문서에서 아래 필수 정보만 정확히 발라내어 대장에 영구 적재했습니다.\n\n● 피험자 성명: ${extractedName}\n● 생년월일: ${extractedSsn}\n● 연락처 번호: ${extractedPhone}\n● 바인딩 과제: ${extractedTitle}`);
+        }        
+    </script>
+
+    <!-- 비밀번호 변경 처리용 통합 오버레이 팝업 모달창 창고 -->
+    <div class="pw-modal-overlay" id="pwModalLayer">
+        <div class="pw-modal-box">
+            <h3 id="txtPwModalHeader">임직원 비밀번호 변경</h3>
+            <input type="hidden" id="hdnTargetSabun"> <!-- 대상 구별용 가상 홀더 -->
+            <div class="form-group">
+                <label for="txtNewPassword">새로운 비밀번호 입력</label>
+                <input type="password" id="txtNewPassword" placeholder="변경할 암호를 입력하세요">
+            </div>
+            <div class="modal-btn-group">
+                <button class="btn-inline save" style="flex:1; height:38px;" onclick="executePasswordChangeCommit()">최종
+                    변경 인가</button>
+                <button class="btn-inline list" style="flex:1; height:38px;" onclick="closePasswordModal()">창
+                    닫기</button>
+            </div>
+        </div>
+    </div>
+    <!-- 모집공고 상세 에디터 모달 팝업 (전체 인라인 스타일 제거 완료) -->
+    <div id="noticeEditorModal" class="editor-modal-overlay">
+        <div class="editor-modal-content">
+            <h3 id="modal-title" class="editor-modal-title">📋 세부 일정 및 주의사항 편집</h3>
+
+            <input type="hidden" id="modal-rec-id">
+
+            <div class="editor-form-group">
+                <label>주의사항</label>
+                <textarea id="modal-rec-notice" class="editor-textarea" rows="4"
+                    placeholder="주의사항 및 공복 유지 지침 등을 입력하세요."></textarea>
+            </div>
+
+            <div class="editor-form-group">
+                <label>시험일정</label>
+                <input type="text" id="modal-rec-examSchedule" class="editor-input" placeholder="예: 2026-08-15 오전 9시">
+            </div>
+
+            <div class="editor-form-group-last">
+                <label>사례비 지급일정</label>
+                <input type="text" id="modal-rec-paySchedule" class="editor-input" placeholder="예: 시험 종료 후 2주 이내 지급">
+            </div>
+
+            <div class="editor-btn-group">
+                <button onclick="closeNoticeEditor()" class="editor-btn-cancel">취소</button>
+                <button onclick="saveNoticeEditorData()" class="editor-btn-save">저장 및 반영</button>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
