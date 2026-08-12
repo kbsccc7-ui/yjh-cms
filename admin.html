@@ -790,6 +790,30 @@
             cursor: pointer;
             /* 마우스 올렸을 때 손가락 모양 표시 */
         }
+/ [기존에 가지고 계신 로그인 함수 예시]
+function 임상시험로그인함수() {
+    const id = document.getElementById('adminId').value;
+    const pw = document.getElementById('adminPw').value;
+
+    if(id === "admin" && pw === "1234") {
+        alert("로그인 성공");
+        window.location.href = "admin_main.html"; // 다음 페이지 이동
+    } else {
+        alert("정보를 확인해주세요.");
+    }
+}
+
+// ----------------------------------------------------
+// 요 아래 [이벤트 리스너] 코드를 기존 스크립트 맨 아래에 "추가"만 해주세요!
+// ----------------------------------------------------
+document.getElementById('adminPw').addEventListener('keydown', function(event) {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        임상시험로그인함수(); // 엔터 치면 위 기존 함수를 실행해라!
+    }
+});
+
+
     </style>
 
 <body>
