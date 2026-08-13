@@ -985,28 +985,30 @@
         function submitFinalSettlementForm() {
             const targetBtn = document.getElementById('ui_submit_btn');
             const bankSelect = document.getElementById('ui_bank_select');
-            const accountInput = document.getElementById('ui_account_input') || document.getElementById('txtAccount'); // 💡 현재 사용 중인 계좌 인풋 ID 자동 매칭
+            const accountInput = document.getElementById('ui_account_input') || document.getElementById('txtAccount');
 
             const selectedBankName = bankSelect ? bankSelect.options[bankSelect.selectedIndex].text : "";
             const inputtedAccount = accountInput ? accountInput.value.trim() : "";
 
-            // 유효성 체크
             if (bankSelect && bankSelect.value === "") return alert("알림: 참여비를 수령하실 은행을 선택해 주세요.");
             if (inputtedAccount === "") return alert("알림: 정산 처리를 위한 계좌번호를 입력해 주세요.");
 
-            // 💡 은행명과 계좌번호를 하나의 금융 정보 규격으로 결합 (예: "신한은행 110-123-456")
             const finalFinancialInfo = `${selectedBankName} ${inputtedAccount}`;
 
-            // 관리자 마스터 대장(localStorage) 파일 스트림 원격 로드
-            let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
+            // 💡 [신규 추가] 피험자가 첨부한 서류의 가상 미리보기 바이너리/랜덤 파일 경로 시뮬레이션 매핑
+            const dummyIdCardUrl = "https://unsplash.com"; // 신분증 예시 가상 뷰 주소
+            const dummyBankBookUrl = "https://unsplash.com"; // 통장사본 예시 가상 뷰 주소
 
-            // 현재 로그인하여 연동 성공한 피험자의 고유 식별자(UID)로 레코드 검색
+            let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
             const idx = adminApplicantDB.findIndex(user => String(user.uid) === String(matchedPatientData.uid));
 
             if (idx !== -1) {
-                // 💡 [핵심] 마스터 대장의 사례비 상태를 "접수"로 바꾸고, 전달받은 계좌 데이터 슬롯 강제 주입
                 adminApplicantDB[idx].payStatus = "접수";
-                adminApplicantDB[idx].accountInfo = finalFinancialInfo; // 💡 신규 계좌 데이터 슬롯 파이프라인 개방
+                adminApplicantDB[idx].accountInfo = finalFinancialInfo;
+
+                // 💡 [핵심 연동] 마스터 대장에 신분증 및 통장 사본 파일의 원격 가상 링크 슬롯 주입
+                adminApplicantDB[idx].idCardUrl = dummyIdCardUrl;
+                adminApplicantDB[idx].bankBookUrl = dummyBankBookUrl;
 
                 localStorage.setItem('dataStoreApplicant', JSON.stringify(adminApplicantDB));
 
@@ -1024,7 +1026,7 @@
                     if (title3) title3.innerText = "실시간 전산 정산 접수 알림 (NOTICE)";
 
                     if (message3) {
-                        message3.innerText = `[전산 송신 완료]\n\n${temporaryVerifiedName} 피험자님의 2기 [1차 차수분] 분할 참여비 청구서가 [${finalFinancialInfo}] 허브를 통해 금융결제원으로 안전하게 전산 접수 완료되었습니다.\n\n관리자 지부의 정산 검토가 시작되며, 진행 상태는 대시보드 배지를 통해 실시간 투과 표기됩니다.`;
+                        message3.innerText = `[전산 송신 완료]\n\n${temporaryVerifiedName} 피험자님의 2기 [1차 차수분] 분할 참여비 청구서가 [${finalFinancialInfo}] 허브를 통해 금융결제원으로 안전하게 전산 접수 완료되었습니다.\n\n첨부 서류(신분증/통장사본)가 전산망 모니터링 허브로 정상 동동화 연동되었습니다.`;
                     }
                     if (actionBtn3) {
                         actionBtn3.innerText = "닫기";
@@ -1034,7 +1036,6 @@
                     popup3.style.display = "block";
                 }
 
-                // 중복 전송 방지를 위해 현재 대상자 화면의 신청 단추 락(Lock)
                 if (targetBtn) {
                     targetBtn.disabled = true;
                     targetBtn.innerText = "💥 지급 신청 완료 (전산 전송됨)";
@@ -1042,13 +1043,12 @@
                     targetBtn.style.background = "#475569";
                 }
 
-                // 4단계 화면 상단의 배지와 텍스트 로그도 실시간 새로고침
                 const tBadge = document.getElementById('cms-badge');
                 const tLog = document.getElementById('history-log');
                 if (tBadge) { tBadge.innerText = "접수"; tBadge.style.background = "#38bdf8"; }
                 if (tLog) { tLog.innerHTML = `실시간 전산 상태: <strong style='color:#38bdf8;'>[접수완료]</strong> ◀ 청구서 서류가 전산 접수되어 대기 중입니다. (접수 계좌: ${finalFinancialInfo})`; }
 
-                console.log("피험자 금융 계좌 전산 접수 트랜잭션 마스터 DB 동기화 성공");
+                console.log("피험자 금융 계좌 및 증빙 서류 전산 접수 트랜잭션 마스터 DB 동기화 성공");
             } else {
                 alert("전산 연동 실패: 데이터 소멸 또는 식별 정보 오류로 인해 접수가 유실되었습니다.");
             }
