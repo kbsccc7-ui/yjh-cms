@@ -985,20 +985,32 @@
         function submitFinalSettlementForm() {
             const targetBtn = document.getElementById('ui_submit_btn');
             const bankSelect = document.getElementById('ui_bank_select');
-            const selectedBankName = bankSelect ? bankSelect.options[bankSelect.selectedIndex].text : "지정 계좌";
+            const accountInput = document.getElementById('ui_account_input') || document.getElementById('txtAccount'); // 💡 현재 사용 중인 계좌 인풋 ID 자동 매칭
 
-            // 💡 1. 관리자 마스터 대장(localStorage) 파일 스트림 원격 동동화 로드
+            const selectedBankName = bankSelect ? bankSelect.options[bankSelect.selectedIndex].text : "";
+            const inputtedAccount = accountInput ? accountInput.value.trim() : "";
+
+            // 유효성 체크
+            if (bankSelect && bankSelect.value === "") return alert("알림: 참여비를 수령하실 은행을 선택해 주세요.");
+            if (inputtedAccount === "") return alert("알림: 정산 처리를 위한 계좌번호를 입력해 주세요.");
+
+            // 💡 은행명과 계좌번호를 하나의 금융 정보 규격으로 결합 (예: "신한은행 110-123-456")
+            const finalFinancialInfo = `${selectedBankName} ${inputtedAccount}`;
+
+            // 관리자 마스터 대장(localStorage) 파일 스트림 원격 로드
             let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
 
-            // 💡 2. 현재 로그인하여 연동 성공한 피험자의 고유 식별자(UID)로 레코드 검색
+            // 현재 로그인하여 연동 성공한 피험자의 고유 식별자(UID)로 레코드 검색
             const idx = adminApplicantDB.findIndex(user => String(user.uid) === String(matchedPatientData.uid));
 
             if (idx !== -1) {
-                // 💡 3. [핵심] 마스터 대장의 사례비 상태를 즉시 "접수"로 강제 리라이팅 갱신
+                // 💡 [핵심] 마스터 대장의 사례비 상태를 "접수"로 바꾸고, 전달받은 계좌 데이터 슬롯 강제 주입
                 adminApplicantDB[idx].payStatus = "접수";
+                adminApplicantDB[idx].accountInfo = finalFinancialInfo; // 💡 신규 계좌 데이터 슬롯 파이프라인 개방
+
                 localStorage.setItem('dataStoreApplicant', JSON.stringify(adminApplicantDB));
 
-                // 💡 4. [STEP 01. 실시간 자동화 알림 팝업] 가동을 위한 3단 팝업창 재활용 스킨 마운트
+                // [STEP 01. 실시간 자동화 알림 팝업] 가동을 위한 3단 팝업창 렌더링
                 document.getElementById('msgWaiting3').style.display = "none";
                 const popup3 = document.getElementById('popupEmbedded3');
                 const icon3 = document.getElementById('icoPop');
@@ -1007,23 +1019,22 @@
                 const actionBtn3 = document.getElementById('btnActionPop');
 
                 if (popup3) {
-                    popup3.className = "embedded-result-popup pop-theme-pass"; // 승인 테마 스킨 적용
-                    if (icon3) icon3.className = "fa-solid fa-cloud-arrow-up";  // 전송 완료 아이콘 변경
+                    popup3.className = "embedded-result-popup pop-theme-pass";
+                    if (icon3) icon3.className = "fa-solid fa-cloud-arrow-up";
                     if (title3) title3.innerText = "실시간 전산 정산 접수 알림 (NOTICE)";
 
                     if (message3) {
-                        message3.innerText = `[전산 송신 완료]\n\n${temporaryVerifiedName} 피험자님의 2기 [1차 차수분] 분할 참여비 청구서가 [${selectedBankName}] 허브를 통해 금융결제원으로 안전하게 전산 접수 완료되었습니다.\n\n관리자 지부의 정산 검토가 시작되며, 진행 상태는 대시보드 배지를 통해 실시간 투과 표기됩니다.`;
+                        message3.innerText = `[전산 송신 완료]\n\n${temporaryVerifiedName} 피험자님의 2기 [1차 차수분] 분할 참여비 청구서가 [${finalFinancialInfo}] 허브를 통해 금융결제원으로 안전하게 전산 접수 완료되었습니다.\n\n관리자 지부의 정산 검토가 시작되며, 진행 상태는 대시보드 배지를 통해 실시간 투과 표기됩니다.`;
                     }
                     if (actionBtn3) {
                         actionBtn3.innerText = "닫기";
                         actionBtn3.style.background = "#475569";
-                        // 닫기 버튼 누르면 팝업 숨기기 이벤트 탑재
                         actionBtn3.onclick = function () { popup3.style.display = "none"; };
                     }
-                    popup3.style.display = "block"; // 팝업 강제 노출
+                    popup3.style.display = "block";
                 }
 
-                // 💡 5. 중복 전송 방지를 위해 현재 대상자 화면의 신청 단추 락(Lock) 및 상태 동기화
+                // 중복 전송 방지를 위해 현재 대상자 화면의 신청 단추 락(Lock)
                 if (targetBtn) {
                     targetBtn.disabled = true;
                     targetBtn.innerText = "💥 지급 신청 완료 (전산 전송됨)";
@@ -1031,13 +1042,13 @@
                     targetBtn.style.background = "#475569";
                 }
 
-                // 💡 6. 4단계 화면 상단의 배지와 텍스트 로그도 '접수' 단계 상태로 실시간 새로고침
+                // 4단계 화면 상단의 배지와 텍스트 로그도 실시간 새로고침
                 const tBadge = document.getElementById('cms-badge');
                 const tLog = document.getElementById('history-log');
                 if (tBadge) { tBadge.innerText = "접수"; tBadge.style.background = "#38bdf8"; }
-                if (tLog) { tLog.innerHTML = "실시간 전산 상태: <strong style='color:#38bdf8;'>[접수완료]</strong> ◀ 청구서 서류가 전산 접수되어 대기 중입니다."; }
+                if (tLog) { tLog.innerHTML = `실시간 전산 상태: <strong style='color:#38bdf8;'>[접수완료]</strong> ◀ 청구서 서류가 전산 접수되어 대기 중입니다. (접수 계좌: ${finalFinancialInfo})`; }
 
-                console.log("피험자 사례비 전산 접수 트랜잭션 마스터 DB 동기화 성공");
+                console.log("피험자 금융 계좌 전산 접수 트랜잭션 마스터 DB 동기화 성공");
             } else {
                 alert("전산 연동 실패: 데이터 소멸 또는 식별 정보 오류로 인해 접수가 유실되었습니다.");
             }
