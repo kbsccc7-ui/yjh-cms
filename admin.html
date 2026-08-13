@@ -799,17 +799,14 @@
     <div class="login-wrapper" id="loginScreen">
         <div class="login-container">
             <h2>관리자 로그인</h2>
-
             <div class="form-group">
                 <label for="uid">사번 (ID)</label>
                 <input type="text" id="uid" placeholder="사번을 입력하세요 (예: m5792)">
             </div>
-
             <div class="form-group">
                 <label for="upw">비밀번호 (PW)</label>
                 <input type="password" id="upw" placeholder="비밀번호를 입력하세요 (예: 1234)">
             </div>
-
             <button class="login-btn" onclick="executeSystemLogin()">시스템 접속</button>
         </div>
     </div>
@@ -1182,12 +1179,16 @@
             } else { span.innerHTML = `<i class="fa-solid fa-user-secret"></i> 임시관리자(${sabunId})`; }
         }
 
+        // [로그인 처리 함수] - 시스템 규격 ID(uid, upw) 매칭 완료
         function executeSystemLogin() {
             const id = document.getElementById('uid').value.trim();
             const pw = document.getElementById('upw').value.trim();
+
             if (!id || !pw) return alert('사번과 비밀번호를 입력해주세요.');
+
             initializePresetMasterDatabase();
             const account = dataStoreAdminMembers.find(m => m.sabun === id);
+
             if (account) {
                 if (pw === account.pw || pw === account.sabun || (pw === "9793" && account.sabun === "admin")) {
                     sessionStorage.setItem('adminLoginSession', 'isAuthorizedSecureToken');
@@ -1196,9 +1197,21 @@
                     document.getElementById('mainDashboard').style.display = 'flex';
                     bindTopBarProfile(id);
                     changeMainViewport('recruitmentView');
-                } else { alert('인증 실패: 비밀번호가 틀립니다.'); }
-            } else { alert('인증 오류: 등록되지 않은 사번입니다.'); }
+                } else {
+                    alert('인증 실패: 비밀번호가 틀립니다.');
+                }
+            } else {
+                alert('인증 오류: 등록되지 않은 사번입니다.');
+            }
         }
+
+        // [이벤트 리스너] 비밀번호(upw) 칸에서 엔터키 입력 시 로그인 함수 실행
+        document.getElementById('upw').addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                event.preventDefault(); // 엔터 키의 브라우저 기본 동작 방지
+                executeSystemLogin();    // 로그인 실행
+            }
+        });
 
         function executeSystemLogout() {
             if (confirm('세션을 파기하고 안전 로그아웃 하시겠습니까?')) {
@@ -1369,9 +1382,7 @@
             });
         }
 
-        /**
-         * 💡 [중복 완전 정리] 대상자 수동 등록을 원스톱 처리하는 마스터 함수입니다.
-         */
+        /** 대상자 수동 등록을 원스톱 처리하는 마스터 함수입니다. */
         function insertApplicantRecord() {
             const elTitle = document.getElementById('form-app-title');
             const elTh = document.getElementById('form-app-th');
