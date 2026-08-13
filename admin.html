@@ -1388,28 +1388,24 @@
             if (!tbody) return;
             tbody.innerHTML = '';
 
-            // 각 시험명+기수 그룹별로 실시간 카운팅을 하기 위한 임시 계수기(Counter) 맵 생성
             const groupCounter = {};
 
             dataStoreApplicant.forEach(row => {
                 const tr = document.createElement('tr');
 
-                // 그룹 식별자 생성 (예: "[임상] 경동제약_4")
                 const groupKey = `${row.title}_${getOnlyNumbers(row.th)}`;
-
-                // 해당 그룹이 맵에 없다면 0으로 초기화 후, 등록 순서대로 1씩 증가
                 if (!groupCounter[groupKey]) {
                     groupCounter[groupKey] = 0;
                 }
                 groupCounter[groupKey]++;
 
-                // 총인원 및 현재 순번 정제
                 const totalCount = getOnlyNumbers(row.count) || '0';
                 const currentOrder = groupCounter[groupKey];
+                const orderDisplayHTML = `<span style="color: #38bdf8;">${currentOrder}</span>/<span style="color: #f87171;">${totalCount}</span>`;
 
-                // 💡 앞 숫자는 #000000 형태의 색상코드로 강제 고정하고, 뒤 숫자는 빨간색(#f87171)으로 분리 제어
-                // 슬래시(/) 기호는 기본 텍스트 색상 또는 앞 숫자 색상을 따르도록 설정했습니다.
-                const orderDisplayHTML = `<span style="color: #38bdf8 ;">${currentOrder}</span>/<span style="color: #f87171;">${totalCount}</span>`;
+                // 💡 동의/미동의 데이터가 없을 경우를 대비한 널 처리 및 조건부 색상 스크립팅
+                const agreementStatus = row.isAgreed || "미동의";
+                let agreementStyle = agreementStatus === "동의" ? "color: var(--success-color);" : "color: var(--danger-color);";
 
                 if (currentEditingUid === row.uid) {
                     tr.classList.add('editing-row');
@@ -1426,6 +1422,11 @@
                     <option value="처리중" ${row.result === '처리중' ? 'selected' : ''}>처리중</option>
                     <option value="처리완료" ${row.result === '처리완료' ? 'selected' : ''}>처리완료</option>
                 </select></td>
+                <!-- 인라인 편집 모드용 동의 여부 셀렉트 박스 단추 배치 -->
+                <td><select id="inline-agreed" class="inline-input">
+                    <option value="동의" ${agreementStatus === '동의' ? 'selected' : ''}>동의</option>
+                    <option value="미동의" ${agreementStatus === '미동의' ? 'selected' : ''}>미동의</option>
+                </select></td>
                 <td style="text-align: center;">
                     <button class="btn-inline save" onclick="saveInlineEditRecord(${row.uid})">완료</button>
                     <button class="btn-inline list" onclick="cancelInlineEditMode()">목록</button>
@@ -1435,13 +1436,14 @@
                     tr.innerHTML = `
                 <td>${row.title}</td>
                 <td>${formatTh(row.th)}</td>
-                <!-- 💡 개별 폰트 컬러 태그 래핑을 위해 외부 부모 스타일의 간섭을 차단하고 주입 -->
                 <td class="text-bold">${orderDisplayHTML}</td>
                 <td>${formatPeriod(row.period)}</td>
                 <td class="text-bold">${row.name}</td>
                 <td>${getOnlyNumbers(row.ssn)}</td>
                 <td>${formatPhone(row.phone)}</td>
                 <td><span style="${style}">${row.result}</span></td>
+                <!-- 💡 사례비 다음 칸에 동의 여부를 가변 색상 서식으로 주입 출력 -->
+                <td class="text-bold" style="${agreementStyle}">${agreementStatus}</td>
                 <td style="text-align: center;">
                     <button class="btn-inline edit" onclick="enableInlineEditMode(${row.uid})">수정</button>
                     <button class="btn-inline delete" onclick="removeApplicantRecord(${row.uid})">삭제</button>
@@ -1449,6 +1451,29 @@
                 }
                 tbody.appendChild(tr);
             });
+        }
+
+        /** 인라인 수정 데이터를 로컬 스토리지 파일 시스템에 영구 커밋하는 트랜잭션 함수 [index: 0.1.41] */
+        function saveInlineEditRecord(id) {
+            const idx = dataStoreApplicant.findIndex(d => d.uid === id);
+            if (idx === -1) return;
+            dataStoreApplicant[idx] = {
+                uid: id,
+                title: document.getElementById('inline-title').value.trim(),
+                th: getOnlyNumbers(document.getElementById('inline-th').value),
+                count: getOnlyNumbers(document.getElementById('inline-count').value),
+                period: getOnlyNumbers(document.getElementById('inline-period').value),
+                name: document.getElementById('inline-name').value.trim(),
+                ssn: getOnlyNumbers(document.getElementById('inline-ssn').value),
+                phone: getOnlyNumbers(document.getElementById('inline-phone').value),
+                result: document.getElementById('inline-result').value,
+                isAgreed: document.getElementById('inline-agreed').value, // 💡 편집 모드 저장 기능 추가
+                category: dataStoreApplicant[idx].category || "미분류",
+                stage: `${getOnlyNumbers(document.getElementById('inline-th').value)}기 참여(소집)`
+            };
+            commitToLocalStorage();
+            currentEditingUid = null;
+            refreshApplicantView();
         }
 
         /** 대상자 수동 등록을 원스톱 처리하는 마스터 함수입니다. */
