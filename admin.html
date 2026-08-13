@@ -1394,18 +1394,36 @@
                 const tr = document.createElement('tr');
 
                 const groupKey = `${row.title}_${getOnlyNumbers(row.th)}`;
-                if (!groupCounter[groupKey]) {
-                    groupCounter[groupKey] = 0;
-                }
+                if (!groupCounter[groupKey]) { groupCounter[groupKey] = 0; }
                 groupCounter[groupKey]++;
 
                 const totalCount = getOnlyNumbers(row.count) || '0';
                 const currentOrder = groupCounter[groupKey];
-                const orderDisplayHTML = `<span style="color: #38bdf8;">${currentOrder}</span>/<span style="color: #f87171;">${totalCount}</span>`;
 
-                // 💡 동의/미동의 데이터가 없을 경우를 대비한 널 처리 및 조건부 색상 스크립팅
+                // 하늘색/빨간색 분수 레이아웃 유지
+                const orderDisplayHTML = `<span style="color: #38bdf8;">${currentOrder}</span>/<span style="color: #f87171;">${totalCount}</span>`;
                 const agreementStatus = row.isAgreed || "미동의";
                 let agreementStyle = agreementStatus === "동의" ? "color: var(--success-color);" : "color: var(--danger-color);";
+
+                // 💡 [계좌 정보 널 처리 포맷터] 제출된 계좌가 없으면 하이픈(-) 표기
+                const displayAccount = row.accountInfo && row.accountInfo.trim() !== '' ? row.accountInfo : '-';
+
+                // [사례비 상태 추적 처리 모듈]
+                const currentPayState = row.payStatus || "";
+                let payColumnHTML = "";
+
+                if (currentPayState === "" || currentPayState === "미신청") {
+                    payColumnHTML = `<button class="btn-inline list" style="background: #475569; color: #cbd5e1; font-size: 12px; padding: 4px 8px;" 
+                                     onclick="executeSingleAllowPayClaim('${row.uid}')">미신청</button>`;
+                } else if (currentPayState === "신청가능") {
+                    payColumnHTML = `<span style="color: #cbd5e1; font-weight: 700;">신청가능</span>`;
+                } else if (currentPayState === "접수") {
+                    payColumnHTML = `<span style="color: #38bdf8; font-weight: 800;">접수</span>`;
+                } else if (currentPayState === "처리중") {
+                    payColumnHTML = `<span style="color: #fbbf24; font-weight: 800;">처리중</span>`;
+                } else if (currentPayState === "처리완료") {
+                    payColumnHTML = `<span style="color: #34d399; font-weight: 800;">처리완료</span>`;
+                }
 
                 if (currentEditingUid === row.uid) {
                     tr.classList.add('editing-row');
@@ -1417,12 +1435,13 @@
                 <td><input type="text" id="inline-name" class="inline-input" value="${row.name}"></td>
                 <td><input type="text" id="inline-ssn" class="inline-input" value="${getOnlyNumbers(row.ssn)}"></td>
                 <td><input type="text" id="inline-phone" class="inline-input" value="${getOnlyNumbers(row.phone)}"></td>
-                <td><select id="inline-result" class="inline-input">
-                    <option value="접수" ${row.result === '접수' ? 'selected' : ''}>접수</option>
-                    <option value="처리중" ${row.result === '처리중' ? 'selected' : ''}>처리중</option>
-                    <option value="처리완료" ${row.result === '처리완료' ? 'selected' : ''}>처리완료</option>
+                <td><select id="inline-paystatus" class="inline-input">
+                    <option value="" ${currentPayState === '' ? 'selected' : ''}>미신청</option>
+                    <option value="신청가능" ${currentPayState === '신청가능' ? 'selected' : ''}>신청가능</option>
+                    <option value="접수" ${currentPayState === '접수' ? 'selected' : ''}>접수</option>
+                    <option value="처리중" ${currentPayState === '처리중' ? 'selected' : ''}>처리중</option>
+                    <option value="처리완료" ${currentPayState === '처리완료' ? 'selected' : ''}>처리완료</option>
                 </select></td>
-                <!-- 인라인 편집 모드용 동의 여부 셀렉트 박스 단추 배치 -->
                 <td><select id="inline-agreed" class="inline-input">
                     <option value="동의" ${agreementStatus === '동의' ? 'selected' : ''}>동의</option>
                     <option value="미동의" ${agreementStatus === '미동의' ? 'selected' : ''}>미동의</option>
@@ -1432,7 +1451,6 @@
                     <button class="btn-inline list" onclick="cancelInlineEditMode()">목록</button>
                 </td>`;
                 } else {
-                    let style = row.result === '접수' ? 'color:#38bdf8;' : (row.result === '처리중' ? 'color:#fbbf24;' : 'color:#34d399;');
                     tr.innerHTML = `
                 <td>${row.title}</td>
                 <td>${formatTh(row.th)}</td>
@@ -1441,8 +1459,7 @@
                 <td class="text-bold">${row.name}</td>
                 <td>${getOnlyNumbers(row.ssn)}</td>
                 <td>${formatPhone(row.phone)}</td>
-                <td><span style="${style}">${row.result}</span></td>
-                <!-- 💡 사례비 다음 칸에 동의 여부를 가변 색상 서식으로 주입 출력 -->
+                <td class="text-bold" style="text-align: center;">${payColumnHTML}</td>
                 <td class="text-bold" style="${agreementStyle}">${agreementStatus}</td>
                 <td style="text-align: center;">
                     <button class="btn-inline edit" onclick="enableInlineEditMode(${row.uid})">수정</button>
