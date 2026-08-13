@@ -784,11 +784,11 @@
         }
 
         // ========================================================
-        // 💥 2단 ➡️ 3단: [핵심] 입력된 값과 Admin 대상자 관리 대장의 크로스 매칭 검증 (기존 함수 교체)
+        // 💥 2단 ➡️ 3단: [핵심] 6자리/8자리 교차 입력 완벽 호환 및 크로스 매칭 검증
         // ========================================================
         function executeStep2Submit() {
             const name = document.getElementById('txtUserName').value.trim();
-            const birth = document.getElementById('txtUserBirth').value.trim();
+            const birth = document.getElementById('txtUserBirth').value.trim().replace(/[^0-9]/g, ''); // 숫자만 추출
             const phone = document.getElementById('txtUserPhone').value.trim();
             const isAgreed = document.getElementById('chkAgree').checked;
 
@@ -797,14 +797,21 @@
 
             temporaryVerifiedName = name;
 
-            // 💡 admin.html이 영구 보관 중인 마스터 대장(localStorage) 원격 로드 및 3각 대조
+            // admin.html이 영구 보관 중인 마스터 대장(localStorage) 원격 로드
             let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
 
-            matchedPatientData = adminApplicantDB.find(user =>
-                user.name === name &&
-                user.ssn === birth &&
-                user.phone.replace(/[^0-9]/g, '') === phone.replace(/[^0-9]/g, '')
-            );
+            // 💡 [6자리/8자리 상호 호환 알고리즘 적용]
+            // 입력값과 DB 저장값이 각각 6자리든 8자리든 상관없이 뒤의 6자리(YYMMDD)만 정밀 추출하여 비교합니다.
+            const cleanInputBirth6 = birth.length === 8 ? birth.substring(2) : birth;
+
+            matchedPatientData = adminApplicantDB.find(user => {
+                const dbBirth = (user.ssn || '').toString().replace(/[^0-9]/g, '');
+                const cleanDbBirth6 = dbBirth.length === 8 ? dbBirth.substring(2) : dbBirth;
+
+                return user.name === name &&
+                    cleanDbBirth6 === cleanInputBirth6 && // 💡 6자리 대 6자리로 변환하여 완벽 매칭
+                    user.phone.replace(/[^0-9]/g, '') === phone.replace(/[^0-9]/g, '')
+            });
 
             document.getElementById('msgWaiting3').style.display = "none";
             const popup = document.getElementById('popupEmbedded3');
