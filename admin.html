@@ -1372,7 +1372,7 @@
             if (!tbody) return;
             tbody.innerHTML = '';
 
-            // 💡 각 시험명+기수 그룹별로 실시간 카운팅을 하기 위한 임시 계수기(Counter) 맵 생성
+            // 각 시험명+기수 그룹별로 실시간 카운팅을 하기 위한 임시 계수기(Counter) 맵 생성
             const groupCounter = {};
 
             dataStoreApplicant.forEach(row => {
@@ -1387,16 +1387,19 @@
                 }
                 groupCounter[groupKey]++;
 
-                // 💡 화면에 표시할 포맷팅 문자열 생성 (예: 21/60)
+                // 총인원 및 현재 순번 정제
                 const totalCount = getOnlyNumbers(row.count) || '0';
-                const orderDisplay = `${groupCounter[groupKey]}/${totalCount}`;
+                const currentOrder = groupCounter[groupKey];
+
+                // 💡 앞 숫자는 #000000 형태의 색상코드로 강제 고정하고, 뒤 숫자는 빨간색(#f87171)으로 분리 제어
+                // 슬래시(/) 기호는 기본 텍스트 색상 또는 앞 숫자 색상을 따르도록 설정했습니다.
+                const orderDisplayHTML = `<span style="color: #000000;">${currentOrder}</span>/<span style="color: #f87171;">${totalCount}</span>`;
 
                 if (currentEditingUid === row.uid) {
                     tr.classList.add('editing-row');
                     tr.innerHTML = `
                 <td><input type="text" id="inline-title" class="inline-input" value="${row.title}"></td>
                 <td><input type="text" id="inline-th" class="inline-input" value="${getOnlyNumbers(row.th)}"></td>
-                <!-- 편집 모드에서는 원래 입력된 전체 숫자만 보여줌 -->
                 <td><input type="text" id="inline-count" class="inline-input" value="${totalCount}"></td>
                 <td><input type="text" id="inline-period" class="inline-input" value="${getOnlyNumbers(row.period)}"></td>
                 <td><input type="text" id="inline-name" class="inline-input" value="${row.name}"></td>
@@ -1416,8 +1419,8 @@
                     tr.innerHTML = `
                 <td>${row.title}</td>
                 <td>${formatTh(row.th)}</td>
-                <!-- 💡 '인원수' 자리에 계산된 순번/총원(21/60) 레이아웃 출력 -->
-                <td class="text-bold" style="color: var(--secondary-color);">${orderDisplay}</td>
+                <!-- 💡 개별 폰트 컬러 태그 래핑을 위해 외부 부모 스타일의 간섭을 차단하고 주입 -->
+                <td class="text-bold">${orderDisplayHTML}</td>
                 <td>${formatPeriod(row.period)}</td>
                 <td class="text-bold">${row.name}</td>
                 <td>${getOnlyNumbers(row.ssn)}</td>
