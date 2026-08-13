@@ -800,8 +800,7 @@
             // admin.html이 영구 보관 중인 마스터 대장(localStorage) 원격 로드
             let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
 
-            // 💡 [6자리/8자리 상호 호환 알고리즘 적용]
-            // 입력값과 DB 저장값이 각각 6자리든 8자리든 상관없이 뒤의 6자리(YYMMDD)만 정밀 추출하여 비교합니다.
+            // 💡 [6자리/8자리 상호 호환 알고리즘] 뒤의 6자리(YYMMDD)만 정밀 추출하여 비교
             const cleanInputBirth6 = birth.length === 8 ? birth.substring(2) : birth;
 
             matchedPatientData = adminApplicantDB.find(user => {
@@ -809,7 +808,7 @@
                 const cleanDbBirth6 = dbBirth.length === 8 ? dbBirth.substring(2) : dbBirth;
 
                 return user.name === name &&
-                    cleanDbBirth6 === cleanInputBirth6 && // 💡 6자리 대 6자리로 변환하여 완벽 매칭
+                    cleanDbBirth6 === cleanInputBirth6 &&
                     user.phone.replace(/[^0-9]/g, '') === phone.replace(/[^0-9]/g, '')
             });
 
@@ -821,11 +820,22 @@
             const actionBtn = document.getElementById('btnActionPop');
 
             if (matchedPatientData) {
+                // 💡 [실시간 크로스 체킹] 모집공고 마스터 DB에서 해당 과제의 '사례비 지급일정' 문구 추적 추출
+                let adminRecruitmentDB = JSON.parse(localStorage.getItem('dataStoreRecruitment')) || [];
+                const matchedRec = adminRecruitmentDB.find(rec =>
+                    rec.title === matchedPatientData.title && String(rec.th) === String(matchedPatientData.th)
+                );
+                // 지급일정이 비어있다면 대기 문구로 보정 마운트
+                const targetPayScheduleText = (matchedRec && matchedRec.payDate) ? matchedRec.payDate.trim() : "추후 공지 예정";
+
                 // [검증 통과] 3단 팝업 승인(PASS) 스킨 빌드
                 popup.className = "embedded-result-popup pop-theme-pass";
                 if (icon) icon.className = "fa-solid fa-circle-check";
                 title.innerText = "본인인증 승인 (PASS)";
-                message.innerText = `● 연계사: ${currentChannelName} 모듈\n● 피험자명: ${name}\n\n[실시간 자동화 알림]\n소집팀 데이터셋 매칭 통과가 감지되었습니다.\n\n하단 확인 버튼을 선택하면 자동으로 동기화 차단 장벽이 해제되며 다음 단계 정산 폼으로 이동합니다.`;
+
+                // 💡 3단 인증서 step02 결과 팝업창 내부에 "내 사례비가 언제 들어오는지" 일정 정보 실시간 바인딩
+                message.innerText = `● 연계사: ${currentChannelName} 모듈\n● 피험자명: ${name}\n\n[실시간 자동화 알림]\n소집팀 데이터셋 매칭 통과가 감지되었습니다.\n\n📢 [사례비 지급일정 안내]\n👉 ${targetPayScheduleText}\n\n하단 확인 버튼을 선택하면 자동으로 동기화 차단 장벽이 해제되며 다음 단계 정산 폼으로 이동합니다.`;
+
                 actionBtn.innerText = "확인";
                 actionBtn.style.background = "#03C75A";
             } else {
@@ -842,9 +852,8 @@
             document.getElementById('formContent4').style.display = "none";
             document.getElementById('msgWaiting4').style.display = "block";
         }
-
         // ========================================================
-        // 💥 3단 ➡️ 4단: [핵심] 승인 완료 시 잠금을 해제하고 참여한 '실제 시험 정보'를 로딩 (기존 함수 교체)
+        // 💥 3단 ➡️ 4단: [핵심] 관리자 심사 상태(payStatus)에 따른 조건부 잠금 해제 체인
         // ========================================================
         function executeStep3ConfirmNext() {
             if (matchedPatientData) {
@@ -853,28 +862,116 @@
                 document.getElementById('formContent4').style.display = "block";
 
                 // 💥 매칭된 데이터에서 피험자의 실제 임상시험 과제 정보를 실시간 화면 바인딩
-                // 💡 [안내] 만약 기존 HTML에 lblTrialCategory, lblTrialTitle ID가 없다면 내부 요소에 맞춰 유연하게 연동됩니다.
                 const lblCategory = document.getElementById('lblTrialCategory');
                 const lblTitle = document.getElementById('lblTrialTitle');
 
-                if (lblCategory) lblCategory.innerText = matchedPatientData.category; // 과제 카테고리
-                if (lblTitle) lblTitle.innerText = matchedPatientData.title;       // 과제명 명세
+                if (lblCategory) lblCategory.innerText = matchedPatientData.category;
+                if (lblTitle) lblTitle.innerText = matchedPatientData.title;
 
                 // 기존 4단 하드코딩 렌더링 구역 동적 갱신
                 document.getElementById('lblSetTarget').innerText = `${matchedPatientData.name} 피험자님 (${document.getElementById('txtUserBirth').value})`;
-                document.getElementById('ui_stage_text').innerHTML = matchedPatientData.stage;       // 이수 진행 단계 상태
+                document.getElementById('ui_stage_text').innerHTML = matchedPatientData.stage;
 
-                // 요구 명세 고정값 동기화
+                // 💡 [실시간 크로스 체킹] 4단계 화면 내부에도 "내 사례비가 언제 들어오는지" 일정 정보 실시간 마운트
+                let adminRecruitmentDB = JSON.parse(localStorage.getItem('dataStoreRecruitment')) || [];
+                const matchedRec = adminRecruitmentDB.find(rec =>
+                    rec.title === matchedPatientData.title && String(rec.th) === String(matchedPatientData.th)
+                );
+                const targetPayScheduleText = (matchedRec && matchedRec.payDate) ? matchedRec.payDate.trim() : "추후 공지 예정";
+
+                // 💡 4단계 레이아웃 내에 지급일정 전용 메시지 슬롯이 있다면 동적 주입
+                const lblPaySchedule = document.getElementById('ui_pay_schedule_text');
+                if (lblPaySchedule) {
+                    lblPaySchedule.innerHTML = `<strong style="color: #fbbf24;">${targetPayScheduleText}</strong>`;
+                }
+
+                // UI 제어용 엘리먼트 타겟팅 정의
                 const tBadge = document.getElementById('cms-badge');
                 const tLog = document.getElementById('history-log');
-                if (tBadge) { tBadge.innerText = "참여(소집)"; tBadge.className = "badge bg-blue"; }
-                if (tLog) { tLog.innerHTML = "대기 : 후속 일정 확인 요망"; tLog.style.color = "#06B6D4"; }
-
-                // 4단계 하단의 최종 지급 정산 신청 버튼 비활성화 상태 유지
                 const targetBtn = document.getElementById('ui_submit_btn');
-                if (targetBtn) targetBtn.disabled = true;
 
-                console.log("CMS 4단계 내부 스마트 청구서 요구 기반 커스텀 전산 동기화 성공");
+                // admin 전산망의 심사 처리 상태(payStatus) 추적 스캔
+                const adminReviewResult = matchedPatientData.payStatus || "";
+
+                if (adminReviewResult === "처리완료") {
+                    if (tBadge) {
+                        tBadge.innerText = "처리완료";
+                        tBadge.className = "badge bg-green";
+                        tBadge.style.background = "#34d399";
+                        tBadge.style.color = "#000";
+                    }
+                    if (tLog) {
+                        tLog.innerHTML = `실시간 전산 상태: <strong style='color:#34d399;'>[처리완료]</strong> ◀ 정산 처리가 모두 완료되어 지급이 확정되었습니다. (지급 일정: ${targetPayScheduleText})`;
+                    }
+                    if (targetBtn) {
+                        targetBtn.disabled = true;
+                        targetBtn.innerText = "💥 정산 지급 완료 (종결됨)";
+                        targetBtn.style.opacity = "0.4";
+                    }
+                } else if (adminReviewResult === "처리중") {
+                    if (tBadge) {
+                        tBadge.innerText = "처리중";
+                        tBadge.className = "badge bg-orange";
+                        tBadge.style.background = "#fbbf24";
+                        tBadge.style.color = "#000";
+                    }
+                    if (tLog) {
+                        tLog.innerHTML = `실시간 전산 상태: <strong style='color:#fbbf24;'>[처리중]</strong> ◀ 재무팀 정산 검토 단계입니다. (예정 일정: ${targetPayScheduleText})`;
+                    }
+                    if (targetBtn) {
+                        targetBtn.disabled = true;
+                        targetBtn.innerText = "💥 지급 심사 진행 중";
+                        targetBtn.style.opacity = "0.4";
+                    }
+                } else if (adminReviewResult === "접수") {
+                    if (tBadge) {
+                        tBadge.innerText = "접수";
+                        tBadge.className = "badge bg-blue";
+                        tBadge.style.background = "#38bdf8";
+                        tBadge.style.color = "#000";
+                    }
+                    if (tLog) {
+                        tLog.innerHTML = `실시간 전산 상태: <strong style='color:#38bdf8;'>[접수완료]</strong> ◀ 청구서 서류가 전산 접수되어 대기 중입니다. (예정 일정: ${targetPayScheduleText})`;
+                    }
+                    if (targetBtn) {
+                        targetBtn.disabled = true;
+                        targetBtn.innerText = "💥 지급 신청 완료 (전산 전송됨)";
+                        targetBtn.style.opacity = "0.4";
+                    }
+                } else if (adminReviewResult === "신청가능") {
+                    // 🔓 [심사 완료 - 신청가능 상태]: 최종 지급 신청 버튼 활성화 및 UI 개방
+                    if (tBadge) {
+                        tBadge.innerText = "신청가능";
+                        tBadge.className = "badge bg-green";
+                        tBadge.style.background = "#4ade80";
+                        tBadge.style.color = "#000";
+                    }
+                    if (tLog) {
+                        tLog.innerHTML = `실시간 연결: <strong style='color:#4ade80;'>연결완료</strong> ◀ 안내 : 심사 통과 / 사례비 신청이 가능합니다. (예정 일정: ${targetPayScheduleText})`;
+                    }
+                    if (targetBtn) {
+                        targetBtn.disabled = false; // 🔒 버튼 잠금 해제!
+                        targetBtn.style.opacity = "1";
+                    }
+                } else {
+                    // 🔒 [초기 대기 상태 - 권한 발령 전]
+                    if (tBadge) {
+                        tBadge.innerText = "참여(소집)";
+                        tBadge.className = "badge bg-blue";
+                        tBadge.style.background = "#2563eb";
+                        tBadge.style.color = "#fff";
+                    }
+                    if (tLog) {
+                        tLog.innerHTML = "실시간 연결: <strong style='color:#06b6d4;'>연결중</strong> ◀ 안내 : <span style='color:#fbbf24; font-weight:700;'>대기 : 관리자 서류 심사 진행 중 (신청 비활성화)</span>";
+                    }
+                    if (targetBtn) {
+                        targetBtn.disabled = true;
+                        targetBtn.style.opacity = "0.3";
+                        targetBtn.innerText = "지급 신청 대기 (심사 중)";
+                    }
+                }
+
+                console.log("CMS 4단계 관리자 지급일정(payDate) 및 심사 연동 정밀 수립 성공");
             } else {
                 // 매칭 실패 상태라면 1단계 수단 선택으로 복귀 리셋
                 document.getElementById('popupEmbedded3').style.display = "none";
