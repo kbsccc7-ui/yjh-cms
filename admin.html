@@ -973,14 +973,15 @@
                     <table>
                         <thead>
                             <tr>
-                                <th style="width: 18%;">시험명</th>
-                                <th style="width: 7%;">기수</th>
-                                <th style="width: 7%;">인원수</th>
-                                <th style="width: 10%;">기간</th>
-                                <th style="width: 10%;">이름</th>
-                                <th style="width: 13%;">생년월일</th>
-                                <th style="width: 13%;">전화번호</th>
-                                <th style="width: 10%;">사례비</th>
+                                <th style="width: 15%;">시험명</th>
+                                <th style="width: 6%;">기수</th>
+                                <th style="width: 8%;">인원수</th>
+                                <th style="width: 8%;">기간</th>
+                                <th style="width: 9%;">이름</th>
+                                <th style="width: 11%;">생년월일</th>
+                                <th style="width: 12%;">전화번호</th>
+                                <th style="width: 8%;">사례비</th>
+                                <th style="width: 11%;">동의여부</th>
                                 <th style="width: 12%; text-align: center;">작업</th>
                             </tr>
                         </thead>
@@ -1111,7 +1112,8 @@
                         period: "72",  // 💡 누락된 기간 추가
                         category: "내분비내과 / 2 기 모집",
                         stage: "🎁 2 기 1 차 일정 완료 (분할 허용)",
-                        result: "처리중"
+                        result: "처리중",
+                        isAgreed: "동의"
                     },
                     {
                         uid: 202,
@@ -1124,7 +1126,8 @@
                         period: "96",  // 💡 누락된 기간 추가
                         category: "비뇨의학과 / 4 기 모집",
                         stage: "🎁 과제 심사 완료 (종합 정산 가능)",
-                        result: "접수"
+                        result: "접수",
+                        isAgreed: "동의"
                     },
                     {
                         uid: 203,
@@ -1137,7 +1140,7 @@
                         period: "96",  // 💡 누락된 기간 추가
                         category: "비뇨의학과 / 4 기 모집",
                         stage: "🎁 과제 심사 완료 (종합 정산 가능)",
-                        result: "접수"
+                        result: "접수",
                     }
                 );
                 console.log("CMS 대상자 마스터 대장 가상 DB 생성 완료");
