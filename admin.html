@@ -1372,14 +1372,32 @@
             if (!tbody) return;
             tbody.innerHTML = '';
 
+            // 💡 각 시험명+기수 그룹별로 실시간 카운팅을 하기 위한 임시 계수기(Counter) 맵 생성
+            const groupCounter = {};
+
             dataStoreApplicant.forEach(row => {
                 const tr = document.createElement('tr');
+
+                // 그룹 식별자 생성 (예: "[임상] 경동제약_4")
+                const groupKey = `${row.title}_${getOnlyNumbers(row.th)}`;
+
+                // 해당 그룹이 맵에 없다면 0으로 초기화 후, 등록 순서대로 1씩 증가
+                if (!groupCounter[groupKey]) {
+                    groupCounter[groupKey] = 0;
+                }
+                groupCounter[groupKey]++;
+
+                // 💡 화면에 표시할 포맷팅 문자열 생성 (예: 21/60)
+                const totalCount = getOnlyNumbers(row.count) || '0';
+                const orderDisplay = `${groupCounter[groupKey]}/${totalCount}`;
+
                 if (currentEditingUid === row.uid) {
                     tr.classList.add('editing-row');
                     tr.innerHTML = `
                 <td><input type="text" id="inline-title" class="inline-input" value="${row.title}"></td>
                 <td><input type="text" id="inline-th" class="inline-input" value="${getOnlyNumbers(row.th)}"></td>
-                <td><input type="text" id="inline-count" class="inline-input" value="${getOnlyNumbers(row.count)}"></td>
+                <!-- 편집 모드에서는 원래 입력된 전체 숫자만 보여줌 -->
+                <td><input type="text" id="inline-count" class="inline-input" value="${totalCount}"></td>
                 <td><input type="text" id="inline-period" class="inline-input" value="${getOnlyNumbers(row.period)}"></td>
                 <td><input type="text" id="inline-name" class="inline-input" value="${row.name}"></td>
                 <td><input type="text" id="inline-ssn" class="inline-input" value="${getOnlyNumbers(row.ssn)}"></td>
@@ -1396,8 +1414,15 @@
                 } else {
                     let style = row.result === '접수' ? 'color:#38bdf8;' : (row.result === '처리중' ? 'color:#fbbf24;' : 'color:#34d399;');
                     tr.innerHTML = `
-                <td>${row.title}</td><td>${formatTh(row.th)}</td><td>${formatCount(row.count)}</td><td>${formatPeriod(row.period)}</td>
-                <td class="text-bold">${row.name}</td><td>${getOnlyNumbers(row.ssn)}</td><td>${formatPhone(row.phone)}</td><td><span style="${style}">${row.result}</span></td>
+                <td>${row.title}</td>
+                <td>${formatTh(row.th)}</td>
+                <!-- 💡 '인원수' 자리에 계산된 순번/총원(21/60) 레이아웃 출력 -->
+                <td class="text-bold" style="color: var(--secondary-color);">${orderDisplay}</td>
+                <td>${formatPeriod(row.period)}</td>
+                <td class="text-bold">${row.name}</td>
+                <td>${getOnlyNumbers(row.ssn)}</td>
+                <td>${formatPhone(row.phone)}</td>
+                <td><span style="${style}">${row.result}</span></td>
                 <td style="text-align: center;">
                     <button class="btn-inline edit" onclick="enableInlineEditMode(${row.uid})">수정</button>
                     <button class="btn-inline delete" onclick="removeApplicantRecord(${row.uid})">삭제</button>
