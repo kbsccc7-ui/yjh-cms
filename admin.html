@@ -1426,13 +1426,14 @@
                 if (!tbody) return;
                 tbody.innerHTML = '';
 
+                // ========================================================
+                // 💡 [탑재] 가상 DB 실시간 통계 카운터 연산 모듈
+                // ========================================================
                 const totalApplicants = dataStoreApplicant.length;
-                // payStatus 상태값 조건별 실시간 필터링 연산
                 const receivedCount = dataStoreApplicant.filter(u => u.payStatus === "접수").length;
                 const processingCount = dataStoreApplicant.filter(u => u.payStatus === "처리중").length;
                 const completeCount = dataStoreApplicant.filter(u => u.payStatus === "처리완료").length;
 
-                // 상단 뷰 패널 HTML 엘리먼트에 실시간 카운팅 수치 바인딩 마운트
                 const elStatTotal = document.getElementById('stat-total-count');
                 const elStatRecv = document.getElementById('stat-received-count');
                 const elStatProc = document.getElementById('stat-processing-count');
@@ -1442,6 +1443,7 @@
                 if (elStatRecv) elStatRecv.innerText = `${receivedCount}건`;
                 if (elStatProc) elStatProc.innerText = `${processingCount}건`;
                 if (elStatComp) elStatComp.innerText = `${completeCount}건`;
+                // ========================================================
 
                 const groupCounter = {};
 
@@ -1455,15 +1457,28 @@
                     const totalCount = getOnlyNumbers(row.count) || '0';
                     const currentOrder = groupCounter[groupKey];
 
-                    // 하늘색/빨간색 분수 레이아웃 유지
+                    // 하늘색/빨간색 분수 레이아웃 포맷팅
                     const orderDisplayHTML = `<span style="color: #38bdf8;">${currentOrder}</span>/<span style="color: #f87171;">${totalCount}</span>`;
+
+                    // 동의여부 고대비 스타일링
                     const agreementStatus = row.isAgreed || "미동의";
                     let agreementStyle = agreementStatus === "동의" ? "color: var(--success-color);" : "color: var(--danger-color);";
 
-                    // 💡 [계좌 정보 널 처리 포맷터] 제출된 계좌가 없으면 하이픈(-) 표기
+                    // 💡 [보완] 피험자가 서류 신청 시 제출한 은행/계좌 정보 매핑 (없으면 하이픈)
                     const displayAccount = row.accountInfo && row.accountInfo.trim() !== '' ? row.accountInfo : '-';
 
-                    // [사례비 상태 추적 처리 모듈]
+                    // 💡 [신규 추가] 피험자가 서류를 정상 첨부하여 데이터가 넘어온 경우에만 원격 링크 단추 활성화
+                    let documentLinksHTML = "";
+                    if (row.idCardUrl && row.bankBookUrl) {
+                        documentLinksHTML = `
+                <br>
+                <span style="display: inline-flex; gap: 4px; margin-top: 4px;">
+                    <a href="${row.idCardUrl}" target="_blank" class="btn-inline list" style="background:#1e293b; border:1px solid #334155; font-size:10.5px; padding:2px 5px; text-decoration:none; color:var(--text-muted) !important; border-radius:4px;"><i class="fa-solid fa-id-card" style="color:var(--warning-color);"></i> 신분증</a>
+                    <a href="${row.bankBookUrl}" target="_blank" class="btn-inline list" style="background:#1e293b; border:1px solid #334155; font-size:10.5px; padding:2px 5px; text-decoration:none; color:var(--text-muted) !important; border-radius:4px;"><i class="fa-solid fa-wallet" style="color:var(--secondary-color);"></i> 통장</a>
+                </span>`;
+                    }
+
+                    // [사례비 프로세스 흐름 제어 스위치 모듈]
                     const currentPayState = row.payStatus || "";
                     let payColumnHTML = "";
 
@@ -1480,6 +1495,7 @@
                         payColumnHTML = `<span style="color: #34d399; font-weight: 800;">처리완료</span>`;
                     }
 
+                    // A. 인라인 라이브 편집(Edit Mode) 활성화 행 렌더링 부 구역
                     if (currentEditingUid === row.uid) {
                         tr.classList.add('editing-row');
                         tr.innerHTML = `
@@ -1505,13 +1521,22 @@
                     <button class="btn-inline save" onclick="saveInlineEditRecord(${row.uid})">완료</button>
                     <button class="btn-inline list" onclick="cancelInlineEditMode()">목록</button>
                 </td>`;
-                    } else {
+                    }
+                    // B. 일반 리스트 출력 모드 구역 (실시간 서류 앵커 링크 마운트)
+                    else {
                         tr.innerHTML = `
                 <td>${row.title}</td>
                 <td>${formatTh(row.th)}</td>
                 <td class="text-bold">${orderDisplayHTML}</td>
                 <td>${formatPeriod(row.period)}</td>
-                <td class="text-bold">${row.name}</td>
+                
+                <!-- 💡 피험자 성명 칸 내부에 이름 + 계좌번호 + 원격 서류 가상 링크 정밀 결합 주입 -->
+                <td class="text-bold">
+                    ${row.name}
+                    <br><span style="font-size:11px; color:var(--text-muted); font-weight:normal;">${displayAccount}</span>
+                    ${documentLinksHTML}
+                </td>
+                
                 <td>${getOnlyNumbers(row.ssn)}</td>
                 <td>${formatPhone(row.phone)}</td>
                 <td class="text-bold" style="text-align: center;">${payColumnHTML}</td>
