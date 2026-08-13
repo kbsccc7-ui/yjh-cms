@@ -1016,6 +1016,7 @@
                                     <th style="width: 8%;">인원수</th>
                                     <th style="width: 8%;">기간</th>
                                     <th style="width: 9%;">이름</th>
+                                    <th style="width: 12%; text-align: center;">첨부서류</th>
                                     <th style="width: 11%;">생년월일</th>
                                     <th style="width: 12%;">전화번호</th>
                                     <th style="width: 8%;">사례비</th>
@@ -1523,11 +1524,18 @@
                 <td>${formatTh(row.th)}</td>
                 <td class="text-bold">${orderDisplayHTML}</td>
                 <td>${formatPeriod(row.period)}</td>
+                
+                <!-- 1. 이름 및 계좌 번호 출력 칸 -->
                 <td class="text-bold">
                     ${row.name}
                     <br><span style="font-size:11px; color:var(--text-muted); font-weight:normal;">${displayAccount}</span>
-                    ${documentLinksHTML} <!-- 💡 접수 단계 시 예외 없이 버튼 무조건 강제 투과 마운트 -->
                 </td>
+                
+                <!-- 💡 2. [신규 추가 연동] HTML 헤더 규격에 맞춰 독립된 '첨부서류' 데이터 칸 수 매싱 -->
+                <td style="text-align: center;">
+                    ${documentLinksHTML ? documentLinksHTML : '<span style="color:var(--text-muted); font-size:12px;">미제출</span>'}
+                </td>
+                
                 <td>${getOnlyNumbers(row.ssn)}</td>
                 <td>${formatPhone(row.phone)}</td>
                 <td class="text-bold" style="text-align: center;">${payColumnHTML}</td>
@@ -1537,6 +1545,8 @@
                     <button class="btn-inline delete" onclick="removeApplicantRecord(${row.uid})">삭제</button>
                 </td>`;
                     }
+                    // =========================================================================
+
                     tbody.appendChild(tr);
                 });
             }
