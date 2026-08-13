@@ -746,6 +746,43 @@
             document.getElementById('msgWaiting4').style.display = "block";
         }
 
+        /**
+ * 대상자 간편인증 및 관리자 DB 크로스 체킹 연동 함수
+ */
+        function executeApplicantVerification() {
+            const inputName = document.getElementById('userName').value.trim();
+            const inputSsn = document.getElementById('userSsn').value.trim();
+            const inputPhone = document.getElementById('userPhone').value.trim().replace(/[^0-9]/g, '');
+
+            const dataStoreApplicant = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
+
+            // 💡 생년월일 8자리 입력 시 앞 2글자 자동 절삭하여 6자리 관리자 DB와 매칭
+            const cleanSsn6 = inputSsn.length === 8 ? inputSsn.substring(2) : inputSsn;
+
+            const matchedPatient = dataStoreApplicant.find(p =>
+                p.name === inputName &&
+                p.ssn.toString().includes(cleanSsn6)
+            );
+
+            if (!matchedPatient) {
+                return alert("인증 실패: 등록되지 않은 피험자 정보이거나 전산망 조회가 불가능합니다.");
+            }
+
+            alert(`본인 식별 성공: [${matchedPatient.title}] 대상자로 확인되었습니다.`);
+
+            // UI 제어용 엘리먼트 ID 매칭
+            const statusLabel = document.getElementById('connectionStatusLabel');
+            const noticeLabel = document.getElementById('connectionNoticeLabel');
+
+            if (matchedPatient.isAgreed === "동의") {
+                if (statusLabel) statusLabel.innerHTML = "<span style='color: #4ade80;'>연결완료</span>";
+                if (noticeLabel) noticeLabel.innerHTML = "<span style='color: #38bdf8;'>정상 : 사례비 신청 및 일정 승인 단계</span>";
+            } else {
+                if (statusLabel) statusLabel.innerHTML = "<span style='color: #f87171;'>연결차단</span>";
+                if (noticeLabel) noticeLabel.innerHTML = "<span style='color: #f87171; font-weight: 800;'>⚠ 경고 : 서약서 미동의 상태입니다. 관리자 지부에 문의하세요.</span>";
+            }
+        }
+
         // ========================================================
         // 💥 2단 ➡️ 3단: [핵심] 입력된 값과 Admin 대상자 관리 대장의 크로스 매칭 검증 (기존 함수 교체)
         // ========================================================
