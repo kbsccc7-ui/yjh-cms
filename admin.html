@@ -922,387 +922,420 @@
                  ========================================================== -->
             <div id="applicantView" class="content-section">
                 <h2>대상자 관리</h2>
-                <div class="upload-zone" onclick="document.getElementById('fileParser').click()">
-                    <strong><i class="fa-solid fa-file-excel" style="color:#10b981;"></i> 대상자(명단) 파일 업로드</strong>
-                    <p>Excel, Word, HWP, HWPX, TXT 문서를 드롭하거나 클릭하여 첨부하세요.</p>
 
-                    <!-- 선택된 파일명이 표시될 스타일 영역 -->
-                    <p id="selected-file-name"
-                        style="margin-top: 10px; font-weight: 700; color: var(--secondary-color); font-size: 14px;"></p>
-
-                    <!-- accept 속성에 쉼표 꼭 확인하세요! -->
-                    <input type="file" id="fileParser" accept=".xlsx, .xls, .docx, .doc, .hwp, .hwpx, .txt"
-                        style="display:none;" onchange="handleSmartFileImport(event)">
-                </div>
-
-                <div class="register-box" style="margin-top:20px;">
-                    <h3>[신규 대상자 등록]</h3>
-                    <div class="register-form">
-                        <div class="form-group">
-                            <label>참여 시험명</label>
-                            <input type="text" id="form-app-title" placeholder="예: [임상] 경동제약">
-                        </div>
-                        <div class="form-group">
-                            <label>적용 기수</label>
-                            <input type="text" id="form-app-th" placeholder="숫자만">
-                        </div>
-                        <div class="form-group">
-                            <label>그룹 인원수</label>
-                            <input type="text" id="form-app-count" placeholder="숫자만">
-                        </div>
-                        <div class="form-group">
-                            <label>기간(시간)</label>
-                            <input type="text" id="form-app-period" placeholder="숫자만">
-                        </div>
-                        <div class="form-group">
-                            <label>성명</label>
-                            <input type="text" id="form-app-name">
-                        </div>
-                        <div class="form-group">
-                            <label>생년월일(YYMMDD)</label>
-                            <input type="text" id="form-app-ssn" maxlength="6" placeholder="숫자만">
-                        </div>
-                        <div class="form-group">
-                            <label>연락처</label>
-                            <input type="text" id="form-app-phone" placeholder="숫자만">
-                        </div>
-                        <button class="action-btn" onclick="insertApplicantRecord()">대상자 등록</button>
+                <!-- 💡 [신규 추가] 실시간 재무 정산 프로세스 통계 대시보드 뷰 패널 -->
+                <div class="dashboard-stats-row"
+                    style="display: flex; gap: 14px; margin-top: 20px; margin-bottom: 20px; width: 100%;">
+                    <div class="stat-card"
+                        style="flex: 1; background: var(--card-color); border: 1px solid var(--border-color); padding: 16px 20px; border-radius: 10px; display: flex; flex-direction: column; gap: 6px;">
+                        <span style="font-size: 13px; color: var(--text-muted); font-weight: 700;">총 대상자 수</span>
+                        <span id="stat-total-count" style="font-size: 24px; font-weight: 800; color: #ffffff;">0명</span>
+                    </div>
+                    <div class="stat-card"
+                        style="flex: 1; background: var(--card-color); border: 1px solid #38bdf8; padding: 16px 20px; border-radius: 10px; display: flex; flex-direction: column; gap: 6px;">
+                        <span style="font-size: 13px; color: #38bdf8; font-weight: 700;">청구서 접수 현황</span>
+                        <span id="stat-received-count"
+                            style="font-size: 24px; font-weight: 800; color: #38bdf8;">0건</span>
+                    </div>
+                    <div class="stat-card"
+                        style="flex: 1; background: var(--card-color); border: 1px solid #fbbf24; padding: 16px 20px; border-radius: 10px; display: flex; flex-direction: column; gap: 6px;">
+                        <span style="font-size: 13px; color: #fbbf24; font-weight: 700;">재무 검토 (처리중)</span>
+                        <span id="stat-processing-count"
+                            style="font-size: 24px; font-weight: 800; color: #fbbf24;">0건</span>
+                    </div>
+                    <div class="stat-card"
+                        style="flex: 1; background: var(--card-color); border: 1px solid #34d399; padding: 16px 20px; border-radius: 10px; display: flex; flex-direction: column; gap: 6px;">
+                        <span style="font-size: 13px; color: #34d399; font-weight: 700;">정산 종결 (지급완료)</span>
+                        <span id="stat-complete-count"
+                            style="font-size: 24px; font-weight: 800; color: #34d399;">0건</span>
                     </div>
                 </div>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th style="width: 15%;">시험명</th>
-                                <th style="width: 6%;">기수</th>
-                                <th style="width: 8%;">인원수</th>
-                                <th style="width: 8%;">기간</th>
-                                <th style="width: 9%;">이름</th>
-                                <th style="width: 11%;">생년월일</th>
-                                <th style="width: 12%;">전화번호</th>
-                                <th style="width: 8%;">사례비</th>
-                                <th style="width: 11%;">동의여부</th>
-                                <th style="width: 12%; text-align: center;">작업</th>
-                            </tr>
-                        </thead>
-                        <tbody id="dom-applicant-table"></tbody>
-                    </table>
-                </div>
-            </div>
 
-            <!-- ==========================================================
+                <!-- 이 아래로는 기존의 upload-zone 및 명단 데이터 테이블 레이아웃이 자연스럽게 이어집니다 -->
+                <div class="upload-zone" onclick="document.getElementById('fileParser').click()">
+
+                    <div class="upload-zone" onclick="document.getElementById('fileParser').click()">
+                        <strong><i class="fa-solid fa-file-excel" style="color:#10b981;"></i> 대상자(명단) 파일 업로드</strong>
+                        <p>Excel, Word, HWP, HWPX, TXT 문서를 드롭하거나 클릭하여 첨부하세요.</p>
+
+                        <!-- 선택된 파일명이 표시될 스타일 영역 -->
+                        <p id="selected-file-name"
+                            style="margin-top: 10px; font-weight: 700; color: var(--secondary-color); font-size: 14px;">
+                        </p>
+
+                        <!-- accept 속성에 쉼표 꼭 확인하세요! -->
+                        <input type="file" id="fileParser" accept=".xlsx, .xls, .docx, .doc, .hwp, .hwpx, .txt"
+                            style="display:none;" onchange="handleSmartFileImport(event)">
+                    </div>
+
+                    <div class="register-box" style="margin-top:20px;">
+                        <h3>[신규 대상자 등록]</h3>
+                        <div class="register-form">
+                            <div class="form-group">
+                                <label>참여 시험명</label>
+                                <input type="text" id="form-app-title" placeholder="예: [임상] 경동제약">
+                            </div>
+                            <div class="form-group">
+                                <label>적용 기수</label>
+                                <input type="text" id="form-app-th" placeholder="숫자만">
+                            </div>
+                            <div class="form-group">
+                                <label>그룹 인원수</label>
+                                <input type="text" id="form-app-count" placeholder="숫자만">
+                            </div>
+                            <div class="form-group">
+                                <label>기간(시간)</label>
+                                <input type="text" id="form-app-period" placeholder="숫자만">
+                            </div>
+                            <div class="form-group">
+                                <label>성명</label>
+                                <input type="text" id="form-app-name">
+                            </div>
+                            <div class="form-group">
+                                <label>생년월일(YYMMDD)</label>
+                                <input type="text" id="form-app-ssn" maxlength="6" placeholder="숫자만">
+                            </div>
+                            <div class="form-group">
+                                <label>연락처</label>
+                                <input type="text" id="form-app-phone" placeholder="숫자만">
+                            </div>
+                            <button class="action-btn" onclick="insertApplicantRecord()">대상자 등록</button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width: 15%;">시험명</th>
+                                    <th style="width: 6%;">기수</th>
+                                    <th style="width: 8%;">인원수</th>
+                                    <th style="width: 8%;">기간</th>
+                                    <th style="width: 9%;">이름</th>
+                                    <th style="width: 11%;">생년월일</th>
+                                    <th style="width: 12%;">전화번호</th>
+                                    <th style="width: 8%;">사례비</th>
+                                    <th style="width: 11%;">동의여부</th>
+                                    <th style="width: 12%; text-align: center;">작업</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dom-applicant-table"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ==========================================================
                  SECTION 03. [교정 반영] 관리 담당자 리스트 통합 마운트 구역
                  ========================================================== -->
 
-            <div id="gradeView" class="content-section">
-                <h2>전산망 관리 담당자 회원 목록</h2>
-                <div class="register-box">
-                    <h3>[신규 사원 정보 권한 발령 등록]</h3>
-                    <div class="register-form">
-                        <div class="form-group">
-                            <label>사번</label>
-                            <input type="text" id="form-mem-id" placeholder="예: m0005">
+                <div id="gradeView" class="content-section">
+                    <h2>전산망 관리 담당자 회원 목록</h2>
+                    <div class="register-box">
+                        <h3>[신규 사원 정보 권한 발령 등록]</h3>
+                        <div class="register-form">
+                            <div class="form-group">
+                                <label>사번</label>
+                                <input type="text" id="form-mem-id" placeholder="예: m0005">
+                            </div>
+                            <div class="form-group">
+                                <label>성명</label>
+                                <input type="text" id="form-mem-name" placeholder="성명">
+                            </div>
+                            <div class="form-group">
+                                <label>직급</label>
+                                <select id="form-mem-duty"
+                                    style="width:100%; background:#0b0f19; color:#fff; border:2px solid var(--border-color); border-radius:8px; height:43px; padding:0 10px; font-weight:700;">
+                                    <option value="사원">사원</option>
+                                    <option value="주임">주임</option>
+                                    <option value="대리">대리</option>
+                                    <option value="과장">과장</option>
+                                    <option value="팀장">팀장</option>
+                                    <option value="본부장">본부장</option>
+                                    <option value="센터장">센터장</option>
+                                    <option value="연구원장">연구원장</option>
+                                    <option value="시스템 관리자">시스템 관리자</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>소속 부서</label>
+                                <input type="text" id="form-mem-dept" placeholder="예: 임상관리팀">
+                            </div>
+                            <button class="action-btn" onclick="insertAdminMember()">임직원 등록</button>
                         </div>
-                        <div class="form-group">
-                            <label>성명</label>
-                            <input type="text" id="form-mem-name" placeholder="성명">
-                        </div>
-                        <div class="form-group">
-                            <label>직급</label>
-                            <select id="form-mem-duty"
-                                style="width:100%; background:#0b0f19; color:#fff; border:2px solid var(--border-color); border-radius:8px; height:43px; padding:0 10px; font-weight:700;">
-                                <option value="사원">사원</option>
-                                <option value="주임">주임</option>
-                                <option value="대리">대리</option>
-                                <option value="과장">과장</option>
-                                <option value="팀장">팀장</option>
-                                <option value="본부장">본부장</option>
-                                <option value="센터장">센터장</option>
-                                <option value="연구원장">연구원장</option>
-                                <option value="시스템 관리자">시스템 관리자</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>소속 부서</label>
-                            <input type="text" id="form-mem-dept" placeholder="예: 임상관리팀">
-                        </div>
-                        <button class="action-btn" onclick="insertAdminMember()">임직원 등록</button>
+                    </div>
+                    <!-- 가로 폭 분할 및 동적 인라인 편집 액션 폼 슬롯 장착 -->
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width: 13%;" text-align: center;">사번</th>
+                                    <th style="width: 17%;">성명</th>
+                                    <th style="width: 17%;">부서</th>
+                                    <th style="width: 13%;">직급</th>
+                                    <th style="width: 15%;">권한 레벨</th>
+                                    <th style="width: 13%;">비밀번호 관리</th>
+                                    <th style="width: 12%; text-align: center;">작업</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dom-member-table">
+                                <!-- JS 엔진에 의해 실시간 동적 바인딩 및 인라인 폼이 마운트되는 슬롯 -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-                <!-- 가로 폭 분할 및 동적 인라인 편집 액션 폼 슬롯 장착 -->
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th style="width: 13%;" text-align: center;">사번</th>
-                                <th style="width: 17%;">성명</th>
-                                <th style="width: 17%;">부서</th>
-                                <th style="width: 13%;">직급</th>
-                                <th style="width: 15%;">권한 레벨</th>
-                                <th style="width: 13%;">비밀번호 관리</th>
-                                <th style="width: 12%; text-align: center;">작업</th>
-                            </tr>
-                        </thead>
-                        <tbody id="dom-member-table">
-                            <!-- JS 엔진에 의해 실시간 동적 바인딩 및 인라인 폼이 마운트되는 슬롯 -->
-                        </tbody>
-                    </table>
-                </div>
+
             </div>
-
         </div>
-    </div>
-    <script>
-        // =========================================================================
-        // [1파트] 시스템 상수 구조 및 로컬 가상 데이터베이스(localStorage) 선언부
-        // =========================================================================
+        <script>
+            // =========================================================================
+            // [1파트] 시스템 상수 구조 및 로컬 가상 데이터베이스(localStorage) 선언부
+            // =========================================================================
 
-        // 1. 임직원 직급별 보안 접근 레벨 제어 매트릭스 [index: 0.1.1]
-        const DUTY_LEVEL_MATRIX = {
-            "사원": { level: 1, textType: "normal" },
-            "주임": { level: 2, textType: "normal" },
-            "대리": { level: 3, textType: "normal" },
-            "과장": { level: 4, textType: "normal" },
-            "팀장": { level: 5, textType: "normal" },
-            "본부장": { level: 6, textType: "normal" },
-            "센터장": { level: 7, textType: "normal" },
-            "연구원장": { level: 8, textType: "normal" },
-            "시스템 관리자": { level: 10, textType: "system" }
-        };
+            // 1. 임직원 직급별 보안 접근 레벨 제어 매트릭스 [index: 0.1.1]
+            const DUTY_LEVEL_MATRIX = {
+                "사원": { level: 1, textType: "normal" },
+                "주임": { level: 2, textType: "normal" },
+                "대리": { level: 3, textType: "normal" },
+                "과장": { level: 4, textType: "normal" },
+                "팀장": { level: 5, textType: "normal" },
+                "본부장": { level: 6, textType: "normal" },
+                "센터장": { level: 7, textType: "normal" },
+                "연구원장": { level: 8, textType: "normal" },
+                "시스템 관리자": { level: 10, textType: "system" }
+            };
 
-        // 2. 통합 로컬스토리지 파일 시스템 스트림 동기화 로드 [index: 0.1.1]
-        let dataStoreRecruitment = JSON.parse(localStorage.getItem('dataStoreRecruitment')) || [];
-        let dataStoreApplicant = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
-        let dataStoreAdminMembers = JSON.parse(localStorage.getItem('dataStoreAdminMembers')) || [];
+            // 2. 통합 로컬스토리지 파일 시스템 스트림 동기화 로드 [index: 0.1.1]
+            let dataStoreRecruitment = JSON.parse(localStorage.getItem('dataStoreRecruitment')) || [];
+            let dataStoreApplicant = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
+            let dataStoreAdminMembers = JSON.parse(localStorage.getItem('dataStoreAdminMembers')) || [];
 
-        // 3. 인라인 라이브 편집(Edit Mode) 추적용 상태 포인터 스케줄러
-        let recEditingUid = null;
-        let currentEditingUid = null;
-        let memberEditingSabun = null;
+            // 3. 인라인 라이브 편집(Edit Mode) 추적용 상태 포인터 스케줄러
+            let recEditingUid = null;
+            let currentEditingUid = null;
+            let memberEditingSabun = null;
 
-        /**
-         * 전역 데이터스토리지 트랜잭션 커밋 함수 [index: 0.1.3]
-         * 분산되어 있던 중복 저장 구문을 하나로 통일하여 동기화 안정성을 보장합니다.
-         */
-        function commitToLocalStorage() {
-            localStorage.setItem('dataStoreRecruitment', JSON.stringify(dataStoreRecruitment));
-            localStorage.setItem('dataStoreApplicant', JSON.stringify(dataStoreApplicant));
-            localStorage.setItem('dataStoreAdminMembers', JSON.stringify(dataStoreAdminMembers));
-        }
-
-        // =========================================================================
-        // [2파트] 마스터 가상 DB 생성 엔진 및 관리자 보안 인증 체인
-        // =========================================================================
-
-        /**
-         * CMS 피험자 마스터 대장(매칭 풀) 가상 DB 가동 상태 체크 [index: 0.1.26, 0.1.27]
-         * 중복 가동되던 생성 루틴을 통합 단일화하였습니다.
-         */
-        function initializeCMSDatabase() {
-            if (dataStoreApplicant.length === 0) {
-                dataStoreApplicant.push(
-                    {
-                        uid: 201,
-                        name: "홍길동",
-                        ssn: "950505",
-                        phone: "01012345678",
-                        title: "애드파마-로잘탄+로수+에제 2 기 임상과제",
-                        th: "2",       // 💡 누락된 기수 추가
-                        count: "60",    // 💡 누락된 인원수 추가
-                        period: "72",  // 💡 누락된 기간 추가
-                        category: "내분비내과 / 2 기 모집",
-                        stage: "🎁 2 기 1 차 일정 완료 (분할 허용)",
-                        result: "처리중",
-                        isAgreed: "동의"
-                    },
-                    {
-                        uid: 202,
-                        name: "강남구",
-                        ssn: "980101",
-                        phone: "01090956763",
-                        title: "경동제약 Mirabegron 식후 임상시험",
-                        th: "4",       // 💡 누락된 기수 추가
-                        count: "46",    // 💡 누락된 인원수 추가
-                        period: "96",  // 💡 누락된 기간 추가
-                        category: "비뇨의학과 / 4 기 모집",
-                        stage: "🎁 과제 심사 완료 (종합 정산 가능)",
-                        result: "접수",
-                        isAgreed: "동의"
-                    },
-                    {
-                        uid: 203,
-                        name: "진재영",
-                        ssn: "050607",
-                        phone: "01023469876",
-                        title: "경동제약 Mirabegron 식후 임상시험",
-                        th: "4",       // 💡 누락된 기수 추가
-                        count: "46",    // 💡 누락된 인원수 추가
-                        period: "96",  // 💡 누락된 기간 추가
-                        category: "비뇨의학과 / 4 기 모집",
-                        stage: "🎁 과제 심사 완료 (종합 정산 가능)",
-                        result: "접수",
-                    }
-                );
-                console.log("CMS 대상자 마스터 대장 가상 DB 생성 완료");
-            }
-        }
-
-        /**
-         * 마스터 초기 프리셋 데이터 적재 제어 스케줄러 [index: 0.1.2, 0.1.3, 0.1.27]
-         */
-        function initializePresetMasterDatabase() {
-            let isUpdated = false;
-
-            // 대상자 매칭 데이터셋 레이어 먼저 완벽 인스턴스화
-            initializeCMSDatabase();
-
-            if (dataStoreRecruitment.length === 0) {
-                dataStoreRecruitment.push(
-                    { uid: 101, title: "[생동] 신일제약 Teneligliptin 20mg", th: "1", count: "34", period: "72", notice: "", examSchedule: "", paySchedule: "" },
-                    { uid: 102, title: "[임상] 경동제약 Mirabegron+Tamsulosin (식후시험)", th: "4", count: "46", period: "96", notice: "", examSchedule: "", paySchedule: "" }
-                );
-                isUpdated = true;
+            /**
+             * 전역 데이터스토리지 트랜잭션 커밋 함수 [index: 0.1.3]
+             * 분산되어 있던 중복 저장 구문을 하나로 통일하여 동기화 안정성을 보장합니다.
+             */
+            function commitToLocalStorage() {
+                localStorage.setItem('dataStoreRecruitment', JSON.stringify(dataStoreRecruitment));
+                localStorage.setItem('dataStoreApplicant', JSON.stringify(dataStoreApplicant));
+                localStorage.setItem('dataStoreAdminMembers', JSON.stringify(dataStoreAdminMembers));
             }
 
-            if (dataStoreAdminMembers.length === 0) {
-                dataStoreAdminMembers.push(
-                    { sabun: "admin", name: "시스템 관리자", duty: "시스템 관리자", dept: "전산팀", pw: "9793" },
-                    { sabun: "m2993", name: "강남구", duty: "과장", dept: "임상관리팀", pw: "1234" },
-                    { sabun: "m5792", name: "구본순", duty: "사원", dept: "임상관리팀", pw: "1234" }
-                );
-                isUpdated = true;
+            // =========================================================================
+            // [2파트] 마스터 가상 DB 생성 엔진 및 관리자 보안 인증 체인
+            // =========================================================================
+
+            /**
+             * CMS 피험자 마스터 대장(매칭 풀) 가상 DB 가동 상태 체크 [index: 0.1.26, 0.1.27]
+             * 중복 가동되던 생성 루틴을 통합 단일화하였습니다.
+             */
+            function initializeCMSDatabase() {
+                if (dataStoreApplicant.length === 0) {
+                    dataStoreApplicant.push(
+                        {
+                            uid: 201,
+                            name: "홍길동",
+                            ssn: "950505",
+                            phone: "01012345678",
+                            title: "애드파마-로잘탄+로수+에제 2 기 임상과제",
+                            th: "2",       // 💡 누락된 기수 추가
+                            count: "60",    // 💡 누락된 인원수 추가
+                            period: "72",  // 💡 누락된 기간 추가
+                            category: "내분비내과 / 2 기 모집",
+                            stage: "🎁 2 기 1 차 일정 완료 (분할 허용)",
+                            result: "처리중",
+                            isAgreed: "동의"
+                        },
+                        {
+                            uid: 202,
+                            name: "강남구",
+                            ssn: "980101",
+                            phone: "01090956763",
+                            title: "경동제약 Mirabegron 식후 임상시험",
+                            th: "4",       // 💡 누락된 기수 추가
+                            count: "46",    // 💡 누락된 인원수 추가
+                            period: "96",  // 💡 누락된 기간 추가
+                            category: "비뇨의학과 / 4 기 모집",
+                            stage: "🎁 과제 심사 완료 (종합 정산 가능)",
+                            result: "접수",
+                            isAgreed: "동의"
+                        },
+                        {
+                            uid: 203,
+                            name: "진재영",
+                            ssn: "050607",
+                            phone: "01023469876",
+                            title: "경동제약 Mirabegron 식후 임상시험",
+                            th: "4",       // 💡 누락된 기수 추가
+                            count: "46",    // 💡 누락된 인원수 추가
+                            period: "96",  // 💡 누락된 기간 추가
+                            category: "비뇨의학과 / 4 기 모집",
+                            stage: "🎁 과제 심사 완료 (종합 정산 가능)",
+                            result: "접수",
+                        }
+                    );
+                    console.log("CMS 대상자 마스터 대장 가상 DB 생성 완료");
+                }
             }
 
-            if (!dataStoreAdminMembers.some(m => m.sabun === "admin")) {
-                dataStoreAdminMembers.unshift({ sabun: "admin", name: "시스템 관리자", duty: "시스템 관리자", dept: "통합전산관리", pw: "9793" });
-                isUpdated = true;
+            /**
+             * 마스터 초기 프리셋 데이터 적재 제어 스케줄러 [index: 0.1.2, 0.1.3, 0.1.27]
+             */
+            function initializePresetMasterDatabase() {
+                let isUpdated = false;
+
+                // 대상자 매칭 데이터셋 레이어 먼저 완벽 인스턴스화
+                initializeCMSDatabase();
+
+                if (dataStoreRecruitment.length === 0) {
+                    dataStoreRecruitment.push(
+                        { uid: 101, title: "[생동] 신일제약 Teneligliptin 20mg", th: "1", count: "34", period: "72", notice: "", examSchedule: "", paySchedule: "" },
+                        { uid: 102, title: "[임상] 경동제약 Mirabegron+Tamsulosin (식후시험)", th: "4", count: "46", period: "96", notice: "", examSchedule: "", paySchedule: "" }
+                    );
+                    isUpdated = true;
+                }
+
+                if (dataStoreAdminMembers.length === 0) {
+                    dataStoreAdminMembers.push(
+                        { sabun: "admin", name: "시스템 관리자", duty: "시스템 관리자", dept: "전산팀", pw: "9793" },
+                        { sabun: "m2993", name: "강남구", duty: "과장", dept: "임상관리팀", pw: "1234" },
+                        { sabun: "m5792", name: "구본순", duty: "사원", dept: "임상관리팀", pw: "1234" }
+                    );
+                    isUpdated = true;
+                }
+
+                if (!dataStoreAdminMembers.some(m => m.sabun === "admin")) {
+                    dataStoreAdminMembers.unshift({ sabun: "admin", name: "시스템 관리자", duty: "시스템 관리자", dept: "통합전산관리", pw: "9793" });
+                    isUpdated = true;
+                }
+
+                dataStoreAdminMembers.forEach(m => {
+                    if (!m.pw) { m.pw = m.sabun ? m.sabun : "1234"; isUpdated = true; }
+                });
+
+                if (isUpdated) commitToLocalStorage();
             }
 
-            dataStoreAdminMembers.forEach(m => {
-                if (!m.pw) { m.pw = m.sabun ? m.sabun : "1234"; isUpdated = true; }
-            });
-
-            if (isUpdated) commitToLocalStorage();
-        }
-
-        /**
-         * 실시간 활성 로그인 세션 검증 추적 처리기 [index: 0.1.1, 0.1.2]
-         */
-        function checkActiveLoginSession() {
-            const token = sessionStorage.getItem('adminLoginSession');
-            const sabun = sessionStorage.getItem('adminLoginSabun');
-            if (token === 'isAuthorizedSecureToken' && sabun) {
-                if (document.getElementById('loginScreen')) document.getElementById('loginScreen').style.display = 'none';
-                if (document.getElementById('mainDashboard')) document.getElementById('mainDashboard').style.display = 'flex';
-                initializePresetMasterDatabase();
-                bindTopBarProfile(sabun);
-                changeMainViewport('recruitmentView');
-            } else {
-                if (document.getElementById('loginScreen')) document.getElementById('loginScreen').style.display = 'flex';
-                if (document.getElementById('mainDashboard')) document.getElementById('mainDashboard').style.display = 'none';
-            }
-        }
-
-        // 스크립트 파싱 즉시 보안 런타임 가동
-        checkActiveLoginSession();
-
-        // =========================================================================
-        // [3파트] 대시보드 인터페이스 제어 및 데이터 규격화 포맷터 유틸리티
-        // =========================================================================
-
-        function bindTopBarProfile(sabunId) {
-            const member = dataStoreAdminMembers.find(m => m.sabun === sabunId);
-            const span = document.getElementById('txtUserProfile'); if (!span) return;
-            if (member) {
-                const meta = DUTY_LEVEL_MATRIX[member.duty] || { level: 1, textType: "normal" };
-                span.innerHTML = meta.textType === "system" ?
-                    `<i class="fa-solid fa-user-gear"></i> 시스템 관리자` : `<i class="fa-solid fa-user-shield"></i> 관리자(${member.name})`;
-            } else { span.innerHTML = `<i class="fa-solid fa-user-secret"></i> 임시관리자(${sabunId})`; }
-        }
-
-        // [로그인 처리 함수] - 시스템 규격 ID(uid, upw) 매칭 완료
-        function executeSystemLogin() {
-            const id = document.getElementById('uid').value.trim();
-            const pw = document.getElementById('upw').value.trim();
-
-            if (!id || !pw) return alert('사번과 비밀번호를 입력해주세요.');
-
-            initializePresetMasterDatabase();
-            const account = dataStoreAdminMembers.find(m => m.sabun === id);
-
-            if (account) {
-                if (pw === account.pw || pw === account.sabun || (pw === "9793" && account.sabun === "admin")) {
-                    sessionStorage.setItem('adminLoginSession', 'isAuthorizedSecureToken');
-                    sessionStorage.setItem('adminLoginSabun', id);
-                    document.getElementById('loginScreen').style.display = 'none';
-                    document.getElementById('mainDashboard').style.display = 'flex';
-                    bindTopBarProfile(id);
+            /**
+             * 실시간 활성 로그인 세션 검증 추적 처리기 [index: 0.1.1, 0.1.2]
+             */
+            function checkActiveLoginSession() {
+                const token = sessionStorage.getItem('adminLoginSession');
+                const sabun = sessionStorage.getItem('adminLoginSabun');
+                if (token === 'isAuthorizedSecureToken' && sabun) {
+                    if (document.getElementById('loginScreen')) document.getElementById('loginScreen').style.display = 'none';
+                    if (document.getElementById('mainDashboard')) document.getElementById('mainDashboard').style.display = 'flex';
+                    initializePresetMasterDatabase();
+                    bindTopBarProfile(sabun);
                     changeMainViewport('recruitmentView');
                 } else {
-                    alert('인증 실패: 비밀번호가 틀립니다.');
+                    if (document.getElementById('loginScreen')) document.getElementById('loginScreen').style.display = 'flex';
+                    if (document.getElementById('mainDashboard')) document.getElementById('mainDashboard').style.display = 'none';
                 }
-            } else {
-                alert('인증 오류: 등록되지 않은 사번입니다.');
             }
-        }
 
-        // [이벤트 리스너] 비밀번호(upw) 칸에서 엔터키 입력 시 로그인 함수 실행
-        document.getElementById('upw').addEventListener('keydown', function (event) {
-            if (event.key === 'Enter') {
-                event.preventDefault(); // 엔터 키의 브라우저 기본 동작 방지
-                executeSystemLogin();    // 로그인 실행
+            // 스크립트 파싱 즉시 보안 런타임 가동
+            checkActiveLoginSession();
+
+            // =========================================================================
+            // [3파트] 대시보드 인터페이스 제어 및 데이터 규격화 포맷터 유틸리티
+            // =========================================================================
+
+            function bindTopBarProfile(sabunId) {
+                const member = dataStoreAdminMembers.find(m => m.sabun === sabunId);
+                const span = document.getElementById('txtUserProfile'); if (!span) return;
+                if (member) {
+                    const meta = DUTY_LEVEL_MATRIX[member.duty] || { level: 1, textType: "normal" };
+                    span.innerHTML = meta.textType === "system" ?
+                        `<i class="fa-solid fa-user-gear"></i> 시스템 관리자` : `<i class="fa-solid fa-user-shield"></i> 관리자(${member.name})`;
+                } else { span.innerHTML = `<i class="fa-solid fa-user-secret"></i> 임시관리자(${sabunId})`; }
             }
-        });
 
-        function executeSystemLogout() {
-            if (confirm('세션을 파기하고 안전 로그아웃 하시겠습니까?')) {
-                sessionStorage.clear();
-                document.getElementById('mainDashboard').style.display = 'none';
-                document.getElementById('loginScreen').style.display = 'flex';
-                document.getElementById('uid').value = ''; document.getElementById('upw').value = '';
+            // [로그인 처리 함수] - 시스템 규격 ID(uid, upw) 매칭 완료
+            function executeSystemLogin() {
+                const id = document.getElementById('uid').value.trim();
+                const pw = document.getElementById('upw').value.trim();
+
+                if (!id || !pw) return alert('사번과 비밀번호를 입력해주세요.');
+
+                initializePresetMasterDatabase();
+                const account = dataStoreAdminMembers.find(m => m.sabun === id);
+
+                if (account) {
+                    if (pw === account.pw || pw === account.sabun || (pw === "9793" && account.sabun === "admin")) {
+                        sessionStorage.setItem('adminLoginSession', 'isAuthorizedSecureToken');
+                        sessionStorage.setItem('adminLoginSabun', id);
+                        document.getElementById('loginScreen').style.display = 'none';
+                        document.getElementById('mainDashboard').style.display = 'flex';
+                        bindTopBarProfile(id);
+                        changeMainViewport('recruitmentView');
+                    } else {
+                        alert('인증 실패: 비밀번호가 틀립니다.');
+                    }
+                } else {
+                    alert('인증 오류: 등록되지 않은 사번입니다.');
+                }
             }
-        }
 
-        function changeMainViewport(targetId) {
-            document.querySelectorAll('.content-section').forEach(v => v.style.display = 'none');
-            document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
-            recEditingUid = null; currentEditingUid = null;
-            const target = document.getElementById(targetId); if (target) target.style.display = 'block';
-            if (targetId === 'recruitmentView') { document.getElementById('menuRec').classList.add('active'); refreshRecruitmentView(); }
-            else if (targetId === 'applicantView') { document.getElementById('menuApp').classList.add('active'); refreshApplicantView(); }
-            else if (targetId === 'gradeView') { document.getElementById('menuGrade').classList.add('active'); refreshAdminMemberTableView(); }
-        }
+            // [이벤트 리스너] 비밀번호(upw) 칸에서 엔터키 입력 시 로그인 함수 실행
+            document.getElementById('upw').addEventListener('keydown', function (event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault(); // 엔터 키의 브라우저 기본 동작 방지
+                    executeSystemLogin();    // 로그인 실행
+                }
+            });
 
-        // -------------------------------------------------------------------------
-        // 문자열 원천 정제 가공 처리를 위한 정규식 유틸리티 포맷터 엔진 [index: 0.1.5, 0.1.6]
-        // -------------------------------------------------------------------------
-        function getOnlyNumbers(v) { if (!v) return ''; return v.toString().replace(/[^0-9]/g, ''); }
-        function formatTh(v) { const n = getOnlyNumbers(v); return n ? `${n}기` : v; }
-        function formatCount(v) { const n = getOnlyNumbers(v); return n ? `${n}명` : v; }
-        function formatPeriod(v) { const n = getOnlyNumbers(v); return n ? `${n}시간` : v; }
-        function formatPhone(v) {
-            const n = getOnlyNumbers(v);
-            if (n.length === 11) return n.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
-            if (n.length === 10) return n.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
-            return v;
-        }
+            function executeSystemLogout() {
+                if (confirm('세션을 파기하고 안전 로그아웃 하시겠습니까?')) {
+                    sessionStorage.clear();
+                    document.getElementById('mainDashboard').style.display = 'none';
+                    document.getElementById('loginScreen').style.display = 'flex';
+                    document.getElementById('uid').value = ''; document.getElementById('upw').value = '';
+                }
+            }
 
-        // =========================================================================
-        // [4파트] 모집공고 전용 렌더링 엔진 및 스케줄러 동적 트랜잭션 제어 모듈
-        // =========================================================================
+            function changeMainViewport(targetId) {
+                document.querySelectorAll('.content-section').forEach(v => v.style.display = 'none');
+                document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+                recEditingUid = null; currentEditingUid = null;
+                const target = document.getElementById(targetId); if (target) target.style.display = 'block';
+                if (targetId === 'recruitmentView') { document.getElementById('menuRec').classList.add('active'); refreshRecruitmentView(); }
+                else if (targetId === 'applicantView') { document.getElementById('menuApp').classList.add('active'); refreshApplicantView(); }
+                else if (targetId === 'gradeView') { document.getElementById('menuGrade').classList.add('active'); refreshAdminMemberTableView(); }
+            }
 
-        function refreshRecruitmentView() {
-            const tbody = document.getElementById('dom-recruitment-table'); if (!tbody) return;
-            tbody.innerHTML = '';
-            const sortedData = dataStoreRecruitment.slice().reverse(); // 역순 복사본 생성 [index: 0.1.6]
-            sortedData.forEach(row => {
-                const tr = document.createElement('tr');
-                const note = (row.note && row.note.trim() !== '') ? row.note : '-';
-                const schedule = (row.schedule && row.schedule.trim() !== '') ? row.schedule : '-';
-                const payDate = (row.payDate && row.payDate.trim() !== '') ? row.payDate : '-';
-                if (recEditingUid === row.uid) {
-                    tr.classList.add('editing-row');
-                    tr.innerHTML = `
+            // -------------------------------------------------------------------------
+            // 문자열 원천 정제 가공 처리를 위한 정규식 유틸리티 포맷터 엔진 [index: 0.1.5, 0.1.6]
+            // -------------------------------------------------------------------------
+            function getOnlyNumbers(v) { if (!v) return ''; return v.toString().replace(/[^0-9]/g, ''); }
+            function formatTh(v) { const n = getOnlyNumbers(v); return n ? `${n}기` : v; }
+            function formatCount(v) { const n = getOnlyNumbers(v); return n ? `${n}명` : v; }
+            function formatPeriod(v) { const n = getOnlyNumbers(v); return n ? `${n}시간` : v; }
+            function formatPhone(v) {
+                const n = getOnlyNumbers(v);
+                if (n.length === 11) return n.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+                if (n.length === 10) return n.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+                return v;
+            }
+
+            // =========================================================================
+            // [4파트] 모집공고 전용 렌더링 엔진 및 스케줄러 동적 트랜잭션 제어 모듈
+            // =========================================================================
+
+            function refreshRecruitmentView() {
+                const tbody = document.getElementById('dom-recruitment-table'); if (!tbody) return;
+                tbody.innerHTML = '';
+                const sortedData = dataStoreRecruitment.slice().reverse(); // 역순 복사본 생성 [index: 0.1.6]
+                sortedData.forEach(row => {
+                    const tr = document.createElement('tr');
+                    const note = (row.note && row.note.trim() !== '') ? row.note : '-';
+                    const schedule = (row.schedule && row.schedule.trim() !== '') ? row.schedule : '-';
+                    const payDate = (row.payDate && row.payDate.trim() !== '') ? row.payDate : '-';
+                    if (recEditingUid === row.uid) {
+                        tr.classList.add('editing-row');
+                        tr.innerHTML = `
                 <td><input type="text" id="inline-rec-title" class="inline-input" value="${row.title}"></td>
                 <td><input type="text" id="inline-rec-th" class="inline-input" value="${getOnlyNumbers(row.th)}"></td>
                 <td><input type="text" id="inline-rec-count" class="inline-input" value="${getOnlyNumbers(row.count)}"></td>
@@ -1314,120 +1347,137 @@
                     <button class="btn-inline save" onclick="saveRecInlineEditRecord(${row.uid})">완료</button>
                     <button class="btn-inline list" onclick="cancelRecInlineEditMode()">목록</button>
                 </td>`;
-                } else {
-                    tr.innerHTML = `
+                    } else {
+                        tr.innerHTML = `
                 <td class="text-bold">${row.title}</td><td>${formatTh(row.th)}</td><td>${formatCount(row.count)}</td><td>${formatPeriod(row.period)}</td>
                 <td style="color: var(--text-muted); font-size: 13px;">${note}</td><td style="color: var(--text-muted); font-size: 13px;">${schedule}</td><td style="color: var(--text-muted); font-size: 13px;">${payDate}</td>
                 <td style="text-align: center;">
                     <button class="btn-inline edit" onclick="enableRecInlineEditMode(${row.uid})">수정</button>
                     <button class="btn-inline delete" onclick="removeRecruitmentRecord(${row.uid})">삭제</button>
                 </td>`;
+                    }
+                    tbody.appendChild(tr);
+                });
+            }
+
+            function insertRecruitmentRecord() {
+                const t = document.getElementById('form-rec-title').value.trim(); const th = document.getElementById('form-rec-th').value.trim();
+                const c = document.getElementById('form-rec-count').value.trim(); const p = document.getElementById('form-rec-period').value.trim();
+                if (!t || !th || !c || !p) return alert('알림: 빈칸을 모두 채워 넣어야 등록이 완료됩니다.');
+                dataStoreRecruitment.push({ uid: Date.now(), title: t, th: getOnlyNumbers(th), count: getOnlyNumbers(c), period: getOnlyNumbers(p), notice: "", examSchedule: "", paySchedule: "" });
+                commitToLocalStorage(); refreshRecruitmentView();
+                document.getElementById('form-rec-title').value = ''; document.getElementById('form-rec-th').value = '';
+                document.getElementById('form-rec-count').value = ''; document.getElementById('form-rec-period').value = '';
+            }
+
+            function enableRecInlineEditMode(id) { recEditingUid = id; refreshRecruitmentView(); }
+            function cancelRecInlineEditMode() { recEditingUid = null; refreshRecruitmentView(); }
+            function saveRecInlineEditRecord(id) {
+                const idx = dataStoreRecruitment.findIndex(d => d.uid === id); if (idx === -1) return;
+                const t = document.getElementById('inline-rec-title').value.trim(); const th = getOnlyNumbers(document.getElementById('inline-rec-th').value);
+                const c = getOnlyNumbers(document.getElementById('inline-rec-count').value); const p = getOnlyNumbers(document.getElementById('inline-rec-period').value);
+                if (!t || !th || !c || !p) return alert('알림: 공백 수정을 허용할 수 없습니다.');
+                dataStoreRecruitment[idx] = { ...dataStoreRecruitment[idx], title: t, th: th, count: c, period: p };
+                commitToLocalStorage(); recEditingUid = null; refreshRecruitmentView();
+            }
+
+            function removeRecruitmentRecord(id) {
+                if (confirm('선택하신 임상 모집공고를 영구적으로 제거하시겠습니까?')) {
+                    dataStoreRecruitment = dataStoreRecruitment.filter(d => d.uid !== id); commitToLocalStorage(); recEditingUid = null; refreshRecruitmentView();
                 }
-                tbody.appendChild(tr);
-            });
-        }
-
-        function insertRecruitmentRecord() {
-            const t = document.getElementById('form-rec-title').value.trim(); const th = document.getElementById('form-rec-th').value.trim();
-            const c = document.getElementById('form-rec-count').value.trim(); const p = document.getElementById('form-rec-period').value.trim();
-            if (!t || !th || !c || !p) return alert('알림: 빈칸을 모두 채워 넣어야 등록이 완료됩니다.');
-            dataStoreRecruitment.push({ uid: Date.now(), title: t, th: getOnlyNumbers(th), count: getOnlyNumbers(c), period: getOnlyNumbers(p), notice: "", examSchedule: "", paySchedule: "" });
-            commitToLocalStorage(); refreshRecruitmentView();
-            document.getElementById('form-rec-title').value = ''; document.getElementById('form-rec-th').value = '';
-            document.getElementById('form-rec-count').value = ''; document.getElementById('form-rec-period').value = '';
-        }
-
-        function enableRecInlineEditMode(id) { recEditingUid = id; refreshRecruitmentView(); }
-        function cancelRecInlineEditMode() { recEditingUid = null; refreshRecruitmentView(); }
-        function saveRecInlineEditRecord(id) {
-            const idx = dataStoreRecruitment.findIndex(d => d.uid === id); if (idx === -1) return;
-            const t = document.getElementById('inline-rec-title').value.trim(); const th = getOnlyNumbers(document.getElementById('inline-rec-th').value);
-            const c = getOnlyNumbers(document.getElementById('inline-rec-count').value); const p = getOnlyNumbers(document.getElementById('inline-rec-period').value);
-            if (!t || !th || !c || !p) return alert('알림: 공백 수정을 허용할 수 없습니다.');
-            dataStoreRecruitment[idx] = { ...dataStoreRecruitment[idx], title: t, th: th, count: c, period: p };
-            commitToLocalStorage(); recEditingUid = null; refreshRecruitmentView();
-        }
-
-        function removeRecruitmentRecord(id) {
-            if (confirm('선택하신 임상 모집공고를 영구적으로 제거하시겠습니까?')) {
-                dataStoreRecruitment = dataStoreRecruitment.filter(d => d.uid !== id); commitToLocalStorage(); recEditingUid = null; refreshRecruitmentView();
             }
-        }
 
-        function openNoticeEditor(uid) {
-            const data = dataStoreRecruitment.find(item => String(item.uid) === String(uid)); if (!data) return alert("공고 데이터를 불러오지 못했습니다.");
-            document.getElementById('modal-rec-id').value = data.uid;
-            document.getElementById('modal-title').textContent = `📝 [${data.title}] 세부 편집`;
-            document.getElementById('modal-rec-notice').value = data.notice || '';
-            document.getElementById('modal-rec-examSchedule').value = data.examSchedule || '';
-            document.getElementById('modal-rec-paySchedule').value = data.paySchedule || '';
-            if (document.getElementById('noticeEditorModal')) document.getElementById('noticeEditorModal').style.display = 'flex';
-        }
-
-        function closeNoticeEditor() { if (document.getElementById('noticeEditorModal')) document.getElementById('noticeEditorModal').style.display = 'none'; }
-        function saveNoticeEditorData() {
-            const id = document.getElementById('modal-rec-id').value;
-            const idx = dataStoreRecruitment.findIndex(item => String(item.uid) === String(id));
-            if (idx !== -1) {
-                dataStoreRecruitment[idx].notice = document.getElementById('modal-rec-notice').value.trim();
-                dataStoreRecruitment[idx].examSchedule = document.getElementById('modal-rec-examSchedule').value.trim();
-                dataStoreRecruitment[idx].paySchedule = document.getElementById('modal-rec-paySchedule').value.trim();
-                commitToLocalStorage(); alert('세부 데이터가 목록에 반영되었습니다.'); closeNoticeEditor(); refreshRecruitmentView();
+            function openNoticeEditor(uid) {
+                const data = dataStoreRecruitment.find(item => String(item.uid) === String(uid)); if (!data) return alert("공고 데이터를 불러오지 못했습니다.");
+                document.getElementById('modal-rec-id').value = data.uid;
+                document.getElementById('modal-title').textContent = `📝 [${data.title}] 세부 편집`;
+                document.getElementById('modal-rec-notice').value = data.notice || '';
+                document.getElementById('modal-rec-examSchedule').value = data.examSchedule || '';
+                document.getElementById('modal-rec-paySchedule').value = data.paySchedule || '';
+                if (document.getElementById('noticeEditorModal')) document.getElementById('noticeEditorModal').style.display = 'flex';
             }
-        }
 
-        // =========================================================================
-        // [5-A 파트] 대상자 마스터 대장 동적 테이블 렌더러 및 단일 통제 엔진
-        // =========================================================================
+            function closeNoticeEditor() { if (document.getElementById('noticeEditorModal')) document.getElementById('noticeEditorModal').style.display = 'none'; }
+            function saveNoticeEditorData() {
+                const id = document.getElementById('modal-rec-id').value;
+                const idx = dataStoreRecruitment.findIndex(item => String(item.uid) === String(id));
+                if (idx !== -1) {
+                    dataStoreRecruitment[idx].notice = document.getElementById('modal-rec-notice').value.trim();
+                    dataStoreRecruitment[idx].examSchedule = document.getElementById('modal-rec-examSchedule').value.trim();
+                    dataStoreRecruitment[idx].paySchedule = document.getElementById('modal-rec-paySchedule').value.trim();
+                    commitToLocalStorage(); alert('세부 데이터가 목록에 반영되었습니다.'); closeNoticeEditor(); refreshRecruitmentView();
+                }
+            }
 
-        /**
-         * 로컬스토리지 데이터를 기반으로 대상자(피험자) 테이블 화면을 실시간 갱신합니다.
-         */
-        function refreshApplicantView() {
-            const tbody = document.getElementById('dom-applicant-table');
-            if (!tbody) return;
-            tbody.innerHTML = '';
+            // =========================================================================
+            // [5-A 파트] 대상자 마스터 대장 동적 테이블 렌더러 및 단일 통제 엔진
+            // =========================================================================
 
-            const groupCounter = {};
+            /**
+             * 로컬스토리지 데이터를 기반으로 대상자(피험자) 테이블 화면을 실시간 갱신합니다.
+             */
+            function refreshApplicantView() {
+                const tbody = document.getElementById('dom-applicant-table');
+                if (!tbody) return;
+                tbody.innerHTML = '';
 
-            dataStoreApplicant.forEach(row => {
-                const tr = document.createElement('tr');
+                const totalApplicants = dataStoreApplicant.length;
+                // payStatus 상태값 조건별 실시간 필터링 연산
+                const receivedCount = dataStoreApplicant.filter(u => u.payStatus === "접수").length;
+                const processingCount = dataStoreApplicant.filter(u => u.payStatus === "처리중").length;
+                const completeCount = dataStoreApplicant.filter(u => u.payStatus === "처리완료").length;
 
-                const groupKey = `${row.title}_${getOnlyNumbers(row.th)}`;
-                if (!groupCounter[groupKey]) { groupCounter[groupKey] = 0; }
-                groupCounter[groupKey]++;
+                // 상단 뷰 패널 HTML 엘리먼트에 실시간 카운팅 수치 바인딩 마운트
+                const elStatTotal = document.getElementById('stat-total-count');
+                const elStatRecv = document.getElementById('stat-received-count');
+                const elStatProc = document.getElementById('stat-processing-count');
+                const elStatComp = document.getElementById('stat-complete-count');
 
-                const totalCount = getOnlyNumbers(row.count) || '0';
-                const currentOrder = groupCounter[groupKey];
+                if (elStatTotal) elStatTotal.innerText = `${totalApplicants}명`;
+                if (elStatRecv) elStatRecv.innerText = `${receivedCount}건`;
+                if (elStatProc) elStatProc.innerText = `${processingCount}건`;
+                if (elStatComp) elStatComp.innerText = `${completeCount}건`;
 
-                // 하늘색/빨간색 분수 레이아웃 유지
-                const orderDisplayHTML = `<span style="color: #38bdf8;">${currentOrder}</span>/<span style="color: #f87171;">${totalCount}</span>`;
-                const agreementStatus = row.isAgreed || "미동의";
-                let agreementStyle = agreementStatus === "동의" ? "color: var(--success-color);" : "color: var(--danger-color);";
+                const groupCounter = {};
 
-                // 💡 [계좌 정보 널 처리 포맷터] 제출된 계좌가 없으면 하이픈(-) 표기
-                const displayAccount = row.accountInfo && row.accountInfo.trim() !== '' ? row.accountInfo : '-';
+                dataStoreApplicant.forEach(row => {
+                    const tr = document.createElement('tr');
 
-                // [사례비 상태 추적 처리 모듈]
-                const currentPayState = row.payStatus || "";
-                let payColumnHTML = "";
+                    const groupKey = `${row.title}_${getOnlyNumbers(row.th)}`;
+                    if (!groupCounter[groupKey]) { groupCounter[groupKey] = 0; }
+                    groupCounter[groupKey]++;
 
-                if (currentPayState === "" || currentPayState === "미신청") {
-                    payColumnHTML = `<button class="btn-inline list" style="background: #475569; color: #cbd5e1; font-size: 12px; padding: 4px 8px;" 
+                    const totalCount = getOnlyNumbers(row.count) || '0';
+                    const currentOrder = groupCounter[groupKey];
+
+                    // 하늘색/빨간색 분수 레이아웃 유지
+                    const orderDisplayHTML = `<span style="color: #38bdf8;">${currentOrder}</span>/<span style="color: #f87171;">${totalCount}</span>`;
+                    const agreementStatus = row.isAgreed || "미동의";
+                    let agreementStyle = agreementStatus === "동의" ? "color: var(--success-color);" : "color: var(--danger-color);";
+
+                    // 💡 [계좌 정보 널 처리 포맷터] 제출된 계좌가 없으면 하이픈(-) 표기
+                    const displayAccount = row.accountInfo && row.accountInfo.trim() !== '' ? row.accountInfo : '-';
+
+                    // [사례비 상태 추적 처리 모듈]
+                    const currentPayState = row.payStatus || "";
+                    let payColumnHTML = "";
+
+                    if (currentPayState === "" || currentPayState === "미신청") {
+                        payColumnHTML = `<button class="btn-inline list" style="background: #475569; color: #cbd5e1; font-size: 12px; padding: 4px 8px;" 
                                      onclick="executeSingleAllowPayClaim('${row.uid}')">미신청</button>`;
-                } else if (currentPayState === "신청가능") {
-                    payColumnHTML = `<span style="color: #cbd5e1; font-weight: 700;">신청가능</span>`;
-                } else if (currentPayState === "접수") {
-                    payColumnHTML = `<span style="color: #38bdf8; font-weight: 800;">접수</span>`;
-                } else if (currentPayState === "처리중") {
-                    payColumnHTML = `<span style="color: #fbbf24; font-weight: 800;">처리중</span>`;
-                } else if (currentPayState === "처리완료") {
-                    payColumnHTML = `<span style="color: #34d399; font-weight: 800;">처리완료</span>`;
-                }
+                    } else if (currentPayState === "신청가능") {
+                        payColumnHTML = `<span style="color: #cbd5e1; font-weight: 700;">신청가능</span>`;
+                    } else if (currentPayState === "접수") {
+                        payColumnHTML = `<span style="color: #38bdf8; font-weight: 800;">접수</span>`;
+                    } else if (currentPayState === "처리중") {
+                        payColumnHTML = `<span style="color: #fbbf24; font-weight: 800;">처리중</span>`;
+                    } else if (currentPayState === "처리완료") {
+                        payColumnHTML = `<span style="color: #34d399; font-weight: 800;">처리완료</span>`;
+                    }
 
-                if (currentEditingUid === row.uid) {
-                    tr.classList.add('editing-row');
-                    tr.innerHTML = `
+                    if (currentEditingUid === row.uid) {
+                        tr.classList.add('editing-row');
+                        tr.innerHTML = `
                 <td><input type="text" id="inline-title" class="inline-input" value="${row.title}"></td>
                 <td><input type="text" id="inline-th" class="inline-input" value="${getOnlyNumbers(row.th)}"></td>
                 <td><input type="text" id="inline-count" class="inline-input" value="${totalCount}"></td>
@@ -1450,8 +1500,8 @@
                     <button class="btn-inline save" onclick="saveInlineEditRecord(${row.uid})">완료</button>
                     <button class="btn-inline list" onclick="cancelInlineEditMode()">목록</button>
                 </td>`;
-                } else {
-                    tr.innerHTML = `
+                    } else {
+                        tr.innerHTML = `
                 <td>${row.title}</td>
                 <td>${formatTh(row.th)}</td>
                 <td class="text-bold">${orderDisplayHTML}</td>
@@ -1465,163 +1515,163 @@
                     <button class="btn-inline edit" onclick="enableInlineEditMode(${row.uid})">수정</button>
                     <button class="btn-inline delete" onclick="removeApplicantRecord(${row.uid})">삭제</button>
                 </td>`;
+                    }
+                    tbody.appendChild(tr);
+                });
+            }
+
+            /** 인라인 수정 데이터를 로컬 스토리지 파일 시스템에 영구 커밋하는 트랜잭션 함수 [index: 0.1.41] */
+            function saveInlineEditRecord(id) {
+                const idx = dataStoreApplicant.findIndex(d => d.uid === id);
+                if (idx === -1) return;
+
+                // 인라인 화면 필드 엘리먼트 안전 체크
+                const elTitle = document.getElementById('inline-title');
+                const elTh = document.getElementById('inline-th');
+                const elCount = document.getElementById('inline-count');
+                const elPeriod = document.getElementById('inline-period');
+                const elName = document.getElementById('inline-name');
+                const elSsn = document.getElementById('inline-ssn');
+                const elPhone = document.getElementById('inline-phone');
+                const elResult = document.getElementById('inline-result');
+                const elPayStatus = document.getElementById('inline-paystatus'); // 💡 사례비 상태 셀렉트 박스
+                const elAgreed = document.getElementById('inline-agreed');
+
+                dataStoreApplicant[idx] = {
+                    uid: id,
+                    title: elTitle ? elTitle.value.trim() : dataStoreApplicant[idx].title,
+                    th: elTh ? getOnlyNumbers(elTh.value) : dataStoreApplicant[idx].th,
+                    count: elCount ? getOnlyNumbers(elCount.value) : dataStoreApplicant[idx].count,
+                    period: elPeriod ? getOnlyNumbers(elPeriod.value) : dataStoreApplicant[idx].period,
+                    name: elName ? elName.value.trim() : dataStoreApplicant[idx].name,
+                    ssn: elSsn ? getOnlyNumbers(elSsn.value) : dataStoreApplicant[idx].ssn,
+                    phone: elPhone ? getOnlyNumbers(elPhone.value) : dataStoreApplicant[idx].phone,
+
+                    // 💡 기존의 전체 심사 '결과' 상태값 규격 원형 동기화 보존
+                    result: elResult ? elResult.value : (dataStoreApplicant[idx].result || "접수"),
+
+                    // 💡 [핵심] 관리자가 수동 개정한 '사례비 청구 진행 상태' 데이터 오버라이팅 저장 연동
+                    payStatus: elPayStatus ? elPayStatus.value : (dataStoreApplicant[idx].payStatus || ""),
+
+                    isAgreed: elAgreed ? elAgreed.value : (dataStoreApplicant[idx].isAgreed || "미동의"),
+                    category: dataStoreApplicant[idx].category || "내분비내과 / 대장 수동 등록",
+                    stage: `${elTh ? getOnlyNumbers(elTh.value) : dataStoreApplicant[idx].th}기 참여(소집)`
+                };
+
+                // 가상 파일 시스템 영구 저장 커밋 및 뷰 테이블 렌더링 호출
+                commitToLocalStorage();
+                currentEditingUid = null;
+                refreshApplicantView();
+
+                alert(`전산 반영 완료: [${dataStoreApplicant[idx].name}] 피험자의 정산 단계가 업데이트되었습니다.`);
+            }
+
+            /** 대상자 수동 등록을 원스톱 처리하는 마스터 함수입니다. */
+            function insertApplicantRecord() {
+                const elTitle = document.getElementById('form-app-title');
+                const elTh = document.getElementById('form-app-th');
+                const elCount = document.getElementById('form-app-count');
+                const elPeriod = document.getElementById('form-app-period');
+                const elName = document.getElementById('form-app-name');
+                const elSsn = document.getElementById('form-app-ssn');
+                const elPhone = document.getElementById('form-app-phone');
+
+                if (!elTitle || !elTh || !elCount || !elPeriod || !elName || !elSsn || !elPhone) {
+                    console.error("대상자 등록 입력 폼 중 일부 엘리먼트 ID 를 찾을 수 없습니다.");
+                    return alert("알림: 시스템 화면 요소를 로드하지 못했습니다.");
                 }
-                tbody.appendChild(tr);
-            });
-        }
 
-        /** 인라인 수정 데이터를 로컬 스토리지 파일 시스템에 영구 커밋하는 트랜잭션 함수 [index: 0.1.41] */
-        function saveInlineEditRecord(id) {
-            const idx = dataStoreApplicant.findIndex(d => d.uid === id);
-            if (idx === -1) return;
+                const t = elTitle.value.trim(), th = elTh.value.trim(), c = elCount.value.trim();
+                const p = elPeriod.value.trim(), n = elName.value.trim(), s = elSsn.value.trim(), ph = elPhone.value.trim();
 
-            // 인라인 화면 필드 엘리먼트 안전 체크
-            const elTitle = document.getElementById('inline-title');
-            const elTh = document.getElementById('inline-th');
-            const elCount = document.getElementById('inline-count');
-            const elPeriod = document.getElementById('inline-period');
-            const elName = document.getElementById('inline-name');
-            const elSsn = document.getElementById('inline-ssn');
-            const elPhone = document.getElementById('inline-phone');
-            const elResult = document.getElementById('inline-result');
-            const elPayStatus = document.getElementById('inline-paystatus'); // 💡 사례비 상태 셀렉트 박스
-            const elAgreed = document.getElementById('inline-agreed');
+                if (!t || !th || !c || !p || !n || !s || !ph) {
+                    return alert('알림: 빈 필드를 허용할 수 없습니다. 모든 칸을 채워주세요.');
+                }
 
-            dataStoreApplicant[idx] = {
-                uid: id,
-                title: elTitle ? elTitle.value.trim() : dataStoreApplicant[idx].title,
-                th: elTh ? getOnlyNumbers(elTh.value) : dataStoreApplicant[idx].th,
-                count: elCount ? getOnlyNumbers(elCount.value) : dataStoreApplicant[idx].count,
-                period: elPeriod ? getOnlyNumbers(elPeriod.value) : dataStoreApplicant[idx].period,
-                name: elName ? elName.value.trim() : dataStoreApplicant[idx].name,
-                ssn: elSsn ? getOnlyNumbers(elSsn.value) : dataStoreApplicant[idx].ssn,
-                phone: elPhone ? getOnlyNumbers(elPhone.value) : dataStoreApplicant[idx].phone,
+                // 숫자 추출 결과 미리 변수에 할당 (중복 호출 제거)
+                const cleanTh = getOnlyNumbers(th);
 
-                // 💡 기존의 전체 심사 '결과' 상태값 규격 원형 동기화 보존
-                result: elResult ? elResult.value : (dataStoreApplicant[idx].result || "접수"),
+                // 데이터 삽입 및 연동 규격화 가공 처리
+                dataStoreApplicant.push({
+                    // Date.now() 중복 방지를 위해 무작위 난수 조합 (또는 crypto.randomUUID() 사용)
+                    uid: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                    title: t,
+                    th: cleanTh,
+                    count: getOnlyNumbers(c),
+                    period: getOnlyNumbers(p),
+                    name: n,
+                    ssn: getOnlyNumbers(s),
+                    phone: getOnlyNumbers(ph),
+                    result: "접수",
+                    category: "내분비내과 / 대장 수동 등록",
+                    stage: `${cleanTh}기 참여(소집)` // 💡 join_login.html 화면단 연동 핵심 키값
+                });
 
-                // 💡 [핵심] 관리자가 수동 개정한 '사례비 청구 진행 상태' 데이터 오버라이팅 저장 연동
-                payStatus: elPayStatus ? elPayStatus.value : (dataStoreApplicant[idx].payStatus || ""),
+                commitToLocalStorage();
+                refreshApplicantView();
 
-                isAgreed: elAgreed ? elAgreed.value : (dataStoreApplicant[idx].isAgreed || "미동의"),
-                category: dataStoreApplicant[idx].category || "내분비내과 / 대장 수동 등록",
-                stage: `${elTh ? getOnlyNumbers(elTh.value) : dataStoreApplicant[idx].th}기 참여(소집)`
-            };
-
-            // 가상 파일 시스템 영구 저장 커밋 및 뷰 테이블 렌더링 호출
-            commitToLocalStorage();
-            currentEditingUid = null;
-            refreshApplicantView();
-
-            alert(`전산 반영 완료: [${dataStoreApplicant[idx].name}] 피험자의 정산 단계가 업데이트되었습니다.`);
-        }
-
-        /** 대상자 수동 등록을 원스톱 처리하는 마스터 함수입니다. */
-        function insertApplicantRecord() {
-            const elTitle = document.getElementById('form-app-title');
-            const elTh = document.getElementById('form-app-th');
-            const elCount = document.getElementById('form-app-count');
-            const elPeriod = document.getElementById('form-app-period');
-            const elName = document.getElementById('form-app-name');
-            const elSsn = document.getElementById('form-app-ssn');
-            const elPhone = document.getElementById('form-app-phone');
-
-            if (!elTitle || !elTh || !elCount || !elPeriod || !elName || !elSsn || !elPhone) {
-                console.error("대상자 등록 입력 폼 중 일부 엘리먼트 ID 를 찾을 수 없습니다.");
-                return alert("알림: 시스템 화면 요소를 로드하지 못했습니다.");
+                elName.value = '';
+                elSsn.value = '';
+                elPhone.value = '';
+                alert(`📢 신규 대상자 [${n}]님이 대장에 성공적으로 등록 보존되었습니다.`);
             }
 
-            const t = elTitle.value.trim(), th = elTh.value.trim(), c = elCount.value.trim();
-            const p = elPeriod.value.trim(), n = elName.value.trim(), s = elSsn.value.trim(), ph = elPhone.value.trim();
+            function enableInlineEditMode(id) { currentEditingUid = id; refreshApplicantView(); }
+            function cancelInlineEditMode() { currentEditingUid = null; refreshApplicantView(); }
 
-            if (!t || !th || !c || !p || !n || !s || !ph) {
-                return alert('알림: 빈 필드를 허용할 수 없습니다. 모든 칸을 채워주세요.');
-            }
+            function saveInlineEditRecord(id) {
+                const idx = dataStoreApplicant.findIndex(d => d.uid === id);
+                if (idx === -1) return;
 
-            // 숫자 추출 결과 미리 변수에 할당 (중복 호출 제거)
-            const cleanTh = getOnlyNumbers(th);
+                dataStoreApplicant[idx] = {
+                    uid: id,
+                    title: document.getElementById('inline-title').value.trim(),
+                    th: getOnlyNumbers(document.getElementById('inline-th').value),
+                    count: getOnlyNumbers(document.getElementById('inline-count').value),
+                    period: getOnlyNumbers(document.getElementById('inline-period').value),
+                    name: document.getElementById('inline-name').value.trim(),
+                    ssn: getOnlyNumbers(document.getElementById('inline-ssn').value),
+                    phone: getOnlyNumbers(document.getElementById('inline-phone').value),
+                    result: document.getElementById('inline-result').value,
+                    category: dataStoreApplicant[idx].category || "미분류",
+                    stage: `${getOnlyNumbers(document.getElementById('inline-th').value)}기 참여(소집)`
+                };
 
-            // 데이터 삽입 및 연동 규격화 가공 처리
-            dataStoreApplicant.push({
-                // Date.now() 중복 방지를 위해 무작위 난수 조합 (또는 crypto.randomUUID() 사용)
-                uid: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                title: t,
-                th: cleanTh,
-                count: getOnlyNumbers(c),
-                period: getOnlyNumbers(p),
-                name: n,
-                ssn: getOnlyNumbers(s),
-                phone: getOnlyNumbers(ph),
-                result: "접수",
-                category: "내분비내과 / 대장 수동 등록",
-                stage: `${cleanTh}기 참여(소집)` // 💡 join_login.html 화면단 연동 핵심 키값
-            });
-
-            commitToLocalStorage();
-            refreshApplicantView();
-
-            elName.value = '';
-            elSsn.value = '';
-            elPhone.value = '';
-            alert(`📢 신규 대상자 [${n}]님이 대장에 성공적으로 등록 보존되었습니다.`);
-        }
-
-        function enableInlineEditMode(id) { currentEditingUid = id; refreshApplicantView(); }
-        function cancelInlineEditMode() { currentEditingUid = null; refreshApplicantView(); }
-
-        function saveInlineEditRecord(id) {
-            const idx = dataStoreApplicant.findIndex(d => d.uid === id);
-            if (idx === -1) return;
-
-            dataStoreApplicant[idx] = {
-                uid: id,
-                title: document.getElementById('inline-title').value.trim(),
-                th: getOnlyNumbers(document.getElementById('inline-th').value),
-                count: getOnlyNumbers(document.getElementById('inline-count').value),
-                period: getOnlyNumbers(document.getElementById('inline-period').value),
-                name: document.getElementById('inline-name').value.trim(),
-                ssn: getOnlyNumbers(document.getElementById('inline-ssn').value),
-                phone: getOnlyNumbers(document.getElementById('inline-phone').value),
-                result: document.getElementById('inline-result').value,
-                category: dataStoreApplicant[idx].category || "미분류",
-                stage: `${getOnlyNumbers(document.getElementById('inline-th').value)}기 참여(소집)`
-            };
-
-            commitToLocalStorage();
-            currentEditingUid = null;
-            refreshApplicantView();
-        }
-
-        function removeApplicantRecord(id) {
-            if (confirm('대상자를 완전히 파기하겠습니까?')) {
-                dataStoreApplicant = dataStoreApplicant.filter(d => d.uid !== id);
                 commitToLocalStorage();
                 currentEditingUid = null;
                 refreshApplicantView();
             }
-        }
 
-        // =========================================================================
-        // [5-B 파트] 최고 시스템 관리자(admin) 전용 운영진 관리 트랜잭션 제어부
-        // =========================================================================
+            function removeApplicantRecord(id) {
+                if (confirm('대상자를 완전히 파기하겠습니까?')) {
+                    dataStoreApplicant = dataStoreApplicant.filter(d => d.uid !== id);
+                    commitToLocalStorage();
+                    currentEditingUid = null;
+                    refreshApplicantView();
+                }
+            }
 
-        function refreshAdminMemberTableView() {
-            const tbody = document.getElementById('dom-member-table');
-            if (!tbody) return;
-            tbody.innerHTML = '';
+            // =========================================================================
+            // [5-B 파트] 최고 시스템 관리자(admin) 전용 운영진 관리 트랜잭션 제어부
+            // =========================================================================
 
-            const loggedInUserSabun = sessionStorage.getItem('adminLoginSabun');
-            const currentUserInfo = dataStoreAdminMembers.find(member => member.sabun === loggedInUserSabun);
-            const currentUserLevelConfig = currentUserInfo ? (DUTY_LEVEL_MATRIX[currentUserInfo.duty] || { level: 1 }) : { level: 1 };
-            const isMasterAdmin = (loggedInUserSabun === 'admin' || currentUserLevelConfig.level === 10);
+            function refreshAdminMemberTableView() {
+                const tbody = document.getElementById('dom-member-table');
+                if (!tbody) return;
+                tbody.innerHTML = '';
 
-            dataStoreAdminMembers.forEach(row => {
-                const tr = document.createElement('tr');
-                const lvl = (DUTY_LEVEL_MATRIX[row.duty] || { level: 1 }).level;
+                const loggedInUserSabun = sessionStorage.getItem('adminLoginSabun');
+                const currentUserInfo = dataStoreAdminMembers.find(member => member.sabun === loggedInUserSabun);
+                const currentUserLevelConfig = currentUserInfo ? (DUTY_LEVEL_MATRIX[currentUserInfo.duty] || { level: 1 }) : { level: 1 };
+                const isMasterAdmin = (loggedInUserSabun === 'admin' || currentUserLevelConfig.level === 10);
 
-                if (memberEditingSabun === row.sabun) {
-                    tr.classList.add('editing-row');
-                    tr.innerHTML = `
+                dataStoreAdminMembers.forEach(row => {
+                    const tr = document.createElement('tr');
+                    const lvl = (DUTY_LEVEL_MATRIX[row.duty] || { level: 1 }).level;
+
+                    if (memberEditingSabun === row.sabun) {
+                        tr.classList.add('editing-row');
+                        tr.innerHTML = `
                 <td style="color:var(--secondary-color); font-weight:700;">${row.sabun}</td>
                 <td><input type="text" id="inline-mem-name" class="inline-input" value="${row.name}"></td>
                 <td><input type="text" id="inline-mem-dept" class="inline-input" value="${row.dept}"></td>
@@ -1642,229 +1692,232 @@
                     <button class="btn-inline save" onclick="saveAdminMemberInlineRecord('${row.sabun}')">완료</button>
                     <button class="btn-inline list" onclick="cancelAdminMemberInlineMode()">목록</button>
                 </td>`;
-                } else {
-                    const pBtn = isMasterAdmin ? `<button class="btn-inline" style="background:#0284c7; font-size:11px; padding:4px 8px; color:#fff; font-weight:700;" onclick="openSystemResetPasswordModal('${row.sabun}')"><i class="fa-solid fa-key"></i> 비밀번호 수정</button>` : '';
-                    const aBtn = isMasterAdmin ? `<button class="btn-inline edit" onclick="enableAdminMemberInlineMode('${row.sabun}')">수정</button><button class="btn-inline delete" onclick="removeAdminMemberRecord('${row.sabun}')">삭제</button>` : '';
-                    tr.innerHTML = `<td style="color:var(--secondary-color); font-weight:700;">${row.sabun}</td><td class="text-bold">${row.name}</td><td>${row.dept}</td><td><span class="text-bold" style="color:#fff;">${row.duty}</span></td><td><span class="lvl-badge lvl-${lvl}"><i class="fa-solid fa-shield"></i> ${lvl}레벨 등급</span></td><td>${pBtn}</td><td style="text-align: center;">${aBtn}</td>`;
-                }
-                tbody.appendChild(tr);
-            });
-        }
-
-        function enableAdminMemberInlineMode(k) { memberEditingSabun = k; refreshAdminMemberTableView(); }
-        function cancelAdminMemberInlineMode() { memberEditingSabun = null; refreshAdminMemberTableView(); }
-
-        /**
- * 운영진 전산망(adm_mem)에서 참여완료/탈락 심사를 마치고 [사례비 신청] 활성화를 누를 때 발동하는 트랜잭션
- * @param {string|number} uid - 대상자의 고유 식별자 키값
- */
-        function executeAllowPayClaim(uid) {
-            // 1. 로컬스토리지 마스터 대장 안전 로드
-            let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
-
-            // 2. 고유 UID 기반으로 해당 피험자 레코드 추적
-            const idx = adminApplicantDB.findIndex(user => String(user.uid) === String(uid));
-
-            if (idx !== -1) {
-                // 3. 💡 대상자 4단계 장벽을 개방하고 관리자 화면에 '미신청'으로 띄우는 마스터 키 세팅
-                adminApplicantDB[idx].payStatus = "신청가능";
-
-                // 4. 로컬스토리지 스트림 동기화 커밋 및 화면 갱신
-                localStorage.setItem('dataStoreApplicant', JSON.stringify(adminApplicantDB));
-
-                // 대상자 관리 탭 화면이 열려있을 수 있으므로 실시간 리렌더링 호출
-                if (typeof refreshApplicantView === 'function') {
-                    refreshApplicantView();
-                }
-
-                alert("전산 처리 완료: 해당 피험자의 사례비 신청 권한(join_login 4단계)이 정상적으로 활성화되었습니다.");
-            } else {
-                alert("전산 오류: 일치하는 피험자 식별 정보(UID)를 찾을 수 없습니다.");
+                    } else {
+                        const pBtn = isMasterAdmin ? `<button class="btn-inline" style="background:#0284c7; font-size:11px; padding:4px 8px; color:#fff; font-weight:700;" onclick="openSystemResetPasswordModal('${row.sabun}')"><i class="fa-solid fa-key"></i> 비밀번호 수정</button>` : '';
+                        const aBtn = isMasterAdmin ? `<button class="btn-inline edit" onclick="enableAdminMemberInlineMode('${row.sabun}')">수정</button><button class="btn-inline delete" onclick="removeAdminMemberRecord('${row.sabun}')">삭제</button>` : '';
+                        tr.innerHTML = `<td style="color:var(--secondary-color); font-weight:700;">${row.sabun}</td><td class="text-bold">${row.name}</td><td>${row.dept}</td><td><span class="text-bold" style="color:#fff;">${row.duty}</span></td><td><span class="lvl-badge lvl-${lvl}"><i class="fa-solid fa-shield"></i> ${lvl}레벨 등급</span></td><td>${pBtn}</td><td style="text-align: center;">${aBtn}</td>`;
+                    }
+                    tbody.appendChild(tr);
+                });
             }
-        }
 
-        function saveAdminMemberInlineRecord(k) {
-            const idx = dataStoreAdminMembers.findIndex(m => m.sabun === k);
-            if (idx === -1) return;
+            function enableAdminMemberInlineMode(k) { memberEditingSabun = k; refreshAdminMemberTableView(); }
+            function cancelAdminMemberInlineMode() { memberEditingSabun = null; refreshAdminMemberTableView(); }
 
-            const n = document.getElementById('inline-mem-name').value.trim();
-            const dept = document.getElementById('inline-mem-dept').value.trim();
-            const duty = document.getElementById('inline-mem-duty').value;
+            /**
+     * 운영진 전산망(adm_mem)에서 참여완료/탈락 심사를 마치고 [사례비 신청] 활성화를 누를 때 발동하는 트랜잭션
+     * @param {string|number} uid - 대상자의 고유 식별자 키값
+     */
+            function executeAllowPayClaim(uid) {
+                // 1. 로컬스토리지 마스터 대장 안전 로드
+                let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
 
-            if (!n || !dept) return alert('오류: 공백 서식을 허용할 수 없습니다.');
+                // 2. 고유 UID 기반으로 해당 피험자 레코드 추적
+                const idx = adminApplicantDB.findIndex(user => String(user.uid) === String(uid));
 
-            dataStoreAdminMembers[idx] = { sabun: k, name: n, duty: duty, dept: dept, pw: dataStoreAdminMembers[idx].pw };
-            commitToLocalStorage();
+                if (idx !== -1) {
+                    // 3. 💡 대상자 4단계 장벽을 개방하고 관리자 화면에 '미신청'으로 띄우는 마스터 키 세팅
+                    adminApplicantDB[idx].payStatus = "신청가능";
 
-            if (sessionStorage.getItem('adminLoginSabun') === k) bindTopBarProfile(k);
-            memberEditingSabun = null;
-            refreshAdminMemberTableView();
-            alert('📋 정보 갱신 수립: 임직원 정보 보관이 완료되었습니다.');
-        }
+                    // 4. 로컬스토리지 스트림 동기화 커밋 및 화면 갱신
+                    localStorage.setItem('dataStoreApplicant', JSON.stringify(adminApplicantDB));
 
-        function insertAdminMember() {
-            const s = document.getElementById('form-mem-id').value.trim();
-            const n = document.getElementById('form-mem-name').value.trim();
-            const duty = document.getElementById('form-mem-duty').value;
-            const dept = document.getElementById('form-mem-dept').value.trim() || "미배정지부";
+                    // 대상자 관리 탭 화면이 열려있을 수 있으므로 실시간 리렌더링 호출
+                    if (typeof refreshApplicantView === 'function') {
+                        refreshApplicantView();
+                    }
 
-            if (!s || !n) return alert('사번 코드와 성명(이름)은 필수 입력 사항입니다.');
-            if (dataStoreAdminMembers.some(member => member.sabun === s)) return alert('전산 오류: 이미 동일 사번이 존재합니다.');
+                    alert("전산 처리 완료: 해당 피험자의 사례비 신청 권한(join_login 4단계)이 정상적으로 활성화되었습니다.");
+                } else {
+                    alert("전산 오류: 일치하는 피험자 식별 정보(UID)를 찾을 수 없습니다.");
+                }
+            }
 
-            dataStoreAdminMembers.push({ sabun: s, name: n, duty: duty, dept: dept, pw: s });
-            commitToLocalStorage();
-            refreshAdminMemberTableView();
+            function saveAdminMemberInlineRecord(k) {
+                const idx = dataStoreAdminMembers.findIndex(m => m.sabun === k);
+                if (idx === -1) return;
 
-            document.getElementById('form-mem-id').value = '';
-            document.getElementById('form-mem-name').value = '';
-            document.getElementById('form-mem-dept').value = '';
-            alert(`🎉 사원 등록 완료: ${n} 님의 초기 패스워드는 [사번:${s}]으로 사전 할당 보존되었습니다.`);
-        }
+                const n = document.getElementById('inline-mem-name').value.trim();
+                const dept = document.getElementById('inline-mem-dept').value.trim();
+                const duty = document.getElementById('inline-mem-duty').value;
 
-        function removeAdminMemberRecord(k) {
-            if (sessionStorage.getItem('adminLoginSabun') === k) return alert('제한 오류: 본인 계정은 직접 삭제할 수 없습니다.');
-            if (confirm('사번 임직원의 관리 권한을 완전히 삭제하겠습니까?')) {
-                dataStoreAdminMembers = dataStoreAdminMembers.filter(m => m.sabun !== k);
+                if (!n || !dept) return alert('오류: 공백 서식을 허용할 수 없습니다.');
+
+                dataStoreAdminMembers[idx] = { sabun: k, name: n, duty: duty, dept: dept, pw: dataStoreAdminMembers[idx].pw };
+                commitToLocalStorage();
+
+                if (sessionStorage.getItem('adminLoginSabun') === k) bindTopBarProfile(k);
+                memberEditingSabun = null;
+                refreshAdminMemberTableView();
+                alert('📋 정보 갱신 수립: 임직원 정보 보관이 완료되었습니다.');
+            }
+
+            function insertAdminMember() {
+                const s = document.getElementById('form-mem-id').value.trim();
+                const n = document.getElementById('form-mem-name').value.trim();
+                const duty = document.getElementById('form-mem-duty').value;
+                const dept = document.getElementById('form-mem-dept').value.trim() || "미배정지부";
+
+                if (!s || !n) return alert('사번 코드와 성명(이름)은 필수 입력 사항입니다.');
+                if (dataStoreAdminMembers.some(member => member.sabun === s)) return alert('전산 오류: 이미 동일 사번이 존재합니다.');
+
+                dataStoreAdminMembers.push({ sabun: s, name: n, duty: duty, dept: dept, pw: s });
                 commitToLocalStorage();
                 refreshAdminMemberTableView();
-            }
-        }
 
-        // =========================================================================
-        // [5-C 파트] 외부 텍스트/문서 원천 데이터 스마트 정규표현식 파서 엔진
-        // =========================================================================
-
-        function handleSmartFileImport(e) {
-            const file = e.target.files;
-            const d = document.getElementById('selected-file-name');
-            if (!file || file.length === 0) { if (d) d.innerText = ''; return; }
-
-            const ext = file[0].name.split('.').pop().toLowerCase();
-            if (!['xlsx', 'xls', 'docx', 'doc', 'hwp', 'hwpx', 'txt'].includes(ext)) {
-                alert('지원하지 않는 형식입니다.');
-                e.target.value = '';
-                return;
-            }
-            if (d) d.innerHTML = `<i class="fa-solid fa-file-circle-check"></i> 선택: ${file[0].name}`;
-
-            const r = new FileReader();
-            r.onload = function (evt) { if (typeof parseRawTextDump === 'function') parseRawTextDump(evt.target.result); };
-            r.readAsText(file[0]);
-        }
-
-        function handleExamFileImport(event) {
-            const file = event.target.files;
-            if (!file || file.length === 0) return;
-
-            alert(`"${file[0].name}" 업로드가 완료되었습니다.`);
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                mammoth.extractRawText({ arrayBuffer: e.target.result })
-                    .then(function (result) { parseRecruitmentTextDump(result.value); })
-                    .catch(function (err) { alert("❌ 워드 전산 해독 중 오류: " + err.message); });
-            };
-            reader.readAsArrayBuffer(file[0]);
-        }
-
-        function parseRecruitmentTextDump(rawText) {
-            if (!rawText) return alert("파일 내용이 비어있습니다.");
-            const titleMatch = rawText.match(/(?:시험명|과제명|임상명)(?:\s*[:=➔]\s*|\s+)(\[.*\]\s*[가-힣\w\s+]+)/) || rawText.match(/(\[.*\]\s*[가-힣\w\s+]+)/);
-            const thMatch = rawText.match(/(\d+)\s*(?:기|차수)/) || rawText.match(/(?:기수|차수)(?:\s*[:=➔]\s*|\s+)(\d+)/);
-            const countMatch = rawText.match(/(?:배정\s*인원수|인원수|인원)(?:\s*[:=➔]\s*|\s+)(\d+)/) || rawText.match(/(\d+)\s*명/);
-            const periodMatch = rawText.match(/(?:임상\s*기간|기간|시간)(?:\s*[:=➔]\s*|\s+)(\d+)/) || rawText.match(/(\d+)\s*시간/);
-            if (!titleMatch) return alert("❌ 문서 내에서 규격화된 [시험명] 패턴을 식별할 수 없습니다.");
-
-            const extractedTitle = titleMatch[1].trim();
-            const extractedTh = thMatch ? thMatch[1].trim() : "1";
-            const extractedCount = countMatch ? countMatch[1].trim() : "30";
-            const extractedPeriod = periodMatch ? periodMatch[1].trim() : "72";
-
-            if (dataStoreRecruitment.some(rec => rec.title === extractedTitle && rec.th === extractedTh)) {
-                return alert('알림: 이미 대장에 등록된 모집공고 과제입니다.');
+                document.getElementById('form-mem-id').value = '';
+                document.getElementById('form-mem-name').value = '';
+                document.getElementById('form-mem-dept').value = '';
+                alert(`🎉 사원 등록 완료: ${n} 님의 초기 패스워드는 [사번:${s}]으로 사전 할당 보존되었습니다.`);
             }
 
-            dataStoreRecruitment.push({ uid: Date.now(), title: extractedTitle, th: extractedTh, count: extractedCount, period: extractedPeriod });
-            localStorage.setItem('dataStoreRecruitment', JSON.stringify(dataStoreRecruitment));
-            if (typeof refreshRecruitmentView === "function") refreshRecruitmentView();
-            alert(`📢 모집공고 등록 성공!\n● 시험명: ${extractedTitle}\n● 기수: ${extractedTh}기\n● 인원수: ${extractedCount}명\n● 임상기간: ${extractedPeriod}시간`);
-        }
-
-        function parseRawTextDump(rawText) {
-            if (!rawText) return alert("파일 내용이 비어있습니다.");
-            const nameMatch = rawText.match(/(?:이름|성명)(?:\s*[:=➔]\s*|\s+)([가-힣]{2,5})/);
-            const ssnMatch = rawText.match(/(?:생년월일|주민번호|SSN)?(?:\s*[:=➔]\s*|\s+)?\b(\d{6})\b/);
-            const phoneMatch = rawText.match(/(?:연락처|전화번호|휴대폰|HP)?(?:\s*[:=➔]\s*|\s+)?\b(010[-.\s]?\d{3,4}[-.\s]?\d{4})\b/);
-            const titleMatch = rawText.match(/(?:과제명|참여과제|시험명)?(?:\s*[:=➔]\s*|\s+)?(\[.*\]\s*[가-힣\w\s+]+)/) || ["", "[임상] 기본 과제 정의"];
-            const thMatch = rawText.match(/(\d+)\s*(?:기|차수)/) || ["", "1"];
-            if (!nameMatch || !ssnMatch || !phoneMatch) return alert("❌ 문서 내에서 필수값(이름, 생년월일, 연락처) 패턴을 찾을 수 없습니다.");
-
-            const extractedName = nameMatch[1].trim();
-            const extractedSsn = ssnMatch[1].trim();
-            const extractedPhone = phoneMatch[1].replace(/[^0-9]/g, '');
-            const extractedTitle = titleMatch[1] ? titleMatch[1].trim() : "[임상] 수동 업로드 과제";
-            const extractedTh = thMatch[1] ? thMatch[1].trim() : "1";
-
-            if (dataStoreApplicant.some(user => user.name === extractedName && user.ssn === extractedSsn)) {
-                return alert('알림: 이미 대장에 존재하는 피험자입니다.');
+            function removeAdminMemberRecord(k) {
+                if (sessionStorage.getItem('adminLoginSabun') === k) return alert('제한 오류: 본인 계정은 직접 삭제할 수 없습니다.');
+                if (confirm('사번 임직원의 관리 권한을 완전히 삭제하겠습니까?')) {
+                    dataStoreAdminMembers = dataStoreAdminMembers.filter(m => m.sabun !== k);
+                    commitToLocalStorage();
+                    refreshAdminMemberTableView();
+                }
             }
 
-            dataStoreApplicant.push({
-                uid: Date.now(), title: extractedTitle, th: extractedTh, count: "1", period: "72", name: extractedName, ssn: extractedSsn, phone: extractedPhone, result: "접수",
-                category: "내분비내과 / 스마트 업로드", stage: `${extractedTh}기 참여(소집)`
-            });
-            localStorage.setItem('dataStoreApplicant', JSON.stringify(dataStoreApplicant));
-            if (typeof refreshApplicantView === "function") refreshApplicantView();
-            alert(`📢 스마트 자동 등록 성공!\n● 성명: ${extractedName}\n● 생년월일: ${extractedSsn}\n● 연락처: ${extractedPhone}`);
-        }
+            // =========================================================================
+            // [5-C 파트] 외부 텍스트/문서 원천 데이터 스마트 정규표현식 파서 엔진
+            // =========================================================================
 
-    </script>
+            function handleSmartFileImport(e) {
+                const file = e.target.files;
+                const d = document.getElementById('selected-file-name');
+                if (!file || file.length === 0) { if (d) d.innerText = ''; return; }
 
-    <!-- 비밀번호 변경 처리용 통합 오버레이 팝업 모달창 창고 -->
-    <div class="pw-modal-overlay" id="pwModalLayer">
-        <div class="pw-modal-box">
-            <h3 id="txtPwModalHeader">임직원 비밀번호 변경</h3>
-            <input type="hidden" id="hdnTargetSabun"> <!-- 대상 구별용 가상 홀더 -->
-            <div class="form-group">
-                <label for="txtNewPassword">새로운 비밀번호 입력</label>
-                <input type="password" id="txtNewPassword" placeholder="변경할 암호를 입력하세요">
-            </div>
-            <div class="modal-btn-group">
-                <button class="btn-inline save" style="flex:1; height:38px;" onclick="executePasswordChangeCommit()">최종
-                    변경 인가</button>
-                <button class="btn-inline list" style="flex:1; height:38px;" onclick="closePasswordModal()">창
-                    닫기</button>
+                const ext = file[0].name.split('.').pop().toLowerCase();
+                if (!['xlsx', 'xls', 'docx', 'doc', 'hwp', 'hwpx', 'txt'].includes(ext)) {
+                    alert('지원하지 않는 형식입니다.');
+                    e.target.value = '';
+                    return;
+                }
+                if (d) d.innerHTML = `<i class="fa-solid fa-file-circle-check"></i> 선택: ${file[0].name}`;
+
+                const r = new FileReader();
+                r.onload = function (evt) { if (typeof parseRawTextDump === 'function') parseRawTextDump(evt.target.result); };
+                r.readAsText(file[0]);
+            }
+
+            function handleExamFileImport(event) {
+                const file = event.target.files;
+                if (!file || file.length === 0) return;
+
+                alert(`"${file[0].name}" 업로드가 완료되었습니다.`);
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    mammoth.extractRawText({ arrayBuffer: e.target.result })
+                        .then(function (result) { parseRecruitmentTextDump(result.value); })
+                        .catch(function (err) { alert("❌ 워드 전산 해독 중 오류: " + err.message); });
+                };
+                reader.readAsArrayBuffer(file[0]);
+            }
+
+            function parseRecruitmentTextDump(rawText) {
+                if (!rawText) return alert("파일 내용이 비어있습니다.");
+                const titleMatch = rawText.match(/(?:시험명|과제명|임상명)(?:\s*[:=➔]\s*|\s+)(\[.*\]\s*[가-힣\w\s+]+)/) || rawText.match(/(\[.*\]\s*[가-힣\w\s+]+)/);
+                const thMatch = rawText.match(/(\d+)\s*(?:기|차수)/) || rawText.match(/(?:기수|차수)(?:\s*[:=➔]\s*|\s+)(\d+)/);
+                const countMatch = rawText.match(/(?:배정\s*인원수|인원수|인원)(?:\s*[:=➔]\s*|\s+)(\d+)/) || rawText.match(/(\d+)\s*명/);
+                const periodMatch = rawText.match(/(?:임상\s*기간|기간|시간)(?:\s*[:=➔]\s*|\s+)(\d+)/) || rawText.match(/(\d+)\s*시간/);
+                if (!titleMatch) return alert("❌ 문서 내에서 규격화된 [시험명] 패턴을 식별할 수 없습니다.");
+
+                const extractedTitle = titleMatch[1].trim();
+                const extractedTh = thMatch ? thMatch[1].trim() : "1";
+                const extractedCount = countMatch ? countMatch[1].trim() : "30";
+                const extractedPeriod = periodMatch ? periodMatch[1].trim() : "72";
+
+                if (dataStoreRecruitment.some(rec => rec.title === extractedTitle && rec.th === extractedTh)) {
+                    return alert('알림: 이미 대장에 등록된 모집공고 과제입니다.');
+                }
+
+                dataStoreRecruitment.push({ uid: Date.now(), title: extractedTitle, th: extractedTh, count: extractedCount, period: extractedPeriod });
+                localStorage.setItem('dataStoreRecruitment', JSON.stringify(dataStoreRecruitment));
+                if (typeof refreshRecruitmentView === "function") refreshRecruitmentView();
+                alert(`📢 모집공고 등록 성공!\n● 시험명: ${extractedTitle}\n● 기수: ${extractedTh}기\n● 인원수: ${extractedCount}명\n● 임상기간: ${extractedPeriod}시간`);
+            }
+
+            function parseRawTextDump(rawText) {
+                if (!rawText) return alert("파일 내용이 비어있습니다.");
+                const nameMatch = rawText.match(/(?:이름|성명)(?:\s*[:=➔]\s*|\s+)([가-힣]{2,5})/);
+                const ssnMatch = rawText.match(/(?:생년월일|주민번호|SSN)?(?:\s*[:=➔]\s*|\s+)?\b(\d{6})\b/);
+                const phoneMatch = rawText.match(/(?:연락처|전화번호|휴대폰|HP)?(?:\s*[:=➔]\s*|\s+)?\b(010[-.\s]?\d{3,4}[-.\s]?\d{4})\b/);
+                const titleMatch = rawText.match(/(?:과제명|참여과제|시험명)?(?:\s*[:=➔]\s*|\s+)?(\[.*\]\s*[가-힣\w\s+]+)/) || ["", "[임상] 기본 과제 정의"];
+                const thMatch = rawText.match(/(\d+)\s*(?:기|차수)/) || ["", "1"];
+                if (!nameMatch || !ssnMatch || !phoneMatch) return alert("❌ 문서 내에서 필수값(이름, 생년월일, 연락처) 패턴을 찾을 수 없습니다.");
+
+                const extractedName = nameMatch[1].trim();
+                const extractedSsn = ssnMatch[1].trim();
+                const extractedPhone = phoneMatch[1].replace(/[^0-9]/g, '');
+                const extractedTitle = titleMatch[1] ? titleMatch[1].trim() : "[임상] 수동 업로드 과제";
+                const extractedTh = thMatch[1] ? thMatch[1].trim() : "1";
+
+                if (dataStoreApplicant.some(user => user.name === extractedName && user.ssn === extractedSsn)) {
+                    return alert('알림: 이미 대장에 존재하는 피험자입니다.');
+                }
+
+                dataStoreApplicant.push({
+                    uid: Date.now(), title: extractedTitle, th: extractedTh, count: "1", period: "72", name: extractedName, ssn: extractedSsn, phone: extractedPhone, result: "접수",
+                    category: "내분비내과 / 스마트 업로드", stage: `${extractedTh}기 참여(소집)`
+                });
+                localStorage.setItem('dataStoreApplicant', JSON.stringify(dataStoreApplicant));
+                if (typeof refreshApplicantView === "function") refreshApplicantView();
+                alert(`📢 스마트 자동 등록 성공!\n● 성명: ${extractedName}\n● 생년월일: ${extractedSsn}\n● 연락처: ${extractedPhone}`);
+            }
+
+        </script>
+
+        <!-- 비밀번호 변경 처리용 통합 오버레이 팝업 모달창 창고 -->
+        <div class="pw-modal-overlay" id="pwModalLayer">
+            <div class="pw-modal-box">
+                <h3 id="txtPwModalHeader">임직원 비밀번호 변경</h3>
+                <input type="hidden" id="hdnTargetSabun"> <!-- 대상 구별용 가상 홀더 -->
+                <div class="form-group">
+                    <label for="txtNewPassword">새로운 비밀번호 입력</label>
+                    <input type="password" id="txtNewPassword" placeholder="변경할 암호를 입력하세요">
+                </div>
+                <div class="modal-btn-group">
+                    <button class="btn-inline save" style="flex:1; height:38px;"
+                        onclick="executePasswordChangeCommit()">최종
+                        변경 인가</button>
+                    <button class="btn-inline list" style="flex:1; height:38px;" onclick="closePasswordModal()">창
+                        닫기</button>
+                </div>
             </div>
         </div>
-    </div>
-    <!-- 모집공고 상세 에디터 모달 팝업 (전체 인라인 스타일 제거 완료) -->
-    <div id="noticeEditorModal" class="editor-modal-overlay">
-        <div class="editor-modal-content">
-            <h3 id="modal-title" class="editor-modal-title">📋 세부 일정 및 주의사항 편집</h3>
+        <!-- 모집공고 상세 에디터 모달 팝업 (전체 인라인 스타일 제거 완료) -->
+        <div id="noticeEditorModal" class="editor-modal-overlay">
+            <div class="editor-modal-content">
+                <h3 id="modal-title" class="editor-modal-title">📋 세부 일정 및 주의사항 편집</h3>
 
-            <input type="hidden" id="modal-rec-id">
+                <input type="hidden" id="modal-rec-id">
 
-            <div class="editor-form-group">
-                <label>주의사항</label>
-                <textarea id="modal-rec-notice" class="editor-textarea" rows="4"
-                    placeholder="주의사항 및 공복 유지 지침 등을 입력하세요."></textarea>
-            </div>
+                <div class="editor-form-group">
+                    <label>주의사항</label>
+                    <textarea id="modal-rec-notice" class="editor-textarea" rows="4"
+                        placeholder="주의사항 및 공복 유지 지침 등을 입력하세요."></textarea>
+                </div>
 
-            <div class="editor-form-group">
-                <label>시험일정</label>
-                <input type="text" id="modal-rec-examSchedule" class="editor-input" placeholder="예: 2026-08-15 오전 9시">
-            </div>
+                <div class="editor-form-group">
+                    <label>시험일정</label>
+                    <input type="text" id="modal-rec-examSchedule" class="editor-input"
+                        placeholder="예: 2026-08-15 오전 9시">
+                </div>
 
-            <div class="editor-form-group-last">
-                <label>사례비 지급일정</label>
-                <input type="text" id="modal-rec-paySchedule" class="editor-input" placeholder="예: 시험 종료 후 2주 이내 지급">
-            </div>
+                <div class="editor-form-group-last">
+                    <label>사례비 지급일정</label>
+                    <input type="text" id="modal-rec-paySchedule" class="editor-input"
+                        placeholder="예: 시험 종료 후 2주 이내 지급">
+                </div>
 
-            <div class="editor-btn-group">
-                <button onclick="closeNoticeEditor()" class="editor-btn-cancel">취소</button>
-                <button onclick="saveNoticeEditorData()" class="editor-btn-save">저장 및 반영</button>
+                <div class="editor-btn-group">
+                    <button onclick="closeNoticeEditor()" class="editor-btn-cancel">취소</button>
+                    <button onclick="saveNoticeEditorData()" class="editor-btn-save">저장 및 반영</button>
+                </div>
             </div>
         </div>
-    </div>
 </body>
 
 </html>
