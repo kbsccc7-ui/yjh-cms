@@ -1457,23 +1457,46 @@
         function saveInlineEditRecord(id) {
             const idx = dataStoreApplicant.findIndex(d => d.uid === id);
             if (idx === -1) return;
+
+            // 인라인 화면 필드 엘리먼트 안전 체크
+            const elTitle = document.getElementById('inline-title');
+            const elTh = document.getElementById('inline-th');
+            const elCount = document.getElementById('inline-count');
+            const elPeriod = document.getElementById('inline-period');
+            const elName = document.getElementById('inline-name');
+            const elSsn = document.getElementById('inline-ssn');
+            const elPhone = document.getElementById('inline-phone');
+            const elResult = document.getElementById('inline-result');
+            const elPayStatus = document.getElementById('inline-paystatus'); // 💡 사례비 상태 셀렉트 박스
+            const elAgreed = document.getElementById('inline-agreed');
+
             dataStoreApplicant[idx] = {
                 uid: id,
-                title: document.getElementById('inline-title').value.trim(),
-                th: getOnlyNumbers(document.getElementById('inline-th').value),
-                count: getOnlyNumbers(document.getElementById('inline-count').value),
-                period: getOnlyNumbers(document.getElementById('inline-period').value),
-                name: document.getElementById('inline-name').value.trim(),
-                ssn: getOnlyNumbers(document.getElementById('inline-ssn').value),
-                phone: getOnlyNumbers(document.getElementById('inline-phone').value),
-                result: document.getElementById('inline-result').value,
-                isAgreed: document.getElementById('inline-agreed').value, // 💡 편집 모드 저장 기능 추가
-                category: dataStoreApplicant[idx].category || "미분류",
-                stage: `${getOnlyNumbers(document.getElementById('inline-th').value)}기 참여(소집)`
+                title: elTitle ? elTitle.value.trim() : dataStoreApplicant[idx].title,
+                th: elTh ? getOnlyNumbers(elTh.value) : dataStoreApplicant[idx].th,
+                count: elCount ? getOnlyNumbers(elCount.value) : dataStoreApplicant[idx].count,
+                period: elPeriod ? getOnlyNumbers(elPeriod.value) : dataStoreApplicant[idx].period,
+                name: elName ? elName.value.trim() : dataStoreApplicant[idx].name,
+                ssn: elSsn ? getOnlyNumbers(elSsn.value) : dataStoreApplicant[idx].ssn,
+                phone: elPhone ? getOnlyNumbers(elPhone.value) : dataStoreApplicant[idx].phone,
+
+                // 💡 기존의 전체 심사 '결과' 상태값 규격 원형 동기화 보존
+                result: elResult ? elResult.value : (dataStoreApplicant[idx].result || "접수"),
+
+                // 💡 [핵심] 관리자가 수동 개정한 '사례비 청구 진행 상태' 데이터 오버라이팅 저장 연동
+                payStatus: elPayStatus ? elPayStatus.value : (dataStoreApplicant[idx].payStatus || ""),
+
+                isAgreed: elAgreed ? elAgreed.value : (dataStoreApplicant[idx].isAgreed || "미동의"),
+                category: dataStoreApplicant[idx].category || "내분비내과 / 대장 수동 등록",
+                stage: `${elTh ? getOnlyNumbers(elTh.value) : dataStoreApplicant[idx].th}기 참여(소집)`
             };
+
+            // 가상 파일 시스템 영구 저장 커밋 및 뷰 테이블 렌더링 호출
             commitToLocalStorage();
             currentEditingUid = null;
             refreshApplicantView();
+
+            alert(`전산 반영 완료: [${dataStoreApplicant[idx].name}] 피험자의 정산 단계가 업데이트되었습니다.`);
         }
 
         /** 대상자 수동 등록을 원스톱 처리하는 마스터 함수입니다. */
@@ -1613,6 +1636,35 @@
 
         function enableAdminMemberInlineMode(k) { memberEditingSabun = k; refreshAdminMemberTableView(); }
         function cancelAdminMemberInlineMode() { memberEditingSabun = null; refreshAdminMemberTableView(); }
+
+        /**
+ * 운영진 전산망(adm_mem)에서 참여완료/탈락 심사를 마치고 [사례비 신청] 활성화를 누를 때 발동하는 트랜잭션
+ * @param {string|number} uid - 대상자의 고유 식별자 키값
+ */
+        function executeAllowPayClaim(uid) {
+            // 1. 로컬스토리지 마스터 대장 안전 로드
+            let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
+
+            // 2. 고유 UID 기반으로 해당 피험자 레코드 추적
+            const idx = adminApplicantDB.findIndex(user => String(user.uid) === String(uid));
+
+            if (idx !== -1) {
+                // 3. 💡 대상자 4단계 장벽을 개방하고 관리자 화면에 '미신청'으로 띄우는 마스터 키 세팅
+                adminApplicantDB[idx].payStatus = "신청가능";
+
+                // 4. 로컬스토리지 스트림 동기화 커밋 및 화면 갱신
+                localStorage.setItem('dataStoreApplicant', JSON.stringify(adminApplicantDB));
+
+                // 대상자 관리 탭 화면이 열려있을 수 있으므로 실시간 리렌더링 호출
+                if (typeof refreshApplicantView === 'function') {
+                    refreshApplicantView();
+                }
+
+                alert("전산 처리 완료: 해당 피험자의 사례비 신청 권한(join_login 4단계)이 정상적으로 활성화되었습니다.");
+            } else {
+                alert("전산 오류: 일치하는 피험자 식별 정보(UID)를 찾을 수 없습니다.");
+            }
+        }
 
         function saveAdminMemberInlineRecord(k) {
             const idx = dataStoreAdminMembers.findIndex(m => m.sabun === k);
