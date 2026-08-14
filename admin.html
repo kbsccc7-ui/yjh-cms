@@ -1146,7 +1146,9 @@
                         category: "내분비내과 / 2 기 모집",
                         stage: "🎁 2 기 1 차 일정 완료 (분할 허용)",
                         result: "처리중",
-                        isAgreed: "동의"
+                        isAgreed: "동의",
+                                       idCard: true,   // 🌟 홍길동 신분증 제출 완료
+                bankbook: true  // 🌟 홍길동 통장사본 제출 완료
                     },
                     {
                         uid: 202,
@@ -1160,7 +1162,9 @@
                         category: "비뇨의학과 / 4 기 모집",
                         stage: "🎁 과제 심사 완료 (종합 정산 가능)",
                         result: "접수",
-                        isAgreed: "동의"
+                        isAgreed: "동의",
+                                       idCard: true,   // 🌟 홍길동 신분증 제출 완료
+                bankbook: true  // 🌟 홍길동 통장사본 제출 완료
                     },
                     {
                         uid: 203,
@@ -1174,7 +1178,26 @@
                         category: "비뇨의학과 / 4 기 모집",
                         stage: "🎁 과제 심사 완료 (종합 정산 가능)",
                         result: "접수",
-                    }
+                                                isAgreed: "동의",
+                                       idCard: true,   // 🌟 홍길동 신분증 제출 완료
+                bankbook: true  // 🌟 홍길동 통장사본 제출 완료
+                    },
+            {
+                uid: 203,
+                name: "진재영",
+                ssn: "050607",
+                phone: "01023469876",
+                title: "경동제약 Mirabegron 식후 임상시험",
+                th: "4",       
+                count: "46",    
+                period: "96",  
+                category: "비뇨의학과 / 4 기 모집",
+                stage: "🎁 과제 심사 완료 (종합 정산 가능)",
+                result: "접수",
+                isAgreed: "미동의", // 💡 통일성을 위해 미동의 추가
+                idCard: false,   // ❌ 진재영 신분증 미첨부
+                bankbook: false  // ❌ 진재영 통장사본 미첨부
+            }                    
                 );
                 console.log("CMS 대상자 마스터 대장 가상 DB 생성 완료");
             }
