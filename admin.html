@@ -2128,12 +2128,12 @@
                 if (targetView) targetView.style.display = 'block';
 
                 // 3. 좌측 메뉴 전체 하이라이트(.active) 강제 삭제
-                const menuItems = document.querySelectorAll('.menu-item');
-                menuItems.forEach(function (item) {
-                    item.classList.remove('active');
-                });
+                // 3. 💥 [버그 진압] 좌측 메뉴 전체 하이라이트(.active) 강제 삭제 루틴 교정
+                if (document.getElementById('menuRec')) document.getElementById('menuRec').classList.remove('active');
+                if (document.getElementById('menuApp')) document.getElementById('menuApp').classList.remove('active');
+                if (document.getElementById('menuGrade')) document.getElementById('menuGrade').classList.remove('active');
 
-                // 4. 마크업 고유 ID 기준 좌측 메뉴 파란색 하이라이트 강제 복구
+                // 4. 💥 [최종 디자인 밀착 고정] 기억된 화면 뷰포트 ID 명칭에 맞춰 좌측 파란 불빛 강제 마운트 완료
                 if (savedViewport === 'recruitmentView' && document.getElementById('menuRec')) {
                     document.getElementById('menuRec').classList.add('active');
                 } else if (savedViewport === 'applicantView' && document.getElementById('menuApp')) {
