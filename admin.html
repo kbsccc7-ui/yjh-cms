@@ -1237,11 +1237,52 @@
                 if (document.getElementById('mainDashboard')) document.getElementById('mainDashboard').style.display = 'flex';
                 initializePresetMasterDatabase();
                 bindTopBarProfile(sabun);
-                changeMainViewport('recruitmentView');
+
+                // 💥 [요구사항 반영] 새로고침 시 이전에 보던 메뉴(뷰포트) 상태를 역추적하여 유지하는 엔진
+                const savedViewport = localStorage.getItem('adminActiveViewportId');
+
+                if (savedViewport) {
+                    // 기억된 메뉴 명칭('recruitmentView', 'applicantView', 'gradeView')이 있다면 해당 화면 복구
+                    changeMainViewport(savedViewport);
+                } else {
+                    // 최초 로그인 등 기억된 데이터가 없는 경우에만 기본값인 모집공고 화면 노출
+                    changeMainViewport('recruitmentView');
+                }
             } else {
                 if (document.getElementById('loginScreen')) document.getElementById('loginScreen').style.display = 'flex';
                 if (document.getElementById('mainDashboard')) document.getElementById('mainDashboard').style.display = 'none';
             }
+
+            /**
+                     * 💥 [신규 개설 완수] 좌측 메뉴 3개 클릭 및 새로고침 시 화면/스타일 동시 전환 제어 엔진
+                     * @param {string} viewName - 이동할 뷰포트 ID ('recruitmentView' | 'applicantView' | 'gradeView')
+                     */
+            function changeMainViewport(viewName) {
+                // 1. 사용자가 클릭한 메뉴 명칭을 브라우저 저장소에 실시간 영구 기억
+                localStorage.setItem('adminActiveViewportId', viewName);
+
+                // 2. 우측 패널의 모든 본문 화면 섹션('recruitmentView', 'applicantView', 'gradeView') 전체 숨김
+                const views = ['recruitmentView', 'applicantView', 'gradeView'];
+                views.forEach(function (v) {
+                    const el = document.getElementById(v);
+                    if (el) el.style.display = 'none';
+                });
+
+                // 3. 사용자가 선택한 타겟 본문 화면만 즉시 노출
+                const targetView = document.getElementById(viewName);
+                if (targetView) targetView.style.display = 'block';
+
+                // 4. 좌측 사이드바 모든 메뉴 항목의 파란색 하이라이트(.active) 디자인 해제
+                const menuItems = document.querySelectorAll('.menu-item');
+                menuItems.forEach(function (item) {
+                    item.classList.remove('active');
+                });
+
+                // 5. 현재 선택되어 켜진 좌측 메뉴 항목에만 파란색 하이라이트 스킨 장착
+                const activeMenu = document.querySelector(`[onclick*="${viewName}"]`);
+                if (activeMenu) activeMenu.classList.add('active');
+            }
+
         }
 
         // 스크립트 파싱 즉시 보안 런타임 가동
