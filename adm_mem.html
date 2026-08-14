@@ -628,19 +628,19 @@
             }
         }
 
-/* ==========================================================
+        /* ==========================================================
    좌측 slide1 관리자 화면 타이틀
    ========================================================== */
-.panel-slide-title {
-    font-size: 24px;
-    font-weight: 700;
-    color: #FFFFFF;
-    letter-spacing: -0.5px;
-    text-align: left;
-    
-    /* 원래 마진(30px)에서 요구사항에 맞춰 줄간격을 정확히 20px 추가하여 총 50px로 확정 처리 */
-    margin-bottom: 25px; 
-}        
+        .panel-slide-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #FFFFFF;
+            letter-spacing: -0.5px;
+            text-align: left;
+
+            /* 원래 마진(30px)에서 요구사항에 맞춰 줄간격을 정확히 20px 추가하여 총 50px로 확정 처리 */
+            margin-bottom: 25px;
+        }
     </style>
 </head>
 
@@ -653,10 +653,11 @@
 
     <!-- 대시보드 메인 레이아웃 가동 컨테이너 -->
     <div class="container">
-        
+
         <!-- [좌측 패널] 마스터 컨트롤 제어반 -->
         <div class="control-panel">
-            <div class="panel-box" style="padding: 40px 35px 35px 35px; justify-content: flex-start; gap: 0; min-height: 520px;">
+            <div class="panel-box"
+                style="padding: 40px 35px 35px 35px; justify-content: flex-start; gap: 0; min-height: 520px;">
                 <div class="panel-slide-title">⚙ Slide 1: 관리자 화면</div>
 
                 <!-- 출석 및 심사 원격 트리거 체크 레이아웃 -->
@@ -672,16 +673,17 @@
                             <span>시험 예비자(대기)</span>
                         </label>
                     </div>
-                    
+
                     <!-- 합격 / 탈락 전산 서버 시그널 패킷 전송 단추 -->
                     <div class="btn-grid">
                         <button onclick="sendSignal('PASS')" class="btn btn-pass">통과 처리</button>
                         <button onclick="sendSignal('FAIL')" class="btn btn-fail">탈락 처리</button>
                     </div>
-                    
+
                     <!-- 피험자 사례비 이수 요건 매트릭스 (통과 처리 클릭 시 오픈) -->
                     <div id="ui_attendance_section" style="display: none; width: 100%;">
-                        <div style="height: 20px; border-bottom: 1px solid #1E293B; margin-bottom: 20px; width: 100%;"></div>
+                        <div style="height: 20px; border-bottom: 1px solid #1E293B; margin-bottom: 20px; width: 100%;">
+                        </div>
                         <h3>참여완료 및 탈락체크 - [사례비 신청]</h3>
                         <div style="display: flex; flex-direction: column; gap: 4px;">
                             <label class="check-item">
@@ -693,7 +695,8 @@
                                 <span>2차 일정 100% 이수 (외래 + 최종 완료)</span>
                             </label>
                             <label class="check-item" style="color:#FFD700;">
-                                <input type="checkbox" id="chk_first_fail" onclick="handleCheckboxRules('chk_first_fail')">
+                                <input type="checkbox" id="chk_first_fail"
+                                    onclick="handleCheckboxRules('chk_first_fail')">
                                 <span>소집일(입원) 탈락</span>
                             </label>
                             <label class="check-item" style="color:#FB923C;">
@@ -701,10 +704,11 @@
                                 <span>동의철회 (개인사정)</span>
                             </label>
                             <label class="check-item" style="color:#06B6D4;">
-                                <input type="checkbox" id="chk_backup_out" onclick="handleCheckboxRules('chk_backup_out')">
+                                <input type="checkbox" id="chk_backup_out"
+                                    onclick="handleCheckboxRules('chk_backup_out')">
                                 <span>시험 예비자 퇴원 (대기 종료 귀가)</span>
                             </label>
-                            
+
                             <!-- 전산 오픈/홀딩 통제 인가 제어 단추 -->
                             <div class="btn-grid-last" style="margin-top: 20px;">
                                 <button onclick="toggleSettlementAuth(true)" class="btn btn-allow">신청가능</button>
@@ -1153,4 +1157,5 @@
     </script>
 
 </body>
+
 </html>
