@@ -2107,7 +2107,52 @@
                     }
                 }
             }, 50); // 50ms 미세 지연을 통한 강제 우선순위 획득
-        });        
+        });
+
+        // 💥 [최종 절대 권한 해킹 체인] 스크립트 영역 맨 마지막 종료선 바로 위에 이 코드를 새로 추가하세요.
+        // 기존의 그 어떤 로직이나 세션 스크립트가 화면을 리셋하더라도, 0.15초 뒤에 무조건 덮어써서 메뉴를 강제 고정합니다.
+        (function () {
+            function forceRestoreViewport() {
+                var savedViewport = localStorage.getItem('adminActiveViewportId');
+                if (!savedViewport) return;
+
+                // 1. 우측 모든 본문 섹션 강제 은닉
+                const views = ['recruitmentView', 'applicantView', 'gradeView'];
+                views.forEach(function (v) {
+                    const el = document.getElementById(v);
+                    if (el) el.style.display = 'none';
+                });
+
+                // 2. 타겟 본문 화면 강제 노출
+                const targetView = document.getElementById(savedViewport);
+                if (targetView) targetView.style.display = 'block';
+
+                // 3. 좌측 메뉴 전체 하이라이트(.active) 강제 삭제
+                const menuItems = document.querySelectorAll('.menu-item');
+                menuItems.forEach(function (item) {
+                    item.classList.remove('active');
+                });
+
+                // 4. 마크업 고유 ID 기준 좌측 메뉴 파란색 하이라이트 강제 복구
+                if (savedViewport === 'recruitmentView' && document.getElementById('menuRec')) {
+                    document.getElementById('menuRec').classList.add('active');
+                } else if (savedViewport === 'applicantView' && document.getElementById('menuApp')) {
+                    document.getElementById('menuApp').classList.add('active');
+                } else if (savedViewport === 'gradeView' && document.getElementById('menuGrade')) {
+                    document.getElementById('menuGrade').classList.add('active');
+                }
+            }
+
+            // 브라우저 화면이 완전히 구성된 직후 1차 복구 가동
+            window.addEventListener('DOMContentLoaded', function () {
+                setTimeout(forceRestoreViewport, 50);
+            });
+
+            // 전체 리소스와 세션 토큰 판정문이 완벽히 끝난 직후 2차 최종 강제 덮어쓰기 완료 (강력 제어)
+            window.addEventListener('load', function () {
+                setTimeout(forceRestoreViewport, 150);
+            });
+        })();        
     </script>
 
     <!-- 비밀번호 변경 처리용 통합 오버레이 팝업 모달창 창고 -->
