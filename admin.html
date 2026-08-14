@@ -1520,33 +1520,38 @@
                     <button class="btn-inline save" onclick="saveInlineEditRecord(${row.uid})">완료</button>
                     <button class="btn-inline list" onclick="cancelInlineEditMode()">목록</button>
                 </td>`;
-                } else {
-                    tr.innerHTML = `
-                <td>${row.title}</td>
-                <td>${formatTh(row.th)}</td>
-                <td class="text-bold">${orderDisplayHTML}</td>
-                <td>${formatPeriod(row.period)}</td>
-                
-                <!-- 1. 이름 및 계좌 번호 출력 칸 -->
-                <td class="text-bold">
-                    ${row.name}
-                    <br><span style="font-size:11px; color:var(--text-muted); font-weight:normal;">${displayAccount}</span>
-                </td>
-                
-                <!-- 💡 2. [신규 추가 연동] HTML 헤더 규격에 맞춰 독립된 '첨부서류' 데이터 칸 수 매싱 -->
-<td style="text-align: center; vertical-align: middle;">
-    ${documentLinksHTML ? documentLinksHTML : '<span style="color:var(--text-muted); font-size:12px; font-weight:bold;">미제출</span>'}
-</td>
-                
-                <td>${getOnlyNumbers(row.ssn)}</td>
-                <td>${formatPhone(row.phone)}</td>
-                <td class="text-bold" style="text-align: center;">${payColumnHTML}</td>
-                <td class="text-bold" style="${agreementStyle}">${agreementStatus}</td>
-                <td style="text-align: center;">
-                    <button class="btn-inline edit" onclick="enableInlineEditMode(${row.uid})">수정</button>
-                    <button class="btn-inline delete" onclick="removeApplicantRecord(${row.uid})">삭제</button>
-                </td>`;
-                }
+          } else {
+    tr.innerHTML = `
+        <td>${row.title}</td>
+        <td>${formatTh(row.th)}</td>
+        <td class="text-bold">${orderDisplayHTML}</td>
+        <td>${formatPeriod(row.period)}</td>
+        
+        <!-- 1. 이름 및 계좌 번호 출력 칸 -->
+        <td class="text-bold">
+            ${row.name}
+            <br><span style="font-size:11px; color:var(--text-muted); font-weight:normal;">${displayAccount}</span>
+        </td>
+        
+        <!-- 2. 순서 정렬: 생년월일과 전화번호 -->
+        <td>${getOnlyNumbers(row.ssn)}</td>
+        <td>${formatPhone(row.phone)}</td>
+        
+        <!-- 3. 사례비 정보 및 동의여부 -->
+        <td class="text-bold" style="text-align: center;">${payColumnHTML}</td>
+        <td class="text-bold" style="${agreementStyle}">${agreementStatus}</td>
+        
+        <!-- 🌟 4. [정확한 위치로 이동 완수] HTML 헤더 명세 순서(작업 직전)에 칼같이 맞춰 '첨부서류' 데이터 칸 주입 -->
+        <td style="text-align: center; vertical-align: middle;">
+            ${documentLinksHTML ? documentLinksHTML : '<span style="color:var(--text-muted); font-size:12px; font-weight:bold;">미제출</span>'}
+        </td>
+        
+        <!-- 5. 관리자 작업 버튼 기능 -->
+        <td style="text-align: center;">
+            <button class="btn-inline edit" onclick="enableInlineEditMode(${row.uid})">수정</button>
+            <button class="btn-inline delete" onclick="removeApplicantRecord(${row.uid})">삭제</button>
+        </td>`;
+}
                 // =========================================================================
 
                 tbody.appendChild(tr);
