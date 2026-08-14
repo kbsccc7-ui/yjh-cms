@@ -1014,7 +1014,7 @@
                                 <th style="width: 12%;">전화번호</th>
                                 <th style="width: 8%;">사례비</th>
                                 <th style="width: 11%;">동의여부</th>
-                                <th style="width: 12%; text-align: center;">첨부서류</th>                                
+                                <th style="width: 12%; text-align: center;">첨부서류</th>
                                 <th style="width: 12%; text-align: center;">작업</th>
                             </tr>
                         </thead>
@@ -1520,8 +1520,8 @@
                     <button class="btn-inline save" onclick="saveInlineEditRecord(${row.uid})">완료</button>
                     <button class="btn-inline list" onclick="cancelInlineEditMode()">목록</button>
                 </td>`;
-          } else {
-    tr.innerHTML = `
+                } else {
+                    tr.innerHTML = `
         <td>${row.title}</td>
         <td>${formatTh(row.th)}</td>
         <td class="text-bold">${orderDisplayHTML}</td>
@@ -1551,7 +1551,7 @@
             <button class="btn-inline edit" onclick="enableInlineEditMode(${row.uid})">수정</button>
             <button class="btn-inline delete" onclick="removeApplicantRecord(${row.uid})">삭제</button>
         </td>`;
-}
+                }
                 // =========================================================================
 
                 tbody.appendChild(tr);
