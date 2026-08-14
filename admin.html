@@ -1278,9 +1278,18 @@
                     item.classList.remove('active');
                 });
 
-                // 5. 현재 선택되어 켜진 좌측 메뉴 항목에만 파란색 하이라이트 스킨 장착
-                const activeMenu = document.querySelector(`[onclick*="${viewName}"]`);
-                if (activeMenu) activeMenu.classList.add('active');
+                // 5. 💥 [버그 제로 보강] ID 매칭 및 문자열 추적을 통한 2중 안전 장치로 무조건 활성화
+                if (viewName === 'recruitmentView' && document.getElementById('menuRec')) {
+                    document.getElementById('menuRec').classList.add('active');
+                } else if (viewName === 'applicantView' && document.getElementById('menuApp')) {
+                    document.getElementById('menuApp').classList.add('active');
+                } else if (viewName === 'gradeView' && document.getElementById('menuGrade')) {
+                    document.getElementById('menuGrade').classList.add('active');
+                } else {
+                    // 폴백 구조 유지
+                    const activeMenu = document.querySelector(`[onclick*="${viewName}"]`);
+                    if (activeMenu) activeMenu.classList.add('active');
+                }
             }
 
         }
@@ -2086,6 +2095,19 @@
             a.click();
             document.body.removeChild(a);
         }
+
+        // 💥 [최종 해결책] 스크립트 영역 맨 마지막 종료선 바로 위에 이 코드를 새로 추가해 주세요.
+        // 모든 레거시 소스코드의 리셋 루틴이 끝난 후 0.05초 뒤에 기억된 메뉴를 강제로 최종 마운트합니다.
+        window.addEventListener('DOMContentLoaded', function () {
+            setTimeout(function () {
+                var savedViewport = localStorage.getItem('adminActiveViewportId');
+                if (savedViewport) {
+                    if (typeof changeMainViewport === 'function') {
+                        changeMainViewport(savedViewport);
+                    }
+                }
+            }, 50); // 50ms 미세 지연을 통한 강제 우선순위 획득
+        });        
     </script>
 
     <!-- 비밀번호 변경 처리용 통합 오버레이 팝업 모달창 창고 -->
