@@ -963,7 +963,8 @@
 
                 <!-- [신규 대상자 등록] 인풋 폼 구역 -->
                 <div class="register-box" style="margin-top:20px;">
-                    <h3>[신규 대상자 등록]</h3>
+                    <h3 id="form-mode-title">[신규 대상자 등록]</h3>
+                    <input type="hidden" id="editIndex" value="">
                     <div class="register-form">
                         <div class="form-group">
                             <label>참여 시험명</label>
@@ -971,7 +972,11 @@
                         </div>
                         <div class="form-group">
                             <label>적용 기수</label>
-                            <input type="text" id="form-app-th" placeholder="숫자만">
+                            <!-- 💡 인풋에서 셀렉트박스로 변경 -->
+                            <select id="form-app-th"
+                                style="width:100%; background: var(--card-bg, #1e293b); color:#fff; border:1px solid #475569; padding:8px; border-radius:4px;">
+                                <!-- 자바스크립트가 1기 1차 ~ 4기 4차까지 자동으로 채웁니다 -->
+                            </select>
                         </div>
                         <div class="form-group">
                             <label>그룹 인원수</label>
@@ -993,7 +998,12 @@
                             <label>연락처</label>
                             <input type="text" id="form-app-phone" placeholder="숫자만">
                         </div>
-                        <button class="action-btn" onclick="insertApplicantRecord()">대상자 등록</button>
+
+                        <!-- 💡 버튼 그룹 수정 및 취소버튼 추가 -->
+                        <button class="action-btn" id="btn-save" onclick="insertApplicantRecord()">대상자 등록</button>
+                        <button class="action-btn" id="btn-cancel" onclick="resetForm()"
+                            style="background: #475569; display: none; margin-left: 4px;">취소</button>
+
                         <button class="action-btn" onclick="exportFinancialSettlementData()"
                             style="background: var(--secondary-color); box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2); margin-left: 4px;"><i
                                 class="fa-solid fa-file-excel"></i> 정산 명단 추출</button>
