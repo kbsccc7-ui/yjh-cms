@@ -930,6 +930,21 @@
         function toggleSettlementAuth(isAllow) {
             if (currentSocketPayload !== 'PASS') { alert("먼저 대상자를 [통과 처리] 완료해야 제어가 가능합니다."); return; }
             isManualAllowed = isAllow;
+
+            if (isAllow && window.matchedPatientData) {
+                let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
+                const idx = adminApplicantDB.findIndex(user => String(user.uid) === String(window.matchedPatientData.uid));
+
+                if (idx !== -1) {
+                    adminApplicantDB[idx].payStatus = "접수"; // 대장 상태 업데이트 사양 충족
+                    localStorage.setItem('dataStoreApplicant', JSON.stringify(adminApplicantDB));
+
+                    // 만약 부모 창에 명단 렌더러가 존재할 경우 실시간 리렌더링 트리거
+                    if (window.parent && typeof window.parent.renderAdminApplicantTable === "function") {
+                        window.parent.renderAdminApplicantTable();
+                    }
+                }
+            }
             updateScheduleCondition();
         }
         // 8. 마스터 콘솔 데이터를 실시간 해석하여 가상 스마트폰 UI의 시나리오 스킨을 전환하는 연동 엔진 코어

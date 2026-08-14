@@ -1463,8 +1463,25 @@
 
                 const displayAccount = row.accountInfo && row.accountInfo.trim() !== '' ? row.accountInfo : '-';
 
+                // 💥 [요구사항 반영] 신분증, 통장사본 실제 첨부 데이터(Base64) 유무 정밀 판정 및 뱃지 변수 매핑
+                const isIdCardUploaded = row.idCardUrl && row.idCardUrl.startsWith('data:image');
+                const isBankBookUploaded = row.bankBookUrl && row.bankBookUrl.startsWith('data:image');
+
+                // 활성화된 뱃지는 배경 녹색(#10B981) 처리 및 클릭 시 openAdminDocViewer 원격 연결 가동
+                const idBadgeHTML = isIdCardUploaded
+                    ? `<span class="lvl-badge" style="background:#10B981; color:#fff; cursor:pointer; font-weight:700; padding:4px 8px; border-radius:4px; font-size:12px; display:inline-block; margin-right:4px;" onclick="openAdminDocViewer('${row.uid}', 'idCard')">✔ 신분증</span>`
+                    : `<span class="lvl-badge" style="background:rgba(148,163,184,0.15); color:#cbd5e1; opacity:0.4; cursor:not-allowed; padding:4px 8px; border-radius:4px; font-size:12px; display:inline-block; margin-right:4px;">❌ 신분증</span>`;
+
+                const bankBadgeHTML = isBankBookUploaded
+                    ? `<span class="lvl-badge" style="background:#10B981; color:#fff; cursor:pointer; font-weight:700; padding:4px 8px; border-radius:4px; font-size:12px; display:inline-block;" onclick="openAdminDocViewer('${row.uid}', 'bankBook')">✔ 통장</span>`
+                    : `<span class="lvl-badge" style="background:rgba(148,163,184,0.15); color:#cbd5e1; opacity:0.4; cursor:not-allowed; padding:4px 8px; border-radius:4px; font-size:12px; display:inline-block;">❌ 통장</span>`;
+
+                // 하나의 마운트 레이아웃으로 래핑
+                const totalBadgesHTML = `<div style="text-align: center; display:flex; gap:2px; justify-content:center; align-items:center;">${idBadgeHTML} ${bankBadgeHTML}</div>`;
+
+
                 // 💡 [버그 제로 보정 필터 적용] 
-                // 데이터가 공백이거나 누락되었을 가능성을 철저히 계산하여, 임시 주소라도 주입해 서류 링크 단추를 화면에 무조건 강제 마운트합니다.
+                // 기존 '접수' 등의 상태일 때 하단에 링크 박스를 무조건 띄워주던 ..데이터가 공백이거나 누락되었을 가능성을 철저히 계산하여, 임시 주소라도 주입해 서류 링크 단추를 화면에 무조건 강제 마운트합니다.
                 const idCardLink = row.idCardUrl || "https://unsplash.com";
                 const bankBookLink = row.bankBookUrl || "https://unsplash.com";
 
@@ -1962,6 +1979,57 @@
             alert(`📢 스마트 자동 등록 성공!\n● 성명: ${extractedName}\n● 생년월일: ${extractedSsn}\n● 연락처: ${extractedPhone}`);
         }
 
+        // [독립 확장] 활성화된 배지 클릭 시 알림 레이어 팝업으로 원본 이미지를 보여주고 인쇄/저장 가동
+        function openAdminDocViewer(uid, docType) {
+            let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
+            const targetUser = adminApplicantDB.find(function (u) { return String(u.uid) === String(uid); });
+
+            if (!targetUser) return alert("해당 대상자 데이터를 전산망에서 식별할 수 없습니다.");
+
+            const targetImgSrc = (docType === 'idCard') ? targetUser.idCardUrl : targetUser.bankBookUrl;
+            const docTitle = (docType === 'idCard') ? "피험자 신분증 원본" : "피험자 통장사본 원본";
+
+            if (!targetImgSrc) return alert("첨부된 파일 서류 증빙 데이터셋이 존재하지 않습니다.");
+
+            let modalOverlay = document.getElementById('admin-global-doc-modal');
+            if (!modalOverlay) {
+                modalOverlay = document.createElement('div');
+                modalOverlay.id = 'admin-global-doc-modal';
+                modalOverlay.style = "display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); backdrop-filter:blur(5px); z-index:99999; justify-content:center; align-items:center;";
+                document.body.appendChild(modalOverlay);
+            }
+
+            modalOverlay.innerHTML = `
+        <div style="background:#1a233a; border:1px solid #334155; padding:25px; border-radius:16px; width:100%; max-width:450px; text-align:center; color:#fff; font-family:sans-serif;">
+            <h3 style="margin-top:0; margin-bottom:12px; font-size:16px; color:#0ea5e9; border-bottom:1px solid #334155; padding-bottom:10px; font-weight:700;">📋 Admin 증빙 서류 팝업</h3>
+            <p style="font-size:12px; color:#94a3b8; margin-bottom:15px; text-align:left;">대상자명: <b>${targetUser.name}</b> (${docTitle})</p>
+            <div style="background:#0b0f19; padding:10px; border-radius:8px; border:1px solid #334155; margin-bottom:18px; display:flex; justify-content:center; align-items:center;">
+                <img src="${targetImgSrc}" style="max-width:100%; max-height:240px; object-fit:contain; border-radius:4px;">
+            </div>
+            <div style="display:flex; gap:8px;">
+                <button onclick="executeAdminPopupPrint('${targetImgSrc}')" style="flex:1; padding:10px; background:#4ade80; color:#070a12; border:none; border-radius:6px; font-weight:700; cursor:pointer; font-size:13px;">💥 증빙 인쇄</button>
+                <button onclick="executeAdminPopupDownload('${targetImgSrc}', '${targetUser.name}_${docType}')" style="flex:1; padding:10px; background:#0ea5e9; color:#fff; border:none; border-radius:6px; font-weight:700; cursor:pointer; font-size:13px;">💥 로컬 저장</button>
+                <button onclick="document.getElementById('admin-global-doc-modal').style.display='none'" style="padding:10px 16px; background:#475569; color:#fff; border:none; border-radius:6px; font-weight:700; cursor:pointer; font-size:13px;">닫기</button>
+            </div>
+        </div>
+    `;
+            modalOverlay.style.display = "flex";
+        }
+
+        function executeAdminPopupPrint(imgSrc) {
+            const printWindow = window.open('', '_blank', 'width=800,height=600');
+            printWindow.document.write('<html><body><img src="' + imgSrc + '" style="max-width:100%;" onload="window.print(); window.close();"></body></html>');
+            printWindow.document.close();
+        }
+
+        function executeAdminPopupDownload(imgSrc, filename) {
+            const a = document.createElement('a');
+            a.href = imgSrc;
+            a.download = 'ADMIN_증빙_' + filename + '.png';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
     </script>
 
     <!-- 비밀번호 변경 처리용 통합 오버레이 팝업 모달창 창고 -->

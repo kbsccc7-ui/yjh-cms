@@ -803,13 +803,13 @@
             // 💡 [6자리/8자리 상호 호환 알고리즘] 뒤의 6자리(YYMMDD)만 정밀 추출하여 비교
             const cleanInputBirth6 = birth.length === 8 ? birth.substring(2) : birth;
 
+
+            // 💥 [사양 반영] 이름, 생년월일, 연락처 3개 정밀 매칭
             matchedPatientData = adminApplicantDB.find(user => {
                 const dbBirth = (user.ssn || '').toString().replace(/[^0-9]/g, '');
                 const cleanDbBirth6 = dbBirth.length === 8 ? dbBirth.substring(2) : dbBirth;
-
-                return user.name === name &&
-                    cleanDbBirth6 === cleanInputBirth6 &&
-                    user.phone.replace(/[^0-9]/g, '') === phone.replace(/[^0-9]/g, '')
+                const cleanDbPhone = (user.phone || '').toString().replace(/[^0-9]/g, '');
+                return user.name === name && cleanDbBirth6 === cleanInputBirth6 && cleanDbPhone === phone;
             });
 
             document.getElementById('msgWaiting3').style.display = "none";
@@ -820,40 +820,26 @@
             const actionBtn = document.getElementById('btnActionPop');
 
             if (matchedPatientData) {
-                // 💡 [실시간 크로스 체킹] 모집공고 마스터 DB에서 해당 과제의 '사례비 지급일정' 문구 추적 추출
+                // 💥 [사양 반영] 모집공고 DB 연동하여 사례비 지급일정 문구 추출
                 let adminRecruitmentDB = JSON.parse(localStorage.getItem('dataStoreRecruitment')) || [];
-                const matchedRec = adminRecruitmentDB.find(rec =>
-                    rec.title === matchedPatientData.title && String(rec.th) === String(matchedPatientData.th)
-                );
-                // 지급일정이 비어있다면 대기 문구로 보정 마운트
-                const targetPayScheduleText = (matchedRec && matchedRec.payDate) ? matchedRec.payDate.trim() : "추후 공지 예정";
+                const matchedRec = adminRecruitmentDB.find(rec => rec.title === matchedPatientData.title && String(rec.th) === String(matchedPatientData.th));
+                const payScheduleText = (matchedRec && matchedRec.payDate) ? matchedRec.payDate.trim() : "추후 공지 예정";
 
-                // [검증 통과] 3단 팝업 승인(PASS) 스킨 빌드
                 popup.className = "embedded-result-popup pop-theme-pass";
-                if (icon) icon.className = "fa-solid fa-circle-check";
-                title.innerText = "본인인증 승인 (PASS)";
-
-                // 💡 3단 인증서 step02 결과 팝업창 내부에 "내 사례비가 언제 들어오는지" 일정 정보 실시간 바인딩
-                message.innerText = `● 연계사: ${currentChannelName} 모듈\n● 피험자명: ${name}\n\n[실시간 자동화 알림]\n소집팀 데이터셋 매칭 통과가 감지되었습니다.\n\n📢 [사례비 지급일정 안내]\n👉 ${targetPayScheduleText}\n\n하단 확인 버튼을 선택하면 자동으로 동기화 차단 장벽이 해제되며 다음 단계 정산 폼으로 이동합니다.`;
-
-                actionBtn.innerText = "확인";
-                actionBtn.style.background = "#03C75A";
+                if (document.getElementById('icoPop')) document.getElementById('icoPop').className = "fa-solid fa-circle-check";
+                document.getElementById('txtPopTitle').innerText = "본인인증 승인 (PASS)";
+                document.getElementById('txtPopMessage').innerText = `● 연계사: ${currentChannelName} 모듈\n● 피험자명: ${name}\n\n📢 [사례비 지급일정 안내]\n👉 ${payScheduleText}\n\n 하단 확인 버튼을 선택하면 자동으로 동기화 차단 장벽이 해제되며 다음 단계 정산 폼으로 이동합니다.`;
             } else {
-                // [검증 실패] 3단 팝업 거부(FAIL) 스킨 빌드
                 matchedPatientData = null;
                 popup.className = "embedded-result-popup pop-theme-fail";
-                if (icon) icon.className = "fa-solid fa-circle-xmark";
-                title.innerText = "본인인증 실패 (FAIL)";
-                message.innerText = `● 연계사: ${currentChannelName} 부적격\n\n조회 매칭에 어긋납니다. 정보 재입력이 수반되어야 합니다.`;
-                actionBtn.innerText = "재시도";
-                actionBtn.style.background = "#E61E25";
+                if (document.getElementById('icoPop')) document.getElementById('icoPop').className = "fa-solid fa-circle-xmark";
+                document.getElementById('txtPopTitle').innerText = "본인인증 실패 (FAIL)";
+                document.getElementById('txtPopMessage').innerText = `● 연계사: ${currentChannelName} 부적격\n\n 조회 매칭에 어긋납니다. 정보 재입력이 수반되어야 합니다.`;
             }
             popup.style.display = "block";
-            document.getElementById('formContent4').style.display = "none";
-            document.getElementById('msgWaiting4').style.display = "block";
         }
         // ========================================================
-        // 💥 3단 ➡️ 4단: [핵심] 관리자 심사 상태(payStatus)에 따른 조건부 잠금 해제 체인
+        // 3단계 -> 4단계 전환 함수 내부 정밀 보완 (초기 비활성화 잠금)
         // ========================================================
         function executeStep3ConfirmNext() {
             if (matchedPatientData) {
