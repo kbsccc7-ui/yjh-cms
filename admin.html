@@ -922,7 +922,7 @@
                                 <th style="width: 150px; ">기간(시간)</th>
                                 <th style="width: 10%; min-width: 140px;">주의사항</th>
                                 <th style="width: 10%; min-width: 110px;">시험일정</th>
-                                <th style="width: 10%; min-width: 120px;">사례비 지급일정</th>
+                                <th style="width: 10%; min-width: 120px;">참여비 지급일정</th>
                                 <th style="width: 185px; min-width: 165px; text-align: center;">작업</th>
                             </tr>
                         </thead>
@@ -1036,7 +1036,7 @@
                                 <th style="width: 9%;">이름</th>
                                 <th style="width: 11%;">생년월일</th>
                                 <th style="width: 12%;">전화번호</th>
-                                <th style="width: 8%;">사례비</th>
+                                <th style="width: 8%;">참여비</th>
                                 <th style="width: 11%;">동의여부</th>
                                 <th style="width: 12%; text-align: center;">첨부서류</th>
                                 <th style="width: 12%; text-align: center;">작업</th>
@@ -1631,7 +1631,7 @@
         <td>${getOnlyNumbers(row.ssn)}</td>
         <td>${formatPhone(row.phone)}</td>
         
-        <!-- 3. 사례비 정보 및 동의여부 -->
+        <!-- 3. 참여비 정보 및 동의여부 -->
         <td class="text-bold" style="text-align: center;">${payColumnHTML}</td>
         <td class="text-bold" style="${agreementStyle}">${agreementStatus}</td>
         
@@ -1893,7 +1893,7 @@
         function cancelAdminMemberInlineMode() { memberEditingSabun = null; refreshAdminMemberTableView(); }
 
         /**
- * 운영진 전산망(adm_mem)에서 참여완료/탈락 심사를 마치고 [사례비 신청] 활성화를 누를 때 발동하는 트랜잭션
+ * 운영진 전산망(adm_mem)에서 참여완료/탈락 심사를 마치고 [참여비 신청] 활성화를 누를 때 발동하는 트랜잭션
  * @param {string|number} uid - 대상자의 고유 식별자 키값
  */
         function executeAllowPayClaim(uid) {
@@ -1915,7 +1915,7 @@
                     refreshApplicantView();
                 }
 
-                alert("전산 처리 완료: 해당 피험자의 사례비 신청 권한(join_login 4단계)이 정상적으로 활성화되었습니다.");
+                alert("전산 처리 완료: 해당 피험자의 참여비 신청 권한(join_login 4단계)이 정상적으로 활성화되었습니다.");
             } else {
                 alert("전산 오류: 일치하는 피험자 식별 정보(UID)를 찾을 수 없습니다.");
             }
@@ -2011,7 +2011,7 @@
 
             // 1. 엑셀/CSV 표준 헤더 타이틀 라인 정의 (쉼표 분할 규격)
             let csvContent = "\uFEFF"; // 💡 엑셀 한글 깨짐 방지를 위한 필수 UTF-8 BOM 바이트 헤더 주입
-            csvContent += "순번,시험명,기수,이름,생년월일,연락처,사례비단계,동의여부,금융계좌정보\n";
+            csvContent += "순번,시험명,기수,이름,생년월일,연락처,참여비단계,동의여부,금융계좌정보\n";
 
             // 2. 가상 DB 순회하며 로우 데이터 로깅 가공 처리
             const counterMap = {};
@@ -2427,7 +2427,7 @@
             </div>
 
             <div class="editor-form-group-last">
-                <label>사례비 지급일정</label>
+                <label>참여비 지급일정</label>
                 <input type="text" id="modal-rec-paySchedule" class="editor-input" placeholder="예: 시험 종료 후 2주 이내 지급">
             </div>
 
