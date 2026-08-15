@@ -1540,7 +1540,7 @@
 
                 const displayAccount = row.accountInfo && row.accountInfo.trim() !== '' ? row.accountInfo : '-';
 
-                // 💥 [요구사항 반영] 신분증, 통장사본 실제 첨부 데이터(Base64) 유무 정밀 판정 및 뱃지 변수 매핑
+                // 신분증, 통장사본 실제 첨부 데이터(Base64) 유무 정밀 판정 및 뱃지 변수 매핑
                 const isIdCardUploaded = row.idCardUrl && row.idCardUrl.startsWith('data:image');
                 const isBankBookUploaded = row.bankBookUrl && row.bankBookUrl.startsWith('data:image');
 
@@ -1623,7 +1623,7 @@
         
         <!-- 1. 이름 및 계좌 번호 출력 칸 -->
         <td class="text-bold">
-            ${row.name}
+             ${row.name ? String(row.name).replace(/[.\-]/g, '').trim() : ''}
             <br><span style="font-size:11px; color:var(--text-muted); font-weight:normal;">${displayAccount}</span>
         </td>
         
@@ -2100,7 +2100,7 @@
             const extractedTh = thMatch[1] ? thMatch[1].trim() : "1";
 
             if (dataStoreApplicant.some(user => user.name === extractedName && user.ssn === extractedSsn)) {
-                return alert('알림: 이미 대장에 존재하는 피험자입니다.');
+                return alert('알림: 이미 명단에 존재하는 대상자입니다.');
             }
 
             dataStoreApplicant.push({
