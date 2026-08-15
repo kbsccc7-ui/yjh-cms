@@ -2334,7 +2334,8 @@
 
         // 관리자 비번변경 모달 열기
         function openSelfPasswordModal() {
-            var modal = document.getElementById('passwordModal');
+            // 💡 HTML의 ID인 'pwModalLayer'로 정확히 일치시켰습니다.
+            var modal = document.getElementById('pwModalLayer');
 
             if (modal) {
                 // 1. 모달을 띄울 때마다 이전 입력 암호를 비워줍니다.
@@ -2350,13 +2351,14 @@
 
         // 관리자 비번변경 모달 닫기
         function closeSelfPasswordModal() {
-            var modal = document.getElementById('passwordModal');
+            // 💡 HTML의 ID인 'pwModalLayer'로 정확히 일치시켰습니다.
+            var modal = document.getElementById('pwModalLayer');
             if (modal) {
                 modal.style.display = 'none'; // 화면에서 완전히 감춤
             }
         }
 
-        // 비밀번호 변경 커밋 실행부 예시
+        // 비밀번호 변경 커밋 실행부
         function executePasswordChangeCommit() {
             var newPassword = document.getElementById('txtNewPassword').value;
 
@@ -2385,11 +2387,13 @@
             <div class="modal-btn-group">
                 <button class="btn-inline save" style="flex:1; height:38px;" onclick="executePasswordChangeCommit()">최종
                     변경 인가</button>
-                <button class="btn-inline list" style="flex:1; height:38px;" onclick="closePasswordModal()">창
+                <!-- 💡 버튼의 onclick 함수명을 스크립트에 선언된 대상을 바라보도록 closeSelfPasswordModal()로 수정했습니다. -->
+                <button class="btn-inline list" style="flex:1; height:38px;" onclick="closeSelfPasswordModal()">창
                     닫기</button>
             </div>
         </div>
     </div>
+
     <!-- 모집공고 상세 에디터 모달 팝업 (전체 인라인 스타일 제거 완료) -->
     <div id="noticeEditorModal" class="editor-modal-overlay">
         <div class="editor-modal-content">
