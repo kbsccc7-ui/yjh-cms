@@ -2346,7 +2346,7 @@
         }
 
         function closeSelfPasswordModal() {
-            var modal = document.getElementById('closePasswordModal');
+            var modal = document.getElementById('passwordModal');
             if (modal) {
                 modal.style.display = 'none'; // 화면에서 숨김
             }
@@ -2365,7 +2365,7 @@
             <div class="modal-btn-group">
                 <button class="btn-inline save" style="flex:1; height:38px;" onclick="executePasswordChangeCommit()">변경
                     완료</button>
-                <button class="btn-inline list" style="flex:1; height:38px;" onclick="closePasswordModal()">창
+                <button class="btn-inline list" style="flex:1; height:38px;" onclick="passwordModal()">창
                     닫기</button>
             </div>
         </div>
