@@ -2331,30 +2331,28 @@
             }
         }
 
-        //관리자 비번변경 모달
+        // 관리자 비번변경 모달 열기
         function openSelfPasswordModal() {
-            // 1. 모달 엘리먼트를 ID로 가져옵니다.
-            // (만약 실제 HTML 내 비밀번호 변경 모달의 ID가 다르다면 해당 ID로 변경하세요)
             var modal = document.getElementById('passwordModal');
 
             if (modal) {
-                // 2. display 속성을 block 또는 flex로 바꾸어 화면에 보이게 합니다.
-                modal.style.display = 'block';
+                modal.style.display = 'block'; // 화면에 보이기
             } else {
                 console.error("모달 엘리먼트를 찾을 수 없습니다.");
             }
         }
 
+        // 관리자 비번변경 모달 닫기
         function closeSelfPasswordModal() {
-            var modal = document.getElementById('passwordModal');
+            var modal = document.getElementById('passwordModal'); // 같은 ID를 지정해야 합니다
             if (modal) {
-                modal.style.display = 'none'; // 화면에서 숨김
+                modal.style.display = 'none'; // 화면에서 숨기기
             }
         }
     </script>
 
     <!-- 비밀번호 변경 처리용 통합 오버레이 팝업 모달창 창고 -->
-    <div class="pw-modal-overlay" id="pwModalLayer">
+    <div class="pw-modal-overlay" id="passwordModal">
         <div class="pw-modal-box">
             <h3 id="txtPwModalHeader">임직원 비밀번호 변경</h3>
             <input type="hidden" id="hdnTargetSabun"> <!-- 대상 구별용 가상 홀더 -->
