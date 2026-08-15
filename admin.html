@@ -2392,15 +2392,15 @@
     <!-- 비밀번호 변경 처리용 통합 오버레이 팝업 모달창 창고 -->
     <div class="pw-modal-overlay" id="pwModalLayer">
         <div class="pw-modal-box">
-            <h3 id="txtPwModalHeader">임직원 비밀번호 변경</h3>
+            <h3 id="txtPwModalHeader">관리자 비밀번호 변경</h3>
             <input type="hidden" id="hdnTargetSabun"> <!-- 대상 구별용 가상 홀더 -->
             <div class="form-group">
                 <label for="txtNewPassword">새로운 비밀번호 입력</label>
-                <input type="password" id="txtNewPassword" placeholder="변경할 암호를 입력하세요">
+                <input type="password" id="txtNewPassword" placeholder="변경할 비밀번호를 입력하세요">
             </div>
             <div class="modal-btn-group">
-                <button class="btn-inline save" style="flex:1; height:38px;"
-                    onclick="executePasswordChangeCommit()">변경완료</button>
+                <button class="btn-inline save" style="flex:1; height:38px;" onclick="executePasswordChangeCommit()">변경
+                    완료</button>
                 <!-- 💡 버튼의 onclick 함수명을 스크립트에 선언된 대상을 바라보도록 closeSelfPasswordModal()로 수정했습니다. -->
                 <button class="btn-inline list" style="flex:1; height:38px;" onclick="closeSelfPasswordModal()">창
                     닫기</button>
