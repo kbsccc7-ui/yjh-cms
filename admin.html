@@ -2331,6 +2331,12 @@
             }
         }
 
+        //관리자 비번변경 모달
+        function openSelfPasswordModal() {
+            // Bootstrap 5 기준 모달 ID가 'passwordModal'인 경우
+            var myModal = new bootstrap.Modal(document.getElementById('passwordModal'));
+            myModal.show();
+        }        
     </script>
 
     <!-- 비밀번호 변경 처리용 통합 오버레이 팝업 모달창 창고 -->
@@ -2343,8 +2349,8 @@
                 <input type="password" id="txtNewPassword" placeholder="변경할 암호를 입력하세요">
             </div>
             <div class="modal-btn-group">
-                <button class="btn-inline save" style="flex:1; height:38px;" onclick="executePasswordChangeCommit()">최종
-                    변경 인가</button>
+                <button class="btn-inline save" style="flex:1; height:38px;" onclick="executePasswordChangeCommit()">변경
+                    완료</button>
                 <button class="btn-inline list" style="flex:1; height:38px;" onclick="closePasswordModal()">창
                     닫기</button>
             </div>
