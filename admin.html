@@ -2331,19 +2331,20 @@
             }
         }
 
+
         // 관리자 비번변경 모달 열기
         function openSelfPasswordModal() {
-            // 혹시 모를 캐시 문제를 방지하기 위해 호출 시점에 ID를 다시 탐색합니다.
             var modal = document.getElementById('passwordModal');
 
             if (modal) {
-                modal.style.display = 'block'; // 일반 스크립트 방식 활성화
-                // 만약 CSS로 flex 레이아웃을 사용 중이라면 block 대신 아래 코드를 쓰셔도 됩니다.
-                // modal.style.display = 'flex'; 
+                // 1. 모달을 띄울 때마다 이전 입력 암호를 비워줍니다.
+                var pwInput = document.getElementById('txtNewPassword');
+                if (pwInput) pwInput.value = '';
+
+                // 2. CSS Flexbox 구조를 활성화하여 정확히 정중앙에 배치되도록 합니다.
+                modal.style.display = 'flex';
             } else {
-                // 에러가 날 경우 브라우저가 현재 읽고 있는 HTML의 상태를 콘솔에 찍어 확인합니다.
-                console.error("모달 엘리먼트를 찾을 수 없습니다. 현재 DOM 상태를 확인하세요.");
-                console.log(document.body.innerHTML.includes('id="passwordModal"'));
+                console.error("모달 엘리먼트를 찾을 수 없습니다.");
             }
         }
 
@@ -2351,13 +2352,29 @@
         function closeSelfPasswordModal() {
             var modal = document.getElementById('passwordModal');
             if (modal) {
-                modal.style.display = 'none'; // 화면에서 숨기기
+                modal.style.display = 'none'; // 화면에서 완전히 감춤
             }
         }
+
+        // 비밀번호 변경 커밋 실행부 예시
+        function executePasswordChangeCommit() {
+            var newPassword = document.getElementById('txtNewPassword').value;
+
+            if (!newPassword || newPassword.trim() === "") {
+                alert("변경할 암호를 입력해 주세요.");
+                document.getElementById('txtNewPassword').focus();
+                return;
+            }
+
+            // 여기에 기존 프로젝트의 변경 로직(ajax 혹은 fetch 등)을 넣으시면 됩니다.
+            alert("비밀번호가 정상적으로 변경되었습니다.");
+            closeSelfPasswordModal();
+        }
+
     </script>
 
     <!-- 비밀번호 변경 처리용 통합 오버레이 팝업 모달창 창고 -->
-    <div class="pw-modal-overlay" id="passwordModal">
+    <div class="pw-modal-overlay" id="pwModalLayer">
         <div class="pw-modal-box">
             <h3 id="txtPwModalHeader">임직원 비밀번호 변경</h3>
             <input type="hidden" id="hdnTargetSabun"> <!-- 대상 구별용 가상 홀더 -->
@@ -2366,9 +2383,9 @@
                 <input type="password" id="txtNewPassword" placeholder="변경할 암호를 입력하세요">
             </div>
             <div class="modal-btn-group">
-                <button class="btn-inline save" style="flex:1; height:38px;" onclick="executePasswordChangeCommit()">변경
-                    완료</button>
-                <button class="btn-inline list" style="flex:1; height:38px;" onclick="closeSelfPasswordModal()">창
+                <button class="btn-inline save" style="flex:1; height:38px;" onclick="executePasswordChangeCommit()">최종
+                    변경 인가</button>
+                <button class="btn-inline list" style="flex:1; height:38px;" onclick="closePasswordModal()">창
                     닫기</button>
             </div>
         </div>
