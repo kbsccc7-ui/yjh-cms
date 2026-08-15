@@ -1415,6 +1415,10 @@
             const sortedData = dataStoreRecruitment.slice().reverse(); // 역순 복사본 생성 [index: 0.1.6]
             sortedData.forEach(row => {
                 const tr = document.createElement('tr');
+
+                // 테이블 행을 생성한 바로 아랫줄에 코드를 삽입합니다.
+                const cleanName = row.name ? String(row.name).replace(/[.\-]/g, '').trim() : '';
+
                 const note = (row.note && row.note.trim() !== '') ? row.note : '-';
                 const schedule = (row.schedule && row.schedule.trim() !== '') ? row.schedule : '-';
                 const payDate = (row.payDate && row.payDate.trim() !== '') ? row.payDate : '-';
