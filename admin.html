@@ -2986,13 +2986,20 @@
             // 모달 상단 타이틀 갱신
             if (modalTitle) modalTitle.innerText = titleText;
 
-            // 실제 이미지 데이터가 존재하거나 유효한 파일 주소인 경우
+            // [원본 로직 100% 유지]: 실제 이미지 데이터가 존재하거나 유효한 파일 주소인 경우
             if (imgSrc && imgSrc !== "undefined" && imgSrc !== "null" && imgSrc !== "유" && imgSrc !== "placeholder") {
                 modalImg.src = imgSrc;
                 modalImg.style.display = "block";
                 if (noImgMsg) noImgMsg.style.display = "none";
             } else {
-                // 시뮬레이터 가동용 플레이스홀더 스킨 처리
+                // [원본 로직 100% 유지]: 시뮬레이터 가동용 플레이스홀더 스킨 처리
+                // 💡 팁: 시뮬레이터 모드에서도 인쇄/저장 기능을 미리 테스트해볼 수 있도록 가상 이미지를 백그라운드 src에 세팅해둡니다.
+                if (titleText.indexOf('신분증') !== -1) {
+                    modalImg.src = "https://picsum.photos";
+                } else {
+                    modalImg.src = "https://picsum.photos";
+                }
+
                 modalImg.style.display = "none";
                 if (noImgMsg) {
                     noImgMsg.style.display = "block";
@@ -3010,6 +3017,66 @@
         function closeDocModal() {
             const overlay = document.getElementById('docModalOverlay');
             if (overlay) overlay.style.display = "none";
+        }
+
+        /**
+         * 🎯 [연동 기능 1] iframe 백그라운드 격리 인쇄 엔진
+         * 메인 대시보드가 같이 프린트되지 않도록 서류 이미지 영역만 깨끗하게 스풀링합니다.
+         */
+        function printDocModalElement() {
+            const modalImg = document.getElementById('docModalImage');
+            const modalTitle = document.getElementById('docModalTitle')?.innerText || "증빙서류";
+            if (!modalImg || !modalImg.src) {
+                alert("인쇄할 수 있는 유효한 서류 리소스가 없습니다.");
+                return;
+            }
+
+            const printFrame = document.createElement('iframe');
+            printFrame.style.position = 'fixed';
+            printFrame.style.width = '0';
+            printFrame.style.height = '0';
+            printFrame.style.border = '0';
+            document.body.appendChild(printFrame);
+
+            const frameDoc = printFrame.contentWindow.document;
+            frameDoc.open();
+            frameDoc.write(`
+        <html>
+        <head>
+            <title>${modalTitle}</title>
+            <style>
+                body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background: #fff; }
+                img { max-width: 100%; height: auto; object-fit: contain; }
+                @page { size: auto; margin: 10mm; }
+            </style>
+        </head>
+        <body>
+            <img src="${modalImg.src}" onload="window.focus(); window.print(); setTimeout(function(){ window.frameElement.remove(); }, 1000);">
+        </body>
+        </html>
+    `);
+            frameDoc.close();
+        }
+
+        /**
+         * 🎯 [연동 기능 2] 가상 가속 앵커 링크 파일 다운로더
+         * 브라우저 다운로드 인터페이스를 강제 기동하여 로컬 하드디스크에 저장합니다.
+         */
+        function downloadDocModalElement() {
+            const modalImg = document.getElementById('docModalImage');
+            const modalTitle = document.getElementById('docModalTitle')?.innerText || "증빙서류_원본";
+            if (!modalImg || !modalImg.src) {
+                alert("저장할 수 있는 파일 스트림이 존재하지 않습니다.");
+                return;
+            }
+
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.href = modalImg.src;
+            // 파일명 공백을 언더바로 변환하여 안전하게 저장명 설정
+            downloadAnchor.download = `${modalTitle.replace(/\s/g, "_")}.jpg`;
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            document.body.removeChild(downloadAnchor);
         }
 
         // ========================================================
@@ -3286,8 +3353,22 @@
                 </div>
             </div>
 
-            <!-- 하단 확인 단추 구역 -->
-            <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
+            <!-- 하단 확인 및 액션 단추 구역 (인쇄, 저장, 닫기 통합) -->
+            <div
+                style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; border-top: 1px solid var(--border-color, #334155); padding-top: 15px;">
+                <!-- 💡 인쇄 단추: 원본 테마 맞춤형 스카이블루 고대비 스타일 -->
+                <button type="button" class="btn-inline list" onclick="printDocModalElement()"
+                    style="padding: 10px 18px; font-size: 14px; border-radius: 6px; font-weight: bold; background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.4); cursor: pointer;">
+                    <i class="fa-solid fa-print"></i> 인쇄
+                </button>
+
+                <!-- 💡 저장 단추: 원본 테마 맞춤형 골드 바이올렛/옐로우 고대비 스타일 -->
+                <button type="button" class="btn-inline edit" onclick="downloadDocModalElement()"
+                    style="padding: 10px 18px; font-size: 14px; border-radius: 6px; font-weight: bold; background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); cursor: pointer;">
+                    <i class="fa-solid fa-download"></i> 저장
+                </button>
+
+                <!-- 기존 검수 확인 완료 단추 유지 -->
                 <button type="button" class="btn-inline save" onclick="closeDocModal()"
                     style="padding: 10px 22px; font-size: 14px; border-radius: 6px; font-weight: bold; background: var(--success-color, #4ade80); color: #070a12; border: none; cursor: pointer;">
                     검수 확인 완료
