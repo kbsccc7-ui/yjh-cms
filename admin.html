@@ -990,13 +990,18 @@
                  SECTION 02. 대상자 관리 탭 (div 임베딩 원형 유지)
                  ========================================================== -->
             <div id="applicantView" class="content-section">
-                <h2>대상자 관리</h2>
+                <!-- 💡 [교정 및 추가] 타이틀과 모바일 연동 버튼을 우측 정렬로 수평 배치하는 플로팅 게이트웨이 -->
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; width: 100%; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 20px;">
+                    <h2 style="margin: 0; padding: 0; border: none;">대상자 관리</h2>
 
-                <!-- admin.html 내부 적당한 위치에 추가 (예: 상단 탑바 유저 구역 등) -->
-                <button onclick="openMobileForm()" class="btn-inline" style="background:#0ea5e9; color:#fff;">
-                    📱 피험자 모바일 정산창 열기
-                </button>
-
+                    <!-- 📱 피험자 모바일 시뮬레이터 정식 가동 버튼 -->
+                    <button onclick="openMobileForm()" type="button"
+                        style="background: #0ea5e9; color: #ffffff; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 13px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3); transition: all 0.2s ease;"
+                        onmouseover="this.style.background='#0284c7'" onmouseout="this.style.background='#0ea5e9'">
+                        <span>📱</span> 피험자 모바일 정산창 열기
+                    </button>
+                </div>
                 <!-- 💡 실시간 재무 정산 프로세스 통계 대시보드 현황판 뷰 패널 -->
                 <div class="dashboard-stats-row"
                     style="display: flex; gap: 14px; margin-top: 20px; margin-bottom: 20px; width: 100%;">
@@ -2592,10 +2597,18 @@
             printWindow.document.close();
         }
 
+
+        // 💡 부모창-자식창 간 커넥션 링크 주소를 자동 매핑하여 모바일 팝업을 정식 인가하는 함수
         function openMobileForm() {
-            // 💡 주소를 깃허브 상대경로로 지정하여 자식 팝업창을 정식으로 가동합니다.
-            window.open('adm_mem.html', 'mobileFormPopup', 'width=450,height=850,scrollbars=yes');
-        }        
+            // 현재 admin.html 주소를 기반으로 동일 디렉토리 내의 adm_mem.html 주소 자동 연산
+            const currentUrl = window.location.href;
+            const targetUrl = currentUrl.replace('admin.html', 'adm_mem.html');
+
+            // 모바일 폰 규격(폭 420px, 높이 850px)으로 브라우저 자식 윈도우 개방 (opener 바인딩 활성화)
+            window.open(targetUrl, 'mobileFormPopup', 'width=420,height=850,resizable=no,scrollbars=yes,left=150,top=50');
+        }
+        window.openMobileForm = openMobileForm;
+
     </script>
 
     <!-- 비밀번호 변경 처리용 통합 오버레이 팝업 모달창 창고 -->
