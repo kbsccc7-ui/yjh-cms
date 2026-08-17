@@ -1014,18 +1014,26 @@
                     style="display: flex; justify-content: space-between; align-items: center; width: 100%; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 20px;">
                     <h2 style="margin: 0; padding: 0; border: none;">대상자 관리</h2>
 
-                    <!--인증서 로그인 -->
-                    <button type="button" id="btnOpenAuth" onclick="openCivilAuthBridge()"
-                        style="background-color: #0284c7; color: #ffffff; border: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; transition: background 0.2s;">
-                        <i class="fa-solid fa-shield-halved"></i> 민간 인증서 로그인
-                    </button>
-                    <!-- 참여비 신청 -->
-                    <button onclick="openMobileForm()" type="button"
-                        style="background: #0ea5e9; color: #ffffff; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 13px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3); transition: all 0.2s ease;"
-                        onmouseover="this.style.background='#0284c7'" onmouseout="this.style.background='#0ea5e9'">
-                        <span>📱</span> 대상자 참여비 신청
-                    </button>
+                    <!-- 버튼들이 배치되는 부모 컨테이너 (정밀 간격 25px 제어) -->
+                    <div class="admin-top-btn-group" style="display: inline-flex; align-items: center; gap: 25px;">
+
+                        <!-- 1. 인증서 로그인 버튼 -->
+                        <button type="button" id="btnOpenAuth" onclick="openCivilAuthBridge()"
+                            style="background-color: #0284c7; color: #ffffff; border: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3); transition: all 0.2s ease;"
+                            onmouseover="this.style.background='#0ea5e9'" onmouseout="this.style.background='#0284c7'">
+                            <i class="fa-solid fa-shield-halved"></i> 민간 인증서 로그인
+                        </button>
+
+                        <!-- 2. 참여비 신청 버튼 (25px 간격 배치 완료) -->
+                        <button onclick="openMobileForm()" type="button"
+                            style="background: #e99c0e; color: #ffffff; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 13px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(233, 156, 14, 0.3); transition: all 0.2s ease;"
+                            onmouseover="this.style.background='#f59e0b'" onmouseout="this.style.background='#e99c0e'">
+                            <span>📱</span> 대상자 참여비 신청
+                        </button>
+
+                    </div>
                 </div>
+
                 <!-- 💡 실시간 재무 정산 프로세스 통계 대시보드 현황판 뷰 패널 -->
                 <div class="dashboard-stats-row"
                     style="display: flex; gap: 14px; margin-top: 20px; margin-bottom: 20px; width: 100%;">
