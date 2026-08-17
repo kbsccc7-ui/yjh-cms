@@ -803,7 +803,6 @@
             // 💡 [6자리/8자리 상호 호환 알고리즘] 뒤의 6자리(YYMMDD)만 정밀 추출하여 비교
             const cleanInputBirth6 = birth.length === 8 ? birth.substring(2) : birth;
 
-
             // 💥 [사양 반영] 이름, 생년월일, 연락처 3개 정밀 매칭
             matchedPatientData = adminApplicantDB.find(user => {
                 const dbBirth = (user.ssn || '').toString().replace(/[^0-9]/g, '');
@@ -820,6 +819,10 @@
             const actionBtn = document.getElementById('btnActionPop');
 
             if (matchedPatientData) {
+                // 🎯 [실시간 동적 연동 추가] DB 조회 매칭 성공 시, 실제 인증을 통과한 유저의 이름을 세션에 보관합니다!
+                sessionStorage.setItem('certifiedUserName', name);
+                console.log(`[인증 전산 락업] ${name} 피험자 이름이 세션에 등록되었습니다.`);
+
                 // 💥 [사양 반영] 모집공고 DB 연동하여 사례비 지급일정 문구 추출
                 let adminRecruitmentDB = JSON.parse(localStorage.getItem('dataStoreRecruitment')) || [];
                 const matchedRec = adminRecruitmentDB.find(rec => rec.title === matchedPatientData.title && String(rec.th) === String(matchedPatientData.th));
