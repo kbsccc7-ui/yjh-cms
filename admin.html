@@ -1542,7 +1542,7 @@
                 const agreementStatus = row.isAgreed || "미동의";
                 let agreementStyle = agreementStatus === "동의" ? "color: var(--success-color);" : "color: var(--danger-color);";
 
-                const displayAccount = row.accountInfo && row.accountInfo.trim() !== '' ? row.accountInfo : '-';
+                const displayAccount = row.accountInfo && row.accountInfo.trim() !== '' ? row.accountInfo : '계좌 미등록';
 
                 // 신분증, 통장사본 실제 첨부 데이터(Base64) 유무 정밀 판정 및 뱃지 변수 매핑
                 const isIdCardUploaded = row.idCardUrl && row.idCardUrl.startsWith('data:image');
