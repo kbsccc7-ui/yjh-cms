@@ -2724,67 +2724,96 @@
         }
 
         // ========================================================
-        // 🎯 [추가] admin.html 스크립트 최하단: 대상자 대장 초기 인가 및 연동 명령셋
+        // 🎯 [최종 통합 싱크] 모집공고와 대상자 데이터베이스 명칭 100% 일치화 엔진
         // ========================================================
         (function () {
-            // 페이지 로드 시 대상자 마스터 데이터(홍길동/강남구/진재영) 정밀 동기화 주입
-            let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
+            // 1. 📊 모집공고 데이터베이스 3종 마스터 리셋 및 강제 셋팅
+            let adminRecruitmentDB = [
+                {
+                    title: "애드파마 로잘탄+로수+에제",
+                    th: "2기(1차)",
+                    count: "60",
+                    period: "72",
+                    notice: "공복 유지 필수 및 소집 10분 전 대기",
+                    examDate: "2026-09-01",
+                    payDate: "2024-09-10" // join_login 연동 고정값
+                },
+                {
+                    title: "신일제약-사쿠+발사",
+                    th: "4기(1차)",
+                    count: "46",
+                    period: "96",
+                    notice: "지정식 이외 취식 금지 및 격리 규정 준수",
+                    examDate: "2026-09-15",
+                    payDate: "2026-09-30"
+                },
+                {
+                    title: "경동제약 식후 임상시험",
+                    th: "4기(2차)",
+                    count: "46",
+                    period: "96",
+                    notice: "지정식 이외 취식 금지 및 격리 규정 준수",
+                    examDate: "2026-10-15",
+                    payDate: "2026-10-30"
+                }
+            ];
+            localStorage.setItem('dataStoreRecruitment', JSON.stringify(adminRecruitmentDB));
+            console.log("[통합 동기화] 모집공고 마스터 테이블 3종 리셋 및 락인 완료.");
 
-            if (adminApplicantDB.length === 0) {
-                adminApplicantDB = [
-                    {
-                        title: "애드파마 로잘탄+로수+에제",
-                        th: "2기(1차)",
-                        count: "60",
-                        period: "72",
-                        name: "홍길동",
-                        ssn: "950505",
-                        phone: "01012345678",
-                        payStatus: "대기",
-                        isAgreed: "동의",
-                        idCardImg: "무",
-                        bankBookImg: "무",
-                        stage: "2 기 [1 차 차수분] 분할 사례비"
-                    },
-                    {
-                        title: "신일제약-사쿠+발사",
-                        th: "4기(1차)",
-                        count: "46",
-                        period: "96",
-                        name: "강남구",
-                        ssn: "960606",
-                        phone: "01098765432",
-                        payStatus: "대기",
-                        isAgreed: "동의",
-                        idCardImg: "무",
-                        bankBookImg: "무",
-                        stage: "4 기 [1 차 차수분] 분할 사례비"
-                    },
-                    {
-                        title: "신일제약-사쿠+발사",
-                        th: "4기(1차)",
-                        count: "46",
-                        period: "96",
-                        name: "진재영",
-                        ssn: "970707",
-                        phone: "01055554444",
-                        payStatus: "대기",
-                        isAgreed: "동의",
-                        idCardImg: "무",
-                        bankBookImg: "무",
-                        stage: "4 기 [1 차 차수분] 분할 사례비"
-                    }
-                ];
-                localStorage.setItem('dataStoreApplicant', JSON.stringify(adminApplicantDB));
-                console.log("[데이터 빌드] 새 피험자 마스터 데이터 3명 인가 완료.");
-            }
+            // 2. 📱 대상자 관리 데이터베이스 3인방 명단 완벽 매칭 주입
+            let adminApplicantDB = [
+                {
+                    title: "애드파마 로잘탄+로수+에제",
+                    th: "2기(1차)",
+                    count: "60",
+                    period: "72",
+                    name: "홍길동",
+                    ssn: "950505",
+                    phone: "01012345678",
+                    payStatus: "대기",
+                    isAgreed: "동의",
+                    idCardImg: "무",
+                    bankBookImg: "무",
+                    stage: "2 기 [1 차 차수분] 분할 사례비"
+                },
+                {
+                    title: "신일제약-사쿠+발사",
+                    th: "4기(1차)",
+                    count: "46",
+                    period: "96",
+                    name: "강남구",
+                    ssn: "980101",
+                    phone: "01090956763",
+                    payStatus: "대기",
+                    isAgreed: "동의",
+                    idCardImg: "무",
+                    bankBookImg: "무",
+                    stage: "4 기 [1 차 차수분] 분할 사례비"
+                },
+                {
+                    title: "경동제약 식후 임상시험",
+                    th: "4기(2차)",
+                    count: "46",
+                    period: "96",
+                    name: "진재영",
+                    ssn: "050607",
+                    phone: "01023469876",
+                    payStatus: "대기",
+                    isAgreed: "동의",
+                    idCardImg: "무",
+                    bankBookImg: "무",
+                    stage: "4 기 [1 차 차수분] 분할 사례비"
+                }
+            ];
+            localStorage.setItem('dataStoreApplicant', JSON.stringify(adminApplicantDB));
+            console.log("[통합 동기화] 대상자 관리 명단 3종 명칭 싱크 결합 완료.");
 
-            // 브라우저 윈도우가 준비 완료되면 두 테이블 뷰를 새로고침 없이 즉시 화면 호출
+            // 3. 브라우저 로딩이 끝나면 양쪽 뷰 포트를 일제히 강제 출력 리프레시
             window.addEventListener('load', function () {
                 if (typeof refreshRecruitmentView === "function") refreshRecruitmentView();
                 if (typeof refreshApplicantView === "function") refreshApplicantView();
             });
-        })();        
+        })();  
     </script>
 
     <!-- 비밀번호 변경 처리용 통합 오버레이 팝업 모달창 창고 -->
