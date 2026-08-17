@@ -1145,17 +1145,18 @@
                     <table>
                         <thead>
                             <tr>
-                                <th style="width: 15%;">시험명</th>
-                                <th style="width: 8%;">기수</th> <!-- 기수 가독성 위해 너비 약간 확장 -->
-                                <th style="width: 8%;">인원수</th>
-                                <th style="width: 8%;">기간</th>
-                                <th style="width: 10%;">이름</th>
+                                <th style="width: 14%;">시험명</th>
+                                <th style="width: 8%;">기수</th>
+                                <th style="width: 6%;">인원수</th>
+                                <th style="width: 6%;">기간</th>
+                                <th style="width: 9%;">이름</th>
                                 <th style="width: 10%;">생년월일</th>
                                 <th style="width: 11%;">전화번호</th>
-                                <th style="width: 8%;">상태</th> <!-- 참여비 -> 상태로 명칭 정돈 -->
-                                <th style="width: 10%;">동의여부</th>
-                                <th style="width: 12%; text-align: center;">첨부서류</th>
-                                <th style="width: 12%; text-align: center;">작업</th>
+                                <th style="width: 7%;">상태</th>
+                                <th style="width: 9%; text-align: center;">당직동의</th>
+                                <th style="width: 9%; text-align: center;">소집동의</th>
+                                <th style="width: 11%; text-align: center;">첨부서류</th>
+                                <th style="width: 10%; text-align: center;">작업</th>
                             </tr>
                         </thead>
                         <tbody id="dom-applicant-table">
@@ -1288,7 +1289,8 @@
                         category: "내분비내과 / 2 기 모집",
                         stage: "🎁 2 기 1 차 일정 완료 (분할 허용)",
                         result: "처리중",
-                        isAgreed: "동의",
+                        isDutyAgreed: "동의", // 💡 기존 isAgreed 분리 및 초기값 설정
+                        isCallAgreed: "동의", // 💡 기존 isAgreed 분리 및 초기값 설정
                         idCard: true,   // 🌟 홍길동 신분증 제출 완료
                         bankbook: true  // 🌟 홍길동 통장사본 제출 완료
                     },
@@ -1304,7 +1306,8 @@
                         category: "비뇨의학과 / 4 기 모집",
                         stage: "🎁 과제 심사 완료 (종합 정산 가능)",
                         result: "접수",
-                        isAgreed: "동의",
+                        isDutyAgreed: "동의", // 💡 기존 isAgreed 분리 및 초기값 설정
+                        isCallAgreed: "동의", // 💡 기존 isAgreed 분리 및 초기값 설정
                         idCard: true,   // 🌟 홍길동 신분증 제출 완료
                         bankbook: true  // 🌟 홍길동 통장사본 제출 완료
                     },
@@ -1320,7 +1323,8 @@
                         category: "비뇨의학과 / 4 기 모집",
                         stage: "🎁 과제 심사 완료 (종합 정산 가능)",
                         result: "접수",
-                        isAgreed: "동의",
+                        isDutyAgreed: "동의", // 💡 기존 isAgreed 분리 및 초기값 설정
+                        isCallAgreed: "동의", // 💡 기존 isAgreed 분리 및 초기값 설정
                         idCard: true,   // 🌟 홍길동 신분증 제출 완료
                         bankbook: true  // 🌟 홍길동 통장사본 제출 완료
                     }
@@ -1783,7 +1787,12 @@
         // [5-A 파트] 대상자 마스터 대장 동적 테이블 렌더러 및 단일 통제 엔진
         // =========================================================================
         // ========================================================
-        // 🎯 [완전 종결] 대상자 마스터 테이블 기수 문자열 싱크 및 배지 드로잉 엔진
+        // 🎯 [인라인 튜닝] 현재 인라인 수정 모드가 활성화된 행의 index 기록 변수
+        // ========================================================
+        var currentAppEditingIndex = null;
+
+        // ========================================================
+        // 🎯 [완전 종결] 대상자 마스터 테이블 기수 문자열 싱크 및 배지 드로잉 엔진 (당직/소집 분리형)
         // ========================================================
         function refreshApplicantView() {
             const tbody = document.getElementById('dom-applicant-table');
@@ -1806,7 +1815,7 @@
                 const rawName = row.name || '';
                 const cleanName = rawName.replace(/[^\w\sㄱ-ㅎㅏ-ㅣ가-힣]/g, '').trim();
 
-                // 🎯 [교정] adm_mem.html 전송 패킷 키 규격 일치화 (idCardImg, bankBookImg)
+                // [교정] adm_mem.html 전송 패킷 키 규격 일치화 (idCardImg, bankBookImg)
                 let documentLinksHTML = "";
                 const hasIdCard = row.idCardImg === "유" || (row.idCardImg && row.idCardImg.length > 5);
                 const hasBankBook = row.bankBookImg === "유" || (row.bankBookImg && row.bankBookImg.length > 5);
@@ -1824,32 +1833,150 @@
                     documentLinksHTML = `<span style="color: var(--text-muted); font-size: 12px; display: block; text-align: center;">미제출</span>`;
                 }
 
-                // 🎯 [교정 핵심]: th 데이터 뒤에 인위적으로 잘라내는 함수나 필터 없이 ${row.th} 그대로를 출력하여 
-                // 배지 내부에 "2기(1차)", "4기(1차)" 텍스트가 잘림 없이 100% 완벽하게 표시되도록 인가합니다.
-                tr.innerHTML = `
-            <td>${row.title || '-'}</td>
-            <td>
-                <span class="lvl-badge lvl-2" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3); font-weight: 700; display: inline-block; white-space: nowrap;">
-                    ${row.th || '1기(1차)'}
-                </span>
-            </td>
-            <td><span style="color: var(--secondary-color); font-weight: 700;">${groupCounter[groupKey]}</span>/${row.count || '0'}</td>
-            <td>${row.period || '0'}h</td>
-            <td class="text-bold" style="color: #ffffff;">${cleanName}</td>
-            <td>${row.ssn || '-'}</td>
-            <td>${row.phone || '-'}</td>
-            <td><span class="lvl-badge lvl-1">${row.payStatus || '대기'}</span></td>
-            <td style="${row.isAgreed === '동의' ? 'color: var(--success-color)' : 'color: var(--danger-color)'}; font-weight: 700;">${row.isAgreed || '미동의'}</td>
-            <td style="vertical-align: middle;">${documentLinksHTML}</td>
-            <td style="text-align: center;">
-                <button type="button" class="btn-inline edit" onclick="editApplicant(${index})" style="background: #334155; border:none; padding:4px 8px; border-radius:4px; color:#fff; font-weight:700; cursor:pointer;">수정</button>
-                <button type="button" class="btn-inline delete" onclick="deleteApplicant(${index})" style="background: rgba(239, 68, 68, 0.15); border: 1px solid #f87171; color: #f87171; padding: 4px 8px; border-radius: 4px; font-weight:700; cursor:pointer;">삭제</button>
-            </td>
-        `;
+                // 초기값 강제 가드: 당직동의, 소집동의 값이 없을 경우 기본값 '동의' 주입
+                if (row.isDutyAgreed === undefined) row.isDutyAgreed = "동의";
+                if (row.isCallAgreed === undefined) row.isCallAgreed = "동의";
+
+                // [A 분기] 현재 인덱스가 인라인 편집 활성화 상태인 경우
+                if (currentAppEditingIndex === index) {
+                    tr.className = "editing-row"; // 원본 스타일시트 하이라이트 주입
+
+                    tr.innerHTML = `
+                <td><input type="text" class="inline-input" id="edit-row-title-${index}" value="${row.title || ''}"></td>
+                <td><input type="text" class="inline-input" id="edit-row-th-${index}" value="${row.th || ''}" style="width:75px;"></td>
+                <td><input type="text" class="inline-input" id="edit-row-count-${index}" value="${row.count || ''}" style="width:50px;"></td>
+                <td><input type="text" class="inline-input" id="edit-row-period-${index}" value="${row.period || ''}" style="width:50px;"></td>
+                <td><input type="text" class="inline-input" id="edit-row-name-${index}" value="${row.name || ''}"></td>
+                <td><input type="text" class="inline-input" id="edit-row-ssn-${index}" value="${row.ssn || ''}"></td>
+                <td><input type="text" class="inline-input" id="edit-row-phone-${index}" value="${row.phone || ''}"></td>
+                <td><input type="text" class="inline-input" id="edit-row-payStatus-${index}" value="${row.payStatus || '대기'}"></td>
+                <!-- 분리된 당직동의 인라인 편집 셀렉트 박스 -->
+                <td style="text-align: center;">
+                    <select class="inline-input" id="edit-row-duty-${index}" style="padding: 2px;">
+                        <option value="동의" ${row.isDutyAgreed === '동의' ? 'selected' : ''}>동의</option>
+                        <option value="미동의" ${row.isDutyAgreed === '미동의' ? 'selected' : ''}>미동의</option>
+                    </select>
+                </td>
+                <!-- 분리된 소집동의 인라인 편집 셀렉트 박스 -->
+                <td style="text-align: center;">
+                    <select class="inline-input" id="edit-row-call-${index}" style="padding: 2px;">
+                        <option value="동의" ${row.isCallAgreed === '동의' ? 'selected' : ''}>동의</option>
+                        <option value="미동의" ${row.isCallAgreed === '미동의' ? 'selected' : ''}>미동의</option>
+                    </select>
+                </td>
+                <td style="vertical-align: middle;">${documentLinksHTML}</td>
+                <td style="text-align: center; white-space: nowrap;">
+                    <button type="button" class="btn-inline save" onclick="saveApplicantInline(${index})" style="background: var(--success-color); border:none; padding:4px 8px; border-radius:4px; color:#070a12; font-weight:700; cursor:pointer;">저장</button>
+                    <button type="button" class="btn-inline list" onclick="cancelApplicantInline()" style="background: #475569; border:none; padding:4px 8px; border-radius:4px; color:#fff; font-weight:700; cursor:pointer;">취소</button>
+                </td>
+            `;
+                }
+                // [B 분기] 일반 데이터 출력 상태인 경우
+                else {
+                    tr.innerHTML = `
+                <td>${row.title || '-'}</td>
+                <td>
+                    <span class="lvl-badge lvl-2" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3); font-weight: 700; display: inline-block; white-space: nowrap;">
+                        ${row.th || '1기(1차)'}
+                    </span>
+                </td>
+                <td><span style="color: var(--secondary-color); font-weight: 700;">${groupCounter[groupKey]}</span>/${row.count || '0'}</td>
+                <td>${row.period || '0'}h</td>
+                <td class="text-bold" style="color: #ffffff;">${cleanName}</td>
+                <td>${row.ssn || '-'}</td>
+                <td>${row.phone || '-'}</td>
+                <td><span class="lvl-badge lvl-1">${row.payStatus || '대기'}</span></td>
+                <!-- 당직동의 및 소집동의 독립 배지 조건 스타일 렌더링 -->
+                <td style="text-align: center; ${row.isDutyAgreed === '동의' ? 'color: var(--success-color)' : 'color: var(--danger-color)'}; font-weight: 700;">${row.isDutyAgreed}</td>
+                <td style="text-align: center; ${row.isCallAgreed === '동의' ? 'color: var(--success-color)' : 'color: var(--danger-color)'}; font-weight: 700;">${row.isCallAgreed}</td>
+                <td style="vertical-align: middle;">${documentLinksHTML}</td>
+                <td style="text-align: center; white-space: nowrap;">
+                    <button type="button" class="btn-inline edit" onclick="editApplicant(${index})" style="background: #334155; border:none; padding:4px 8px; border-radius:4px; color:#fff; font-weight:700; cursor:pointer;">수정</button>
+                    <button type="button" class="btn-inline delete" onclick="deleteApplicant(${index})" style="background: rgba(239, 68, 68, 0.15); border: 1px solid #f87171; color: #f87171; padding: 4px 8px; border-radius: 4px; font-weight:700; cursor:pointer;">삭제</button>
+                </td>
+            `;
+                }
+
                 tbody.appendChild(tr);
             });
         }
 
+        /**
+         * 🎯 원본 호출 인터페이스 매칭: 수정 버튼 클릭 처리
+         */
+        function editApplicant(index) {
+            currentAppEditingIndex = index;
+            refreshApplicantView();
+        }
+
+        /**
+         * 🎯 인라인 수정 취소 처리
+         */
+        function cancelApplicantInline() {
+            currentAppEditingIndex = null;
+            refreshApplicantView();
+        }
+
+        /**
+         * 🎯 인라인 편집본 최종 유효성 검사 및 LocalStorage 원본 데이터베이스 커밋 연동 함수
+         */
+        function saveApplicantInline(index) {
+            let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
+            if (!adminApplicantDB[index]) return;
+
+            // 인라인 대칭 인풋 노드로부터 데이터 일체 스캔
+            const updatedTitle = document.getElementById(`edit-row-title-${index}`).value.trim();
+            const updatedTh = document.getElementById(`edit-row-th-${index}`).value.trim();
+            const updatedCount = document.getElementById(`edit-row-count-${index}`).value.trim();
+            const updatedPeriod = document.getElementById(`edit-row-period-${index}`).value.trim();
+            const updatedName = document.getElementById(`edit-row-name-${index}`).value.trim();
+            const updatedSsn = document.getElementById(`edit-row-ssn-${index}`).value.trim();
+            const updatedPhone = document.getElementById(`edit-row-phone-${index}`).value.trim();
+            const updatedPayStatus = document.getElementById(`edit-row-payStatus-${index}`).value.trim();
+            const updatedDuty = document.getElementById(`edit-row-duty-${index}`).value;
+            const updatedCall = document.getElementById(`edit-row-call-${index}`).value;
+
+            if (!updatedName) {
+                alert("대상자 성명은 필수 입력사항입니다.");
+                return;
+            }
+
+            // 대상자 마스터 DB 레코드 실시간 동기화 업데이트
+            adminApplicantDB[index].title = updatedTitle;
+            adminApplicantDB[index].th = updatedTh;
+            adminApplicantDB[index].count = updatedCount;
+            adminApplicantDB[index].period = updatedPeriod;
+            adminApplicantDB[index].name = updatedName;
+            adminApplicantDB[index].ssn = updatedSsn;
+            adminApplicantDB[index].phone = updatedPhone;
+            adminApplicantDB[index].payStatus = updatedPayStatus;
+            adminApplicantDB[index].isDutyAgreed = updatedDuty;
+            adminApplicantDB[index].isCallAgreed = updatedCall;
+
+            // LocalStorage 영구 영속화 업데이트 및 상태 해제 복원
+            localStorage.setItem('dataStoreApplicant', JSON.stringify(adminApplicantDB));
+            currentAppEditingIndex = null;
+            refreshApplicantView();
+            alert("대상자 정보가 마스터 파일에 완전 저장되었습니다.");
+        }
+
+        /**
+         * 🎯 원본 호출 인터페이스 매칭: 삭제 버튼 클릭 처리
+         */
+        function deleteApplicant(index) {
+            if (confirm("정말로 이 대상자의 전체 정산 상태와 임상 명단 데이터를 영구 삭제하시겠습니까?")) {
+                let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
+
+                // 해당 배열 요소 잘라내기 탈락
+                adminApplicantDB.splice(index, 1);
+
+                localStorage.setItem('dataStoreApplicant', JSON.stringify(adminApplicantDB));
+
+                if (currentAppEditingIndex === index) currentAppEditingIndex = null;
+
+                refreshApplicantView();
+            }
+        }
         /** 대상자 수동 등록 및 수정을 원스톱 처리하는 마스터 함수입니다. */
         function insertApplicantRecord() {
             const elTitle = document.getElementById('form-app-title');
