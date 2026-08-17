@@ -1570,12 +1570,16 @@
             if (!tbody) return;
             tbody.innerHTML = ''; // 테이블 내부 초기화
 
-            // 1. LocalStorage에서 안전하게 공고 데이터 로드
-            let adminRecruitmentDB = JSON.parse(localStorage.getItem('dataStoreRecruitment')) || [];
+            // 🎯 [교정 1] 글로벌 전산 배열 명칭인 dataStoreRecruitment를 다이렉트로 연동합니다.
+            // 만약 완전히 비어있다면 로컬스토리지를 읽어오거나 초기 프리셋을 강제 구성합니다.
+            if (!window.dataStoreRecruitment || dataStoreRecruitment.length === 0) {
+                window.dataStoreRecruitment = JSON.parse(localStorage.getItem('dataStoreRecruitment')) || [];
+            }
 
-            // 2. 만약 데이터가 완전히 비어있다면 요청하신 원본 규격 디폴트 3종 강제 주입
-            if (adminRecruitmentDB.length === 0) {
-                adminRecruitmentDB = [
+
+            // 🎯 [교정 2] 기본 프리셋 3종 세트 객체 내부에 crc 데이터를 완벽하게 내장시킵니다.
+            if (dataStoreRecruitment.length === 0) {
+                dataStoreRecruitment = [
                     {
                         title: "애드파마 로잘탄+로수+에제",
                         th: "2기(1차)",
@@ -1583,8 +1587,8 @@
                         period: "72",
                         crc: "석정은",
                         notice: "공복 유지 필수 및 소집 10분 전 대기",
-                        examDate: "2026-09-01",
-                        payDate: "2026-09-10"
+                        examSchedule: "2026-09-01",
+                        paySchedule: "2024-09-10"
                     },
                     {
                         title: "신일제약-사쿠+발사",
@@ -1593,8 +1597,8 @@
                         period: "96",
                         crc: "최미현",
                         notice: "지정식 이외 취식 금지 및 격리 규정 준수",
-                        examDate: "2026-09-15",
-                        payDate: "2026-09-30"
+                        examSchedule: "2026-09-15",
+                        paySchedule: "2026-09-30"
                     },
                     {
                         title: "경동제약 식후 임상시험",
@@ -1603,21 +1607,19 @@
                         period: "96",
                         crc: "강은애",
                         notice: "지정식 이외 취식 금지 및 격리 규정 준수",
-                        examDate: "2026-10-15",
-                        payDate: "2026-10-30"
+                        examSchedule: "2026-10-15",
+                        paySchedule: "2026-10-30"
                     }
                 ];
-                localStorage.setItem('dataStoreRecruitment', JSON.stringify(adminRecruitmentDB));
+                localStorage.setItem('dataStoreRecruitment', JSON.stringify(dataStoreRecruitment));
             }
 
             // 3. 데이터를 기반으로 테이블 행 생성 및 강제 집행
-            adminRecruitmentDB.forEach((row, index) => {
+            dataStoreRecruitment.forEach((row, index) => {
                 const tr = document.createElement('tr');
                 tr.style.display = "table-row"; // CSS 디스플레이 왜곡 방어 가드
 
-                // 🎯 [교정 핵심]: CSS의 td:last-child { display: flex } 가 테이블 세포(Cell) 구조를 파괴하지 못하도록,
-                // 마지막 작업칸 내부에 중첩 디브 컨테이너(div style="display:flex")를 레이어로 한 번 더 묶어 처리합니다.
-                // 이로써 표의 레이아웃 너비가 0px로 깨져버리는 CSS 버그가 완전히 소멸합니다.
+                // 🎯 제공해주신 무결점 고대비 플렉스 우회 마크업 레이아웃을 그대로 유지합니다.
                 tr.innerHTML = `
             <td style="font-weight: 700; color: #ffffff; white-space: normal !important; word-break: break-all !important; line-height: 1.4; text-align: left; vertical-align: middle;">
                 ${row.title}
@@ -1629,7 +1631,10 @@
             </td>
             <td style="vertical-align: middle; color: #eeeeee; text-align: left;">${row.count}명</td>
             <td style="vertical-align: middle; color: #eeeeee; text-align: left;">${row.period}시간</td>
-            <td style="vertical-align: middle; color: #38bdf8; font-weight: 600;">${row.crc || '-'}</td>            
+            
+            <!-- ⚡ 글로벌 배열 싱크 결합으로 row.crc 값이 대시기호 없이 선명하게 실시간 출력됩니다. -->
+            <td style="vertical-align: middle; color: #38bdf8; font-weight: 600; text-align: left;">${row.crc || '-'}</td>            
+            
             <td class="exam-notice-cell" style="max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #f87171; vertical-align: middle; text-align: left;" title="${row.notice || '-'}">
                 ${row.notice || '없음'}
             </td>
@@ -1637,10 +1642,9 @@
                 <button type="button" class="btn-inline list" style="background: #475569; border: none; color: #ffffff; padding: 4px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 12px;">보기</button>
             </td>
             <td style="vertical-align: middle; text-align: left;">
-                <span style="color: #fbbf24; font-weight: 700;">${row.payDate || '추후공지'}</span>
+                <span style="color: #fbbf24; font-weight: 700;">${row.paySchedule || row.payDate || '추후공지'}</span>
             </td>
             <td style="vertical-align: middle;">
-                <!-- 🎯 CSS display: flex 간섭을 물리적으로 완전히 방어하는 안전 패딩 브릿지 구역 -->
                 <div class="action-btn-wrapper" style="display: flex !important; justify-content: center !important; gap: 6px !important; width: 100% !important; white-space: nowrap !important;">
                     <button type="button" class="btn-inline edit" onclick="editRecruitment(${index})" style="background: #334155; border: none; color: #ffffff; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 13px;">수정</button>
                     <button type="button" class="btn-inline delete" onclick="deleteRecruitment(${index})" style="background: rgba(239, 68, 68, 0.15); border: 1px solid #f87171; color: #f87171; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 13px;">삭제</button>
