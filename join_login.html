@@ -864,8 +864,7 @@
                 if (lblTitle) lblTitle.innerText = matchedPatientData.title || "참여 과제명 없음";
 
 
-                // ③ 🎯 [핵심 교정 - 이름 불일치 버그 타격] 
-                // 하드코딩된 더미 명단("홍길동" 등)을 완벽히 제거합니다.
+                // ③ [이름 동기화 마운트] 
                 // 2단계 인증서 매칭을 정상 통과한 데이터의 실제 실명(matchedPatientData.name)을 강제 바인딩합니다.
                 const lblSetTarget = document.getElementById('lblSetTarget');
                 if (lblSetTarget) {
@@ -894,7 +893,16 @@
                     lblPaySchedule.innerHTML = `<strong style="color: #fbbf24;">${targetPayScheduleText}</strong>`;
                 }
 
-                console.log(`[시뮬레이터 완료] 인증 성공자 '${matchedPatientData.name}' 명단 및 '${matchedPatientData.title}' 과제 정보가 4단계에 일체화되어 마운트되었습니다.`);
+                // ========================================================
+                // 🎯 [신규 추가 - 전면 교정 핵심 코어 부속]
+                // ========================================================
+                // ⑥ 4단계 진입 초기에는 피험자의 마음대로 신청하지 못하도록 모든 인풋/파일업로드/버튼 강제 비활성화
+                setMobileFormActive(false);
+
+                // ⑦ 관리자 창(adm_mem)에서 [신청가능] 신호를 쏠 때까지 1초 간격으로 무한 크로스 체킹 감시엔진 스타트
+                startAdminApprovalMonitor();
+
+                console.log(`[시뮬레이터 완료] 인증 성공자 '${matchedPatientData.name}' 명단 및 '${matchedPatientData.title}' 과제 정보가 4단계에 일체화되어 마운트되었습니다. (초기 비활성화 락 구동)`);
 
             } else {
                 // 매칭 데이터가 없다면 예외 안전장치로 4단계를 폐쇄하고 1단계로 리셋
@@ -902,6 +910,55 @@
                 document.getElementById('msgWaiting3').style.display = "block";
                 alert("인증 정보가 올바르지 않습니다. 다시 시도해주세요.");
             }
+        }
+
+        /**
+         * 🎯 [함수 추가] 4단계 스마트 폼 전체의 락(Lock)을 걸거나 해제하는 헬퍼 컨트롤러
+         */
+        function setMobileFormActive(isActive) {
+            const isDisable = !isActive;
+
+            // 은행명 선택창, 계좌 인풋박스, 신분증/통장 파일 첨부 UI 일괄 통제
+            if (document.getElementById('selBankName')) document.getElementById('selBankName').disabled = isDisable;
+            if (document.getElementById('txtBankAccount')) document.getElementById('txtBankAccount').disabled = isDisable;
+            if (document.getElementById('fileIdCard')) document.getElementById('fileIdCard').disabled = isDisable;
+            if (document.getElementById('fileBankBook')) document.getElementById('fileBankBook').disabled = isDisable;
+
+            // 최종 지급 신청 버튼 디자인 및 활성화 분기 처리
+            const submitBtn = document.getElementById('ui_submit_btn') || document.getElementById('btnSubmitForm');
+            if (submitBtn) {
+                submitBtn.disabled = isDisable;
+                if (isActive) {
+                    submitBtn.style.background = "#0284c7"; // 활성화 시 신뢰감을 주는 푸른색
+                    submitBtn.style.cursor = "pointer";
+                    submitBtn.innerText = "지급 신청하기 (관리자 승인 완료)";
+                } else {
+                    submitBtn.style.background = "#9ca3af"; // 비활성화 시 먹통 회색
+                    submitBtn.style.cursor = "not-allowed";
+                    submitBtn.innerText = "관리자 승인 대기 중 (신청 불가)";
+                }
+            }
+        }
+
+        /**
+         * 🎯 [함수 추가] 부모 창인 admin.html의 글로벌 메모리를 감시하는 백그라운드 폴링 스크립트
+         */
+        function startAdminApprovalMonitor() {
+            const monitorInterval = setInterval(function () {
+                // 나를 열어준 부모 전산 대장창이 온전히 살아있고, 매칭 유저가 각인되어 있다면
+                if (window.opener && !window.opener.closed && window.opener.currentCertifiedUser) {
+
+                    // adm_mem에서 관리자가 [신청가능]을 때리면 부모창 변수의 payStatus가 "신청가능"으로 강제 전환됨
+                    const currentStatus = window.opener.currentCertifiedUser.payStatus;
+
+                    if (currentStatus === "신청가능") {
+                        // 실시간으로 자식 모바일 폼의 모든 장벽을 일제히 전격 해제!
+                        setMobileFormActive(true);
+                        clearInterval(monitorInterval); // 임무 완수했으므로 실시간 타이머 엔진 종료
+                        console.log(`[실시간 동기화 인터페이스] adm_mem 승인 신호 포착! 4단계 정산 폼이 활성화되었습니다.`);
+                    }
+                }
+            }, 1000); // 1초 주기로 부모 컨텍스트를 동적 스캔
         }
 
         // ========================================================
