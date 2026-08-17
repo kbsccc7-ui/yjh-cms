@@ -1656,20 +1656,19 @@
         // =========================================================================
         // [5-A 파트] 대상자 마스터 대장 동적 테이블 렌더러 및 단일 통제 엔진
         // =========================================================================
-
-        /**
-         * 로컬스토리지 데이터를 기반으로 대상자(피험자) 테이블 화면을 실시간 갱신합니다.
-         */
+        // ========================================================
+        // 🎯 [완전 종결] 대상자 마스터 테이블 기수 문자열 싱크 및 배지 드로잉 엔진
+        // ========================================================
         function refreshApplicantView() {
             const tbody = document.getElementById('dom-applicant-table');
             if (!tbody) return;
-            tbody.innerHTML = '';
+            tbody.innerHTML = ''; // 테이블 잔재 청소
 
-            // 데이터 저장소 로드
-            let dataStoreApplicant = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
+            // LocalStorage에서 대상자(피험자) 데이터 로드
+            let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
             const groupCounter = {};
 
-            dataStoreApplicant.forEach((row, index) => {
+            adminApplicantDB.forEach((row, index) => {
                 // 기수 그룹별 순번 계산용 카운터
                 const groupKey = `${row.title}_${row.th}`;
                 if (!groupCounter[groupKey]) groupCounter[groupKey] = 0;
@@ -1677,54 +1676,53 @@
 
                 const tr = document.createElement('tr');
 
-                // 🎯 [교정] 이름 뒤 마침표, 하이픈 등 모든 특수문자 제거 정규식
+                // 이름 뒤 특수문자 제거 가드
                 const rawName = row.name || '';
                 const cleanName = rawName.replace(/[^\w\sㄱ-ㅎㅏ-ㅣ가-힣]/g, '').trim();
 
-                // 🎯 [교정] adm_mem.html 패킷 규격(idCardImg, bankBookImg)과 데이터 키 매칭 연동
-                // "유"라는 문자열이거나 이미지 데이터 파일이 담겨있을 때 활성화 버튼으로 렌더링
+                // 🎯 [교정] adm_mem.html 전송 패킷 키 규격 일치화 (idCardImg, bankBookImg)
                 let documentLinksHTML = "";
                 const hasIdCard = row.idCardImg === "유" || (row.idCardImg && row.idCardImg.length > 5);
                 const hasBankBook = row.bankBookImg === "유" || (row.bankBookImg && row.bankBookImg.length > 5);
 
                 if (hasIdCard || hasBankBook) {
-                    // 원본 CSS 시스템의 .btn-inline.list 스타일을 계승하여 정렬
                     documentLinksHTML = `<div style="display: flex; gap: 4px; justify-content: center; align-items: center;">`;
-
                     if (hasIdCard) {
-                        documentLinksHTML += `<button class="btn-inline list" onclick="openDocModal('${row.idCardImg}', '${cleanName} - 신분증')" style="padding: 3px 8px; font-size: 11px; background: #475569;"><i class="fa-solid fa-id-card"></i> 신분증</button>`;
+                        documentLinksHTML += `<button type="button" class="btn-inline list" onclick="openDocModal('${row.idCardImg}', '${cleanName} - 신분증')" style="padding: 3px 8px; font-size: 11px; background: #475569; border:none; color:#fff; cursor:pointer;"><i class="fa-solid fa-id-card"></i> 신분증</button>`;
                     }
                     if (hasBankBook) {
-                        documentLinksHTML += `<button class="btn-inline list" onclick="openDocModal('${row.bankBookImg}', '${cleanName} - 통장사본')" style="padding: 3px 8px; font-size: 11px; background: #475569;"><i class="fa-solid fa-wallet"></i> 통장</button>`;
+                        documentLinksHTML += `<button type="button" class="btn-inline list" onclick="openDocModal('${row.bankBookImg}', '${cleanName} - 통장사본')" style="padding: 3px 8px; font-size: 11px; background: #475569; border:none; color:#fff; cursor:pointer;"><i class="fa-solid fa-wallet"></i> 통장</button>`;
                     }
-
                     documentLinksHTML += `</div>`;
                 } else {
-                    // 서류가 아직 넘어오지 않은 초기 비활성 상태 표현
                     documentLinksHTML = `<span style="color: var(--text-muted); font-size: 12px; display: block; text-align: center;">미제출</span>`;
                 }
 
-                // 🎯 [교정] 요청에 따라 "접수" 상태에 대한 별도 처리 없이, 상태 배지는 표준 규격으로 유지
+                // 🎯 [교정 핵심]: th 데이터 뒤에 인위적으로 잘라내는 함수나 필터 없이 ${row.th} 그대로를 출력하여 
+                // 배지 내부에 "2기(1차)", "4기(1차)" 텍스트가 잘림 없이 100% 완벽하게 표시되도록 인가합니다.
                 tr.innerHTML = `
-            <td>${row.title}</td>
-            <td><span class="lvl-badge lvl-2">${row.th}</span></td>
+            <td>${row.title || '-'}</td>
+            <td>
+                <span class="lvl-badge lvl-2" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3); font-weight: 700; display: inline-block; white-space: nowrap;">
+                    ${row.th || '1기(1차)'}
+                </span>
+            </td>
             <td><span style="color: var(--secondary-color); font-weight: 700;">${groupCounter[groupKey]}</span>/${row.count || '0'}</td>
-            <td>${row.period}h</td>
-            <td class="text-bold">${cleanName}</td>
-            <td>${row.ssn}</td>
-            <td>${row.phone}</td>
+            <td>${row.period || '0'}h</td>
+            <td class="text-bold" style="color: #ffffff;">${cleanName}</td>
+            <td>${row.ssn || '-'}</td>
+            <td>${row.phone || '-'}</td>
             <td><span class="lvl-badge lvl-1">${row.payStatus || '대기'}</span></td>
             <td style="${row.isAgreed === '동의' ? 'color: var(--success-color)' : 'color: var(--danger-color)'}; font-weight: 700;">${row.isAgreed || '미동의'}</td>
             <td style="vertical-align: middle;">${documentLinksHTML}</td>
             <td style="text-align: center;">
-                <button class="btn-inline edit" onclick="editApplicant(${index})">수정</button>
-                <button class="btn-inline delete" onclick="deleteApplicant(${index})">삭제</button>
+                <button type="button" class="btn-inline edit" onclick="editApplicant(${index})" style="background: #334155; border:none; padding:4px 8px; border-radius:4px; color:#fff; font-weight:700; cursor:pointer;">수정</button>
+                <button type="button" class="btn-inline delete" onclick="deleteApplicant(${index})" style="background: rgba(239, 68, 68, 0.15); border: 1px solid #f87171; color: #f87171; padding: 4px 8px; border-radius: 4px; font-weight:700; cursor:pointer;">삭제</button>
             </td>
         `;
                 tbody.appendChild(tr);
             });
         }
-
 
         /** 대상자 수동 등록 및 수정을 원스톱 처리하는 마스터 함수입니다. */
         function insertApplicantRecord() {
