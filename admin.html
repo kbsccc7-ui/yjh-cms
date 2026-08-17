@@ -804,6 +804,47 @@
             cursor: pointer;
             /* 마우스 올렸을 때 손가락 모양 표시 */
         }
+
+        /* 증빙 서류 배지 공통 고대비 기본 서식 */
+        .doc-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            margin: 2px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        /* 초기 미제출 비활성 회색 배지 */
+        .doc-badge.status-none {
+            background: rgba(148, 163, 184, 0.1);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            color: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        /* 통장 배지 정식 인가 서식 */
+        .doc-badge.status-bank {
+            background: rgba(14, 165, 233, 0.15);
+            border: 1px solid #0ea5e9;
+            color: #38bdf8;
+        }
+
+        /* 신분증 배지 정식 인가 서식 */
+        .doc-badge.status-id {
+            background: rgba(74, 222, 128, 0.15);
+            border: 1px solid #4ade80;
+            color: #4ade80;
+        }
+
+        .doc-badge:hover:not(.status-none) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            filter: brightness(1.2);
+        }
     </style>
 
 <body>
@@ -2390,6 +2431,106 @@
             closeSelfPasswordModal();
         }
 
+        // 관리자 전용 대시대상자 미디어 해시 저장소 (업로드 파일 바이너리를 인메모리에 락업 보관)
+        window.adminDocumentMemoryStore = {};
+
+        // 💡 [실시간 연동 코어 인터페이스] adm_mem.pdf 모바일 신청서 단추 타격 시 소켓 릴레이 수신 라우터 함수
+        function receiveSubjectDocumentPayload(payload) {
+            if (!payload || !payload.patientName) return;
+
+            const pName = payload.patientName;
+            // 글로벌 메모리 해시에 파일 주소 스냅샷 임베딩 영구 적재
+            window.adminDocumentMemoryStore[pName] = {
+                idCard: payload.idCardImg,
+                bankBook: payload.bankBookImg
+            };
+
+            // 하단 대상자 목록 렌더링 구역 내 해당 대상자(예: 홍길동)의 '첨부서류' 데이터 셀 레이어를 가변 배지로 리렌더링 강제
+            // 실제 운영 시스템에서는 고유 ID(uid) 매칭 방식을 적극 권장합니다.
+            updateTableDocumentCellDynamic(pName);
+
+            // 대상자 통계 대시보드 현황판의 '청구서 접수 현황' 스코어 보드 수치 실시간 가중 가동
+            let receivedStat = document.getElementById('stat-received-count');
+            if (receivedStat) {
+                let currentCount = parseInt(receivedStat.innerText) || 0;
+                receivedStat.innerText = (currentCount + 1) + "건";
+            }
+        }
+
+        // 명단 그리드 내부 특정 대상자 행의 서류 구역을 '미제출' -> '신분증/통장 뱃지' 마크업으로 강제 강전산 스위칭
+        function updateTableDocumentCellDynamic(patientName) {
+            // 예시: 테이블 바디 내 전체 행 중에서 성명 열 또는 텍스트 매칭을 추적
+            // 아래 코드는 명단 테이블 구조에서 대상자 매칭 후 서류 셀을 조작하는 마스터 제어 알고리즘 예시입니다.
+            let rows = document.querySelectorAll("#dom-applicant-table-body tr, table tbody tr");
+            rows.forEach(row => {
+                if (row.innerHTML.includes(patientName)) {
+                    // 통상적으로 첨부서류가 출력되도록 규정된 td 컬럼 인덱스 타겟팅 (설계 구조에 맞춰 조정 가능)
+                    // 여기서는 '첨부서류' 레이어 구역을 찾아 교체 처리합니다.
+                    let docCell = row.querySelector(".target-doc-cell") || row.cells[6]; // 임의 지정
+                    if (docCell) {
+                        docCell.innerHTML = `
+                    <span class="doc-badge status-id" onclick="openAdminDocModal('${patientName}', 'idCard')"><i class="fa-solid fa-id-card"></i> 신분증</span>
+                    <span class="doc-badge status-bank" onclick="openAdminDocModal('${patientName}', 'bankBook')"><i class="fa-solid fa-wallet"></i> 통장</span>
+                `;
+                    }
+                    // 전체 대장 대지 상태값 레이블도 "접수" 상태로 전환 처리
+                    let statusCell = row.querySelector(".target-status-cell") || row.cells[7];
+                    if (statusCell) {
+                        statusCell.innerHTML = `<span class="lvl-badge lvl-2">접수</span>`;
+                    }
+                }
+            });
+        }
+
+        // 💡 [모달 오픈 기능] 배지 클릭 시 해당 피험자의 디코딩 미디어를 주입하여 팝업을 개방하는 마스터 핸들러
+        function openAdminDocModal(patientName, docType) {
+            const userDocs = window.adminDocumentMemoryStore[patientName];
+            if (!userDocs || !userDocs[docType] || userDocs[docType] === "placeholder") {
+                alert("제출된 증빙 문서 파일의 변수 스트림이 유효하지 않거나 손상되었습니다.");
+                return;
+            }
+
+            const modal = document.getElementById('adminDocViewerOverlay');
+            const modalImg = document.getElementById('adminDocModalImg');
+            const modalTitle = document.getElementById('adminDocModalTitle');
+            const downloadBtn = document.getElementById('adminDocDownloadBtn');
+
+            const docLabel = docType === 'idCard' ? '신분증' : '통장사본';
+            modalTitle.innerHTML = `💥 [국책정산 증빙] ${patientName} 피험자 님의 정밀 검수 - [${docLabel}]`;
+
+            // Base64 데이터 스레드를 이미지 소스 인젝션 처리
+            modalImg.src = userDocs[docType];
+            modal.style.display = 'flex'; // 전체 브라우저 중앙 레이아웃 고정 개방
+
+            // 로컬 다운로드 동작용 트리거 바인딩 설정 업데이트
+            downloadBtn.onclick = function () {
+                var dummyLink = document.createElement('a');
+                dummyLink.href = userDocs[docType];
+                dummyLink.download = `관리자검수_${patientName}_${docLabel}.png`;
+                document.body.appendChild(dummyLink);
+                dummyLink.click();
+                document.body.removeChild(dummyLink);
+            };
+        }
+
+        function closeAdminDocModal() {
+            document.getElementById('adminDocViewerOverlay').style.display = 'none';
+        }
+
+        // 격리 레이어 프린트 드라이버 원격 호출 인가 함수
+        function printAdminModalDoc() {
+            const imgElement = document.getElementById('adminDocModalImg');
+            if (!imgElement || !imgElement.src) return;
+
+            var printWindow = window.open('', '_blank', 'width=850,height=650');
+            var htmlContent = `
+        <html><head><title>임상관리원 정산증빙출력</title></head>
+        <body style="margin:0; display:flex; justify-content:center; align-items:center; min-height:100vh; background:#ffffff;">
+            <img src="${imgElement.src}" style="max-width:100%; max-height:100vh; object-fit:contain;" onload="window.print(); window.close();">
+        </body></html>`;
+            printWindow.document.write(htmlContent);
+            printWindow.document.close();
+        }        
     </script>
 
     <!-- 비밀번호 변경 처리용 통합 오버레이 팝업 모달창 창고 -->
@@ -2440,6 +2581,29 @@
             </div>
         </div>
     </div>
+
+    <!-- [신규 추가] 관리자 전용 피험자 업로드 서류 개별 스캔 스냅샷 검수 모달 프레임 -->
+    <div id="adminDocViewerOverlay" class="pw-modal-overlay" style="display: none;">
+        <div class="pw-modal-box" style="max-width: 500px; background: #0f172a; text-align: center;">
+            <h3 id="adminDocModalTitle" style="color: var(--secondary-color); font-size: 16px;">💥 국책 증빙 서류 오피셜 마스터 검수반
+            </h3>
+            <div
+                style="background: #070a12; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px;">
+                <img id="adminDocModalImg" src=""
+                    style="max-width: 100%; max-height: 300px; object-fit: contain; border-radius: 4px; border: 1px solid #334155;">
+            </div>
+            <div class="modal-btn-group" style="justify-content: center; gap: 8px;">
+                <button onclick="printAdminModalDoc()" class="action-btn"
+                    style="background: var(--secondary-color); height: 36px; padding: 0 16px; font-size: 13px;">💥
+                    증빙인쇄</button>
+                <button id="adminDocDownloadBtn" class="action-btn"
+                    style="background: #475569; height: 36px; padding: 0 16px; font-size: 13px;">💥 로컬저장</button>
+                <button onclick="closeAdminDocModal()" class="action-btn"
+                    style="background: rgba(239, 68, 68, 0.15); border: 1px solid var(--danger-color); color: var(--danger-color); height: 36px; padding: 0 16px; font-size: 13px;">닫기</button>
+            </div>
+        </div>
+    </div>
+
 </body>
 
 </html>
