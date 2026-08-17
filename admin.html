@@ -1530,22 +1530,22 @@
         function refreshRecruitmentView() {
             const tbody = document.getElementById('dom-recruitment-table');
             if (!tbody) return;
-            tbody.innerHTML = ''; // 기존 테이블 잔재 청소
+            tbody.innerHTML = ''; // 텅 비우기
 
             // 1. LocalStorage에서 모집공고 데이터 로드
             let adminRecruitmentDB = JSON.parse(localStorage.getItem('dataStoreRecruitment')) || [];
 
-            // 2. 만약 데이터가 완전히 비어있다면 백업 디폴트 3종 즉시 강제 주입
+            // 2. 🎯 [데이터 규격 일치화] 완전히 비어있을 경우 하드코딩 버전과 완벽히 같은 규격으로 주입
             if (adminRecruitmentDB.length === 0) {
                 adminRecruitmentDB = [
                     {
                         title: "애드피마 과제",
-                        th: "2기(1차)",
+                        th: "2기(1차)", // HTML에 적혀있던 문자열과 완벽 일치
                         count: "60",
                         period: "72",
                         notice: "공복 유지 필수 및 소집 10분 전 대기",
                         examDate: "2026-09-01",
-                        payDate: "2024-09-10"
+                        payDate: "2024-09-10" // join_login 연동 날짜
                     },
                     {
                         title: "경동제약 식후 임상시험",
@@ -1567,43 +1567,29 @@
                     }
                 ];
                 localStorage.setItem('dataStoreRecruitment', JSON.stringify(adminRecruitmentDB));
-                console.log("[시스템 데이터 엔진] 비어있는 대장에 디폴트 3종 데이터 강제 복구 마운트 완료.");
             }
 
-            // 3. 🎯 [버그 타격 코어] 외부 스크립트나 상위 스크립트에서 설정한 임의의 필터링 타겟 변수들을 무력화하고,
-            // 로컬스토리지에 들어있는 원본 배열 데이터(adminRecruitmentDB) 그대로 100% 무조건 화면에 드로잉합니다.
+            // 3. 순수 테이블 행 드로잉
             adminRecruitmentDB.forEach((row, index) => {
-
-                // 데이터 안전장치 가드 (필드 유실 방지)
-                const displayTitle = row.title || "미지정 과제";
-                const displayTh = row.th || "1기(1차)";
-                const displayCount = row.count || "0";
-                const displayPeriod = row.period || "0";
-                const displayNotice = row.notice || "없음";
-                const displayPayDate = row.payDate || "추후공지";
-
                 const tr = document.createElement('tr');
 
-                // 시스템 고대비 CSS 테마 및 링크/버튼 클래스 일치화 마크업 바인딩
                 tr.innerHTML = `
-            <td class="text-bold" style="color: #ffffff; font-weight: 700;">${displayTitle}</td>
-            <td><span class="lvl-badge lvl-2" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3); font-weight: 700;">${displayTh}</span></td>
-            <td>${displayCount}명</td>
-            <td>${displayPeriod}시간</td>
-            <td class="exam-notice-cell" style="max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #f87171;" title="${displayNotice}">
-                ${displayNotice}
+            <td class="text-bold" style="color: #ffffff;">${row.title}</td>
+            <td><span class="lvl-badge lvl-2" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3); font-weight:700;">${row.th}</span></td>
+            <td>${row.count}명</td>
+            <td>${row.period}시간</td>
+            <td class="exam-notice-cell" style="max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #f87171;" title="${row.notice || '-'}">
+                ${row.notice || '없음'}
             </td>
-            <td><button class="btn-inline list" style="background: #475569; font-size:12.5px; padding: 4px 10px; border-radius: 4px; color: #fff;">보기</button></td>
-            <td><span style="color: #fbbf24; font-weight: 700;">${displayPayDate}</span></td>
+            <td><button class="btn-inline list" style="background: #475569;">보기</button></td>
+            <td><span style="color: #fbbf24; font-weight: 700;">${row.payDate || '추후공지'}</span></td>
             <td style="text-align: center;">
-                <button class="btn-inline edit" onclick="editRecruitment(${index})" style="background: #334155; padding: 4px 8px; border-radius: 4px;">수정</button>
-                <button class="btn-inline delete" onclick="deleteRecruitment(${index})" style="background: rgba(239, 68, 68, 0.15); border: 1px solid #f87171; color: #f87171; padding: 4px 8px; border-radius: 4px;">삭제</button>
+                <button class="btn-inline edit" onclick="editRecruitment(${index})">수정</button>
+                <button class="btn-inline delete" onclick="deleteRecruitment(${index})">삭제</button>
             </td>
         `;
                 tbody.appendChild(tr);
             });
-
-            console.log(`[시뮬레이터 검증완료] 필터가 전격 해제되어 총 ${adminRecruitmentDB.length}개의 모집공고 전체 행이 마운트되었습니다.`);
         }
 
 
