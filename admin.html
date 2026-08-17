@@ -1543,46 +1543,74 @@
         // =========================================================================
         // [4파트] 모집공고 전용 렌더링 엔진 및 스케줄러 동적 트랜잭션 제어 모듈
         // =========================================================================
-
         function refreshRecruitmentView() {
-            const tbody = document.getElementById('dom-recruitment-table'); if (!tbody) return;
+            const tbody = document.getElementById('dom-recruitment-table');
+            if (!tbody) return;
             tbody.innerHTML = '';
-            const sortedData = dataStoreRecruitment.slice().reverse(); // 역순 복사본 생성 [index: 0.1.6]
-            sortedData.forEach(row => {
+
+            // 1. LocalStorage에서 모집공고 데이터 로드
+            let adminRecruitmentDB = JSON.parse(localStorage.getItem('dataStoreRecruitment')) || [];
+
+            // 2. 💥 만약 데이터가 완전히 비어있다면 백업 디폴트 3종을 즉시 강제 주입
+            if (adminRecruitmentDB.length === 0) {
+                adminRecruitmentDB = [
+                    {
+                        title: "애드피마 과제",
+                        th: "2기(1차)",
+                        count: "60",
+                        period: "72",
+                        notice: "공복 유지 필수 및 소집 10분 전 대기",
+                        examDate: "2026-09-01",
+                        payDate: "2024-09-10"
+                    },
+                    {
+                        title: "경동제약 식후 임상시험",
+                        th: "4기(1차)",
+                        count: "46",
+                        period: "96",
+                        notice: "지정식 이외 취식 금지 및 격리 규정 준수",
+                        examDate: "2026-09-15",
+                        payDate: "2026-09-30"
+                    },
+                    {
+                        title: "경동제약 식후 임상시험",
+                        th: "4기(2차)",
+                        count: "46",
+                        period: "96",
+                        notice: "지정식 이외 취식 금지 및 격리 규정 준수",
+                        examDate: "2026-10-15",
+                        payDate: "2026-10-30"
+                    }
+                ];
+                // 로컬 브라우저 저장소에 영구 락인
+                localStorage.setItem('dataStoreRecruitment', JSON.stringify(adminRecruitmentDB));
+                console.log("[시스템 데이터 엔진] 비어있는 대장에 디폴트 3종 데이터 강제 복구 마운트 완료.");
+            }
+
+            // 3. 데이터를 기반으로 테이블 행(tr) 동적 드로잉
+            adminRecruitmentDB.forEach((row, index) => {
                 const tr = document.createElement('tr');
 
-                // 테이블 행을 생성한 바로 아랫줄에 코드를 삽입합니다.
-                let cleanName = item.name.replace(/[\.\-]$/, "").trim();
-
-                const note = (row.note && row.note.trim() !== '') ? row.note : '-';
-                const schedule = (row.schedule && row.schedule.trim() !== '') ? row.schedule : '-';
-                const payDate = (row.payDate && row.payDate.trim() !== '') ? row.payDate : '-';
-                if (recEditingUid === row.uid) {
-                    tr.classList.add('editing-row');
-                    tr.innerHTML = `
-                <td><input type="text" id="inline-rec-title" class="inline-input" value="${row.title}"></td>
-                <td><input type="text" id="inline-rec-th" class="inline-input" value="${getOnlyNumbers(row.th)}"></td>
-                <td><input type="text" id="inline-rec-count" class="inline-input" value="${getOnlyNumbers(row.count)}"></td>
-                <td><input type="text" id="inline-rec-period" class="inline-input" value="${getOnlyNumbers(row.period)}"></td>
-                <td><input type="text" id="inline-rec-note" class="inline-input" value="${note === '-' ? '' : note}" placeholder="주의사항"></td>
-                <td><input type="text" id="inline-rec-schedule" class="inline-input" value="${schedule === '-' ? '' : schedule}" placeholder="시험일정"></td>
-                <td><input type="text" id="inline-rec-paydate" class="inline-input" value="${payDate === '-' ? '' : payDate}" placeholder="지급일"></td>
-                <td style="text-align: center;">
-                    <button class="btn-inline save" onclick="saveRecInlineEditRecord(${row.uid})">완료</button>
-                    <button class="btn-inline list" onclick="cancelRecInlineEditMode()">목록</button>
-                </td>`;
-                } else {
-                    tr.innerHTML = `
-                <td class="text-bold">${row.title}</td><td>${formatTh(row.th)}</td><td>${formatCount(row.count)}</td><td>${formatPeriod(row.period)}</td>
-                <td style="color: var(--text-muted); font-size: 13px;">${note}</td><td style="color: var(--text-muted); font-size: 13px;">${schedule}</td><td style="color: var(--text-muted); font-size: 13px;">${payDate}</td>
-                <td style="text-align: center;">
-                    <button class="btn-inline edit" onclick="enableRecInlineEditMode(${row.uid})">수정</button>
-                    <button class="btn-inline delete" onclick="removeRecruitmentRecord(${row.uid})">삭제</button>
-                </td>`;
-                }
+                // 원본 admin.html 클래스 테마 명세에 맞춘 마크업 렌더링
+                tr.innerHTML = `
+            <td class="text-bold">${row.title}</td>
+            <td><span class="lvl-badge lvl-2">${row.th}</span></td>
+            <td>${row.count}명</td>
+            <td>${row.period}시간</td>
+            <td class="exam-notice-cell" style="max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #f87171;" title="${row.notice || '-'}">
+                ${row.notice || '없음'}
+            </td>
+            <td><button class="btn-inline list">보기</button></td>
+            <td><span style="color: #fbbf24; font-weight: 700;">${row.payDate || '추후공지'}</span></td>
+            <td style="text-align: center;">
+                <button class="btn-inline edit" onclick="editRecruitment(${index})">수정</button>
+                <button class="btn-inline delete" onclick="deleteRecruitment(${index})">삭제</button>
+            </td>
+        `;
                 tbody.appendChild(tr);
             });
         }
+
 
         function insertRecruitmentRecord() {
             const t = document.getElementById('form-rec-title').value.trim(); const th = document.getElementById('form-rec-th').value.trim();
@@ -2698,60 +2726,6 @@
             const overlay = document.getElementById('docModalOverlay');
             if (overlay) overlay.style.display = "none";
         }
-
-
-        // ========================================================
-        // 🎯 [신규 추가] 페이지 로드 시 모집공고 디폴트 데이터 3종 자동 생성 엔진
-        // ========================================================
-        (function () {
-            let adminRecruitmentDB = JSON.parse(localStorage.getItem('dataStoreRecruitment')) || [];
-
-            // 저장소에 아무 공고 데이터도 없을 때만 디폴트 3개 행을 전격 생성합니다.
-            if (adminRecruitmentDB.length === 0) {
-                adminRecruitmentDB = [
-                    {
-                        title: "애드피마 과제",
-                        th: "2기(1차)",
-                        count: "60",
-                        period: "72",
-                        notice: "공복 유지 필수 및 소집 10분 전 대기",
-                        examDate: "2026-09-01",
-                        payDate: "2024-09-10" // 기존 join_login 크로스 체킹 일정과 매칭
-                    },
-                    {
-                        title: "경동제약 식후 임상시험",
-                        th: "4기(1차)",
-                        count: "46",
-                        period: "96",
-                        notice: "지정식 이외 취식 금지 및 격리 규정 준수",
-                        examDate: "2026-09-15",
-                        payDate: "2026-09-30" // 강남구 피험자 연동 타겟 공고
-                    },
-                    {
-                        title: "경동제약 식후 임상시험",
-                        th: "4기(2차)",
-                        count: "46",
-                        period: "96",
-                        notice: "지정식 이외 취식 금지 및 격리 규정 준수",
-                        examDate: "2026-10-15",
-                        payDate: "2026-10-30" // 진재영 피험자 연동 타겟 공고
-                    }
-                ];
-                // 로컬 저장소에 고정 인가
-                localStorage.setItem('dataStoreRecruitment', JSON.stringify(adminRecruitmentDB));
-                console.log("[데이터 빌드] 모집공고 시뮬레이션용 디폴트 데이터 3종 마운트 완료.");
-            }
-
-            // 문서가 준비되었을 때 테이블 화면을 즉시 그려주는 안전장치
-            window.addEventListener('load', function () {
-                if (typeof refreshRecruitmentView === "function") {
-                    refreshRecruitmentView();
-                }
-                if (typeof refreshApplicantView === "function") {
-                    refreshApplicantView();
-                }
-            });
-        })();
 
     </script>
 
