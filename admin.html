@@ -2625,6 +2625,47 @@
         }
         window.openMobileForm = openMobileForm;
 
+
+        // 자식 팝업들이 서로 동기화하기 위해 부모 창의 메모리를 허브로 사용합니다.
+        window.currentCertifiedUser = null; // 인증 통과한 대상자의 전체 객체 보관 슬롯
+
+        // A. 우측 상단 민간인증 로그인 테스트 팝업 가동
+        function openCivilAuthBridge() {
+            // join_login.html을 자식 창으로 오픈
+            window.open('join_login.html', 'civilAuthPopup', 'width=500, height=750, top=150, left=200');
+        }
+
+        // B. 목록 내에서 [사례비 신청 프로세스 관리] 버튼 클릭 시 adm_mem 오픈
+        function openAdminMemberController() {
+            if (!window.currentCertifiedUser) {
+                alert("위험: 아직 민간인증(join_login)을 성공한 대상자가 없습니다. 인증을 먼저 완료해주세요.");
+                return;
+            }
+            // adm_mem.html을 오픈 ( window.opener 관계 형성 )
+            window.open('adm_mem.html', 'adminMemberController', 'width=1600, height=900, top=50, left=100');
+        }
+
+        // C. adm_mem에서 최종 청구 패킷 수신 시 명단 테이블 리렌더링 및 배지 노출 허브 함수
+        function receiveSubjectDocumentPayload(payload) {
+            console.log("실시간 서류 수신 패킷: ", payload);
+
+            let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
+            // 이름 매칭이 아닌, 현재 인증 승인된 고유 객체의 uid나 정보를 추적하여 정밀 갱신
+            const idx = adminApplicantDB.findIndex(user => user.name === payload.patientName);
+
+            if (idx !== -1) {
+                adminApplicantDB[idx].payStatus = "접수";
+                adminApplicantDB[idx].idCardUrl = payload.idCardImg;
+                adminApplicantDB[idx].bankBookUrl = payload.bankBookImg;
+                localStorage.setItem('dataStoreApplicant', JSON.stringify(adminApplicantDB));
+
+                // 화면의 대장 목록 테이블을 새로고침 없이 즉각 리렌더링하는 기존 함수 호출
+                if (typeof renderAdminApplicantTable === "function") {
+                    renderAdminApplicantTable();
+                }
+            }
+        }
+
     </script>
 
     <!-- 비밀번호 변경 처리용 통합 오버레이 팝업 모달창 창고 -->
