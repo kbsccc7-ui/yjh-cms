@@ -1559,17 +1559,21 @@
         // ========================================================
         // 🎯 [완전 종결] CSS 레이아웃 파괴 버그 원천 차단형 렌더링 엔진
         // ========================================================
+        window.currentEditingRecruitmentIndex = null; // 현재 인라인 수정 중인 행 번호 슬롯
+
+        /**
+   * 1. [전면 교체] 테이블 행 내부에서 직접 편집창을 열어주는 렌더링 함수
+   */
         function refreshRecruitmentView() {
             const tbody = document.getElementById('dom-recruitment-table');
             if (!tbody) return;
-            tbody.innerHTML = ''; // 기존 행 완전 초기화
+            tbody.innerHTML = ''; // 테이블 초기화
 
-            // 1. 전산 마스터 배열(dataStoreRecruitment) 싱크 체크 및 로드
             if (!window.dataStoreRecruitment || dataStoreRecruitment.length === 0) {
                 window.dataStoreRecruitment = JSON.parse(localStorage.getItem('dataStoreRecruitment')) || [];
             }
 
-            // 2. 만약 데이터 대장이 완전히 비어있다면 CRC가 포함된 오피셜 프리셋 3종 주입
+            // 프리셋 데이터 안전 가드 (비어있을 때 복구)
             if (dataStoreRecruitment.length === 0) {
                 dataStoreRecruitment = [
                     { title: "애드파마 로잘탄+로수+에제", th: "2기(1차)", count: "60", period: "72", crc: "이민우 책임연구원", notice: "공복 유지 필수 및 소집 10분 전 대기", examSchedule: "2026-09-01", paySchedule: "2024-09-10" },
@@ -1579,50 +1583,121 @@
                 localStorage.setItem('dataStoreRecruitment', JSON.stringify(dataStoreRecruitment));
             }
 
-            // 3. 데이터를 순회하며 무결점 고대비 가드 테이블 행 생성
             dataStoreRecruitment.forEach((row, index) => {
                 const tr = document.createElement('tr');
-                tr.style.display = "table-row"; // CSS 레이아웃 깨짐 영구 방어
+                tr.style.display = "table-row";
 
-                // 🎯 [교정 코어]: a 태그(링크)를 완전히 파괴하고 순수 span 화이트 고대비 텍스트로 치환하여 
-                // 묻혀서 안 보이던 CSS :visited 간섭 문제를 원천 차단했습니다.
-                // 또한 [보기], [수정], [삭제] 버튼에 정밀 인덱스를 매핑하여 상호작용 기능을 복구했습니다.
-                tr.innerHTML = `
-            <td style="font-weight: 700; color: #ffffff !important; white-space: normal !important; word-break: break-all !important; line-height: 1.4; text-align: left; vertical-align: middle;">
-                ${row.title}
-            </td>
-            <td style="vertical-align: middle; text-align: left;">
-                <span class="lvl-badge lvl-2" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3); font-weight: 700; display: inline-block;">
-                    ${row.th}
-                </span>
-            </td>
-            <td style="vertical-align: middle; color: #eeeeee; text-align: left;">${row.count}명</td>
-            <td style="vertical-align: middle; color: #eeeeee; text-align: left;">${row.period}시간</td>
-            
-            <!-- 담당 CRC 연구원 명단 실시간 노출 영역 -->
-            <td style="vertical-align: middle; color: #38bdf8; font-weight: 600; text-align: left;">${row.crc || '-'}</td>            
-            
-            <td class="exam-notice-cell" style="max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #f87171; vertical-align: middle; text-align: left;" title="${row.notice || '-'}">
-                ${row.notice || '없음'}
-            </td>
-            <td style="vertical-align: middle; text-align: left;">
-                <!-- 🎯 [보기] 단추 기능 활성화 연동 -->
-                <button type="button" class="btn-inline list" onclick="openRecruitmentDetails(${index})" style="background: #475569; border: none; color: #ffffff; padding: 4px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 12px;">보기</button>
-            </td>
-            <td style="vertical-align: middle; text-align: left;">
-                <span style="color: #fbbf24; font-weight: 700;">${row.paySchedule || row.payDate || '추후공지'}</span>
-            </td>
-            <td style="vertical-align: middle;">
-                <div class="action-btn-wrapper" style="display: flex !important; justify-content: center !important; gap: 6px !important; width: 100% !important; white-space: nowrap !important;">
-                    <!-- 🎯 [수정], [삭제] 마스터 인덱스 바인딩 및 함수 호출 정상화 -->
-                    <button type="button" class="btn-inline edit" onclick="editRecruitmentRecord(${index})" style="background: #334155; border: none; color: #ffffff; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 13px;">수정</button>
-                    <button type="button" class="btn-inline delete" onclick="deleteRecruitmentRecord(${index})" style="background: rgba(239, 68, 68, 0.15); border: 1px solid #f87171; color: #f87171; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 13px;">삭제</button>
-                </div>
-            </td>
-        `;
+                // 🎯 [핵심 분기] 현재 행이 수정 버튼을 누른 타겟 행인지 스캔 판정
+                if (window.currentEditingRecruitmentIndex === index) {
+                    // 대상자 관리 디자인 시스템(.editing-row, .inline-input) 규격을 그대로 입혀 인라인 인풋 박스로 강제 전환
+                    tr.className = "editing-row";
+                    tr.innerHTML = `
+                <td><input type="text" id="inline-rec-title-${index}" class="inline-input" value="${row.title}" style="font-weight:700;"></td>
+                <td>
+                    <select id="inline-rec-th-${index}" class="inline-input" style="height:32px; padding:2px 6px;">
+                        <option value="1기(1차)" ${row.th === '1기(1차)' ? 'selected' : ''}>1기 1차</option>
+                        <option value="1기(2차)" ${row.th === '1기(2차)' ? 'selected' : ''}>1기 2차</option>
+                        <option value="2기(1차)" ${row.th === '2기(1차)' ? 'selected' : ''}>2기 1차</option>
+                        <option value="2기(2차)" ${row.th === '2기(2차)' ? 'selected' : ''}>2기 2차</option>
+                        <option value="3기(1차)" ${row.th === '3기(1차)' ? 'selected' : ''}>3기 1차</option>
+                        <option value="3기(2차)" ${row.th === '3기(2차)' ? 'selected' : ''}>3기 2차</option>
+                        <option value="4기(1차)" ${row.th === '4기(1차)' ? 'selected' : ''}>4기 1차</option>
+                        <option value="4기(2차)" ${row.th === '4기(2차)' ? 'selected' : ''}>4기 2차</option>
+                    </select>
+                </td>
+                <td><input type="text" id="inline-rec-count-${index}" class="inline-input" value="${row.count}"></td>
+                <td><input type="text" id="inline-rec-period-${index}" class="inline-input" value="${row.period}"></td>
+                <td><input type="text" id="inline-rec-crc-${index}" class="inline-input" value="${row.crc || '-'}"></td>
+                <td><input type="text" id="inline-rec-notice-${index}" class="inline-input" value="${row.notice || ''}"></td>
+                <td style="vertical-align: middle;"><button type="button" class="btn-inline list" style="background:#475569; opacity:0.5; cursor:not-allowed;" disabled>보기</button></td>
+                <td><input type="text" id="inline-rec-pay-${index}" class="inline-input" value="${row.paySchedule || row.payDate || '추후공지'}"></td>
+                <td style="vertical-align: middle;">
+                    <div class="action-btn-wrapper" style="display: flex !important; justify-content: center !important; gap: 6px !important; width: 100% !important;">
+                        <!-- 저장 및 취소 액션 단추 배정 -->
+                        <button type="button" class="btn-inline save" onclick="saveInlineRecruitmentRecord(${index})" style="background: var(--success-color, #4ade80); color: #070a12; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 13px;">저장</button>
+                        <button type="button" class="btn-inline edit" onclick="cancelInlineRecruitmentEdit()" style="background: #475569; border:1px solid var(--border-color); color:#fff; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 13px;">취소</button>
+                    </div>
+                </td>
+            `;
+                } else {
+                    // 일반 읽기 전용 상태 모드 렌더링 (기존 링크 제거 고대비 규격 유지)
+                    tr.innerHTML = `
+                <td style="font-weight: 700; color: #ffffff !important; vertical-align: middle;">${row.title}</td>
+                <td style="vertical-align: middle;"><span class="lvl-badge lvl-2">${row.th}</span></td>
+                <td style="vertical-align: middle; color: #eeeeee;">${row.count}명</td>
+                <td style="vertical-align: middle; color: #eeeeee;">${row.period}시간</td>
+                <td style="vertical-align: middle; color: #38bdf8; font-weight: 600;">${row.crc || '-'}</td>            
+                <td class="exam-notice-cell" style="max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #f87171; vertical-align: middle;" title="${row.notice || '-'}">${row.notice || '없음'}</td>
+                <td style="vertical-align: middle;"><button type="button" class="btn-inline list" onclick="openRecruitmentDetails(${index})" style="background: #475569; border: none; color: #ffffff; padding: 4px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 12px;">보기</button></td>
+                <td style="vertical-align: middle;"><span style="color: #fbbf24; font-weight: 700;">${row.paySchedule || row.payDate || '추후공지'}</span></td>
+                <td style="vertical-align: middle;">
+                    <div class="action-btn-wrapper" style="display: flex !important; justify-content: center !important; gap: 6px !important; width: 100% !important; white-space: nowrap !important;">
+                        <button type="button" class="btn-inline edit" onclick="editInlineRecruitmentRecord(${index})" style="background: #334155; border: none; color: #ffffff; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 13px;">수정</button>
+                        <button type="button" class="btn-inline delete" onclick="deleteRecruitmentRecord(${index})" style="background: rgba(239, 68, 68, 0.15); border: 1px solid #f87171; color: #f87171; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 13px;">삭제</button>
+                    </div>
+                </td>
+            `;
+                }
                 tbody.appendChild(tr);
             });
         }
+
+        /**
+         * 2. [교정] 수정 버튼 클릭 시 인라인 타겟 인덱스를 잡고 화면을 새로 그려주는 헬퍼
+         */
+        function editInlineRecruitmentRecord(index) {
+            window.currentEditingRecruitmentIndex = index; // 수정 타겟 락업
+            refreshRecruitmentView(); // 인라인 입력 상자로 변환 실행
+        }
+
+        /**
+         * 3. [신규] 인라인 상태에서 입력값을 추출하여 대장에 영구 업데이트하는 저장 함수
+         */
+        function saveInlineRecruitmentRecord(index) {
+            // 해당 라인의 고유 인풋 서식 서치
+            const nextTitle = document.getElementById(`inline-rec-title-${index}`).value.trim();
+            const nextTh = document.getElementById(`inline-rec-th-${index}`).value;
+            const nextCount = document.getElementById(`inline-rec-count-${index}`).value.trim();
+            const nextPeriod = document.getElementById(`inline-rec-period-${index}`).value.trim();
+            const nextCrc = document.getElementById(`inline-rec-crc-${index}`).value.trim();
+            const nextNotice = document.getElementById(`inline-rec-notice-${index}`).value.trim();
+            const nextPay = document.getElementById(`inline-rec-pay-${index}`).value.trim();
+
+            if (!nextTitle || !nextCount || !nextPeriod) {
+                alert("알림: 시험명, 인원수, 기간 정보는 빈칸으로 남겨둘 수 없습니다.");
+                return;
+            }
+
+            // 마스터 메모리 배열 객체 정밀 타격 갱신
+            dataStoreRecruitment[index].title = nextTitle;
+            dataStoreRecruitment[index].th = nextTh;
+            dataStoreRecruitment[index].count = typeof getOnlyNumbers === "function" ? getOnlyNumbers(nextCount) : nextCount.replace(/[^0-9]/g, '');
+            dataStoreRecruitment[index].period = typeof getOnlyNumbers === "function" ? getOnlyNumbers(nextPeriod) : nextPeriod.replace(/[^0-9]/g, '');
+            dataStoreRecruitment[index].crc = nextCrc;
+            dataStoreRecruitment[index].notice = nextNotice;
+            dataStoreRecruitment[index].paySchedule = nextPay;
+            dataStoreRecruitment[index].payDate = nextPay; // 상호 호환 공유필드 백업
+
+            // LocalStorage 및 실시간 테이블 그리기 리프레시 종결
+            if (typeof commitToLocalStorage === "function") {
+                commitToLocalStorage();
+            } else {
+                localStorage.setItem('dataStoreRecruitment', JSON.stringify(dataStoreRecruitment));
+            }
+
+            alert("🎉 해당 라인의 모집공고 데이터가 실시간으로 안전하게 저장되었습니다.");
+            window.currentEditingRecruitmentIndex = null; // 인라인 수정 상태 잠금 해제
+            refreshRecruitmentView(); // 원본 리스트 복구 리렌더링
+        }
+
+        /**
+         * 4. [신규] 수정 작업을 원치 않을 때 조작 상태를 복원하는 취소 함수
+         */
+        function cancelInlineRecruitmentEdit() {
+            window.currentEditingRecruitmentIndex = null; // 수정 슬롯 클리어
+            refreshRecruitmentView(); // 리스트 즉시 원상 복구
+        }
+        //// 8-18 추가 위...
 
 
         function insertRecruitmentRecord() {
