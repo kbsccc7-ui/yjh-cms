@@ -1355,6 +1355,7 @@
                         th: "2기(1차)", // 단순 숫자 '2'에서 오피셜 규격 문자열로 변경
                         count: "60",
                         period: "72",
+                        crc: "석정은",
                         notice: "공복 유지 필수 및 소집 10분 전 대기",
                         examSchedule: "2026-09-01",
                         paySchedule: "2026-09-10"
@@ -1365,6 +1366,7 @@
                         th: "4기(1차)",
                         count: "46",
                         period: "96",
+                        crc: "최미현",
                         notice: "지정식 이외 취식 금지 및 격리 규정 준수",
                         examSchedule: "2026-09-15",
                         paySchedule: "2026-09-30"
@@ -1375,6 +1377,7 @@
                         th: "4기(2차)",
                         count: "46",
                         period: "96",
+                        crc: "강은애",
                         notice: "지정식 이외 취식 금지 및 격리 규정 준수",
                         examSchedule: "2026-10-15",
                         paySchedule: "2026-10-30"
@@ -1578,6 +1581,7 @@
                         th: "2기(1차)",
                         count: "60",
                         period: "72",
+                        crc: "석정은",
                         notice: "공복 유지 필수 및 소집 10분 전 대기",
                         examDate: "2026-09-01",
                         payDate: "2026-09-10"
@@ -1587,6 +1591,7 @@
                         th: "4기(1차)",
                         count: "46",
                         period: "96",
+                        crc: "최미현",
                         notice: "지정식 이외 취식 금지 및 격리 규정 준수",
                         examDate: "2026-09-15",
                         payDate: "2026-09-30"
@@ -1596,6 +1601,7 @@
                         th: "4기(2차)",
                         count: "46",
                         period: "96",
+                        crc: "강은애",
                         notice: "지정식 이외 취식 금지 및 격리 규정 준수",
                         examDate: "2026-10-15",
                         payDate: "2026-10-30"
@@ -1623,6 +1629,7 @@
             </td>
             <td style="vertical-align: middle; color: #eeeeee; text-align: left;">${row.count}명</td>
             <td style="vertical-align: middle; color: #eeeeee; text-align: left;">${row.period}시간</td>
+            <td style="vertical-align: middle; color: #38bdf8; font-weight: 600;">${row.crc || '-'}</td>            
             <td class="exam-notice-cell" style="max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #f87171; vertical-align: middle; text-align: left;" title="${row.notice || '-'}">
                 ${row.notice || '없음'}
             </td>
@@ -2799,6 +2806,7 @@
                     th: "2기(1차)",
                     count: "60",
                     period: "72",
+                    crc: "석정은",
                     notice: "공복 유지 필수 및 소집 10분 전 대기",
                     examDate: "2026-09-01",
                     payDate: "2026-09-10" // join_login 연동 고정값
@@ -2808,6 +2816,7 @@
                     th: "4기(1차)",
                     count: "46",
                     period: "96",
+                    crc: "최미현",
                     notice: "지정식 이외 취식 금지 및 격리 규정 준수",
                     examDate: "2026-09-15",
                     payDate: "2026-09-30"
@@ -2817,6 +2826,7 @@
                     th: "4기(2차)",
                     count: "46",
                     period: "96",
+                    crc: "강은애",
                     notice: "지정식 이외 취식 금지 및 격리 규정 준수",
                     examDate: "2026-10-15",
                     payDate: "2026-10-30"
