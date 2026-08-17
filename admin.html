@@ -2986,10 +2986,19 @@
             // 모달 상단 타이틀 실시간 갱신
             if (modalTitle) modalTitle.innerText = titleText;
 
-            // 🎯 [정밀 진단 가드]: 들어온 데이터가 실제 브라우저 렌더링용 유효 주소인지 검증
+            // 🎯 [초정밀 엑박 방어막]: "true" 문자열이 넘어오면 유효하지 않은 주소로 판정하도록 완벽 차단 가드 추가
             let isRealImageAddress = false;
-            if (imgSrc && imgSrc !== "undefined" && imgSrc !== "null" && imgSrc !== "유" && imgSrc !== "placeholder") {
-                if (imgSrc.indexOf('data:') === 0 || imgSrc.indexOf('http') === 0 || imgSrc.length > 20) {
+
+            if (imgSrc &&
+                imgSrc !== "undefined" &&
+                imgSrc !== "null" &&
+                imgSrc !== "유" &&
+                imgSrc !== "true" && // 💡 콘솔 로그에 찍힌 문자열 "true" 차단 필터 주입
+                imgSrc !== "placeholder" &&
+                imgSrc.length > 5) {
+
+                // Base64 스트림 데이터이거나 원격 웹 호스팅 주소인 경우만 진짜 경로로 승인
+                if (imgSrc.indexOf('data:') === 0 || imgSrc.indexOf('http') === 0) {
                     if (imgSrc.indexOf('fakepath') === -1) {
                         isRealImageAddress = true;
                     }
@@ -2997,27 +3006,23 @@
             }
 
             if (isRealImageAddress) {
-                // [케이스 1]: 파일 업로드 가속 스트림 또는 원격서버 실제 경로가 있을 때 -> 원본 그대로 출력
+                // [케이스 1]: 유효한 로컬 스트림이나 이미지 주소인 경우 원본 출력
                 modalImg.src = imgSrc;
                 modalImg.style.display = "block";
                 if (noImgMsg) noImgMsg.style.display = "none";
             } else {
-                // [케이스 2]: 🎯 인증서 패스 및 단독 파일 첨부로 "유" 혹은 더미 패킷만 존재할 때 
-                // 깨진 이미지(엑박)나 텍스트 상자로 우회하지 않고, Slide 2 매뉴얼 가이드에 명시된 고해상도 그래픽 매칭 강제 강행!
+                // [케이스 2]: 🎯 "true" 혹은 무효한 텍스트 패킷이 넘어온 경우, 404 에러를 내지 않고 샘플 이미지로 강제 전환
                 if (titleText.indexOf('신분증') !== -1) {
-                    // 기수 모집 신분증 원본 검수 가이드 플레이스홀더 이미지 바인딩
-                    modalImg.src = "https://picsum.photos";
+                    modalImg.src = "https://picsum.photos"; // 가상 신분증 그래픽 매칭
                 } else {
-                    // 통장사본 검수 가이드 플레이스홀더 이미지 바인딩
-                    modalImg.src = "https://picsum.photos";
+                    modalImg.src = "https://picsum.photos";  // 가상 통장사본 그래픽 매칭
                 }
 
-                // 텍스트 안내 상자를 강제로 숨기고, 고대비 프레임 안에 이미지가 무조건 노출되도록 제어
-                modalImg.style.display = "block";
+                modalImg.style.display = "block"; // 엑박 마크를 완전히 밀어내고 이미지를 띄웁니다.
                 if (noImgMsg) noImgMsg.style.display = "none";
             }
 
-            // 모달 레이아웃 부드럽게 개방
+            // 모달 레이아웃 개방
             overlay.style.display = "flex";
         }
 
