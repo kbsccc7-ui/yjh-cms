@@ -1815,7 +1815,7 @@
                 const rawName = row.name || '';
                 const cleanName = rawName.replace(/[^\w\sㄱ-ㅎㅏ-ㅣ가-힣]/g, '').trim();
 
-                // [전화번호 변환 가드]: 디폴트 숫자 입력값도 실시간으로 하이픈 치환
+                // 전화번호 숫자만 추출 후 하이픈(-) 자동 포맷팅 가드
                 const rawPhone = (row.phone || '').replace(/[^0-9]/g, '');
                 let formattedPhone = '-';
 
@@ -1833,24 +1833,35 @@
                     formattedPhone = row.phone;
                 }
 
-                // 🎯 [삭제 기능 복원]: 원래 소스에 존재하던 인증서 통과 후 파일 업로드 성공 패킷 가드 완벽 복원
-                // 부울 값(true/false)과 기존 이미지 패스 규격을 모두 교차 검증하여 배지를 활성화합니다.
-                let documentLinksHTML = "";
-                const hasIdCard = row.idCard === true || row.idCardImg === "유" || (row.idCardImg && row.idCardImg.length > 5);
-                const hasBankBook = row.bankbook === true || row.bankBookImg === "유" || (row.bankBookImg && row.bankBookImg.length > 5);
+                // 🎯 [전천후 서류 검증 가드 완전 복원]: 데이터 유실 문제를 완벽히 해결하는 핵심 구역
+                // payload가 준 값("유", true, 이미지 경로) 및 기존 DB 데이터 규격(idCard, bankbook)을 전부 상호 체크합니다.
+                const hasIdCard = row.idCardImg === "유" ||
+                    row.idCard === true ||
+                    (typeof row.idCardImg === 'string' && row.idCardImg.length > 3) ||
+                    (typeof row.idCardUrl === 'string' && row.idCardUrl.length > 3);
 
+                const hasBankBook = row.bankBookImg === "유" ||
+                    row.bankbook === true ||
+                    (typeof row.bankBookImg === 'string' && row.bankBookImg.length > 3) ||
+                    (typeof row.bankBookUrl === 'string' && row.bankBookUrl.length > 3);
+
+                // 🎯 [컬러 가독성 교정 구역]
+                let documentLinksHTML = "";
                 if (hasIdCard || hasBankBook) {
-                    documentLinksHTML = `<div style="display: flex; gap: 4px; justify-content: center; align-items: center;">`;
+                    documentLinksHTML = `<div style="display: flex; gap: 6px; justify-content: center; align-items: center;">`;
+
                     if (hasIdCard) {
-                        // 원본 파일에 존재하던 모달 보기 팝업 엔진 정상 연동
-                        const idCardPath = row.idCardImg || 'true';
-                        documentLinksHTML += `<button type="button" class="btn-inline list" onclick="openDocModal('${idCardPath}', '${cleanName} - 신분증')" style="padding: 3px 8px; font-size: 11px; background: #475569; border:none; color:#fff; cursor:pointer;"><i class="fa-solid fa-id-card"></i> 신분증</button>`;
+                        const idPath = (typeof row.idCardImg === 'string' && row.idCardImg.length > 3) ? row.idCardImg : (row.idCardUrl || 'true');
+                        // 💡 신분증: 신뢰감을 주는 에메랄드 녹색 테마 적용 (가독성 향상)
+                        documentLinksHTML += `<button type="button" class="btn-inline list" onclick="openDocModal('${idPath}', '${cleanName} - 신분증')" style="padding: 4px 9px; font-size: 11px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; border-radius: 4px; font-weight: 700; cursor:pointer;"><i class="fa-solid fa-id-card"></i> 신분증</button>`;
                     }
+
                     if (hasBankBook) {
-                        // 원본 파일에 존재하던 모달 보기 팝업 엔진 정상 연동
-                        const bankBookPath = row.bankBookImg || 'true';
-                        documentLinksHTML += `<button type="button" class="btn-inline list" onclick="openDocModal('${bankBookPath}', '${cleanName} - 통장사본')" style="padding: 3px 8px; font-size: 11px; background: #475569; border:none; color:#fff; cursor:pointer;"><i class="fa-solid fa-wallet"></i> 통장</button>`;
+                        const bankPath = (typeof row.bankBookImg === 'string' && row.bankBookImg.length > 3) ? row.bankBookImg : (row.bankBookUrl || 'true');
+                        // 💡 통장: 시선을 끄는 골드 오렌지 테마 적용 (가독성 향상)
+                        documentLinksHTML += `<button type="button" class="btn-inline list" onclick="openDocModal('${bankPath}', '${cleanName} - 통장사본')" style="padding: 4px 9px; font-size: 11px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; border-radius: 4px; font-weight: 700; cursor:pointer;"><i class="fa-solid fa-wallet"></i> 통장</button>`;
                     }
+
                     documentLinksHTML += `</div>`;
                 } else {
                     documentLinksHTML = `<span style="color: var(--text-muted); font-size: 12px; display: block; text-align: center;">미제출</span>`;
@@ -1861,7 +1872,7 @@
                 if (row.isCallAgreed === undefined) row.isCallAgreed = "동의";
 
                 // [A 분기] 현재 인덱스가 인라인 편집 활성화 상태인 경우
-                if (currentAppEditingIndex === index) {
+                if (typeof currentAppEditingIndex !== 'undefined' && currentAppEditingIndex === index) {
                     tr.className = "editing-row";
                     tr.innerHTML = `
                 <td><input type="text" class="inline-input" id="edit-row-title-${index}" value="${row.title || ''}"></td>
