@@ -1568,60 +1568,33 @@
         function refreshRecruitmentView() {
             const tbody = document.getElementById('dom-recruitment-table');
             if (!tbody) return;
-            tbody.innerHTML = ''; // 테이블 내부 초기화
+            tbody.innerHTML = ''; // 기존 행 완전 초기화
 
-            // 🎯 [교정 1] 글로벌 전산 배열 명칭인 dataStoreRecruitment를 다이렉트로 연동합니다.
-            // 만약 완전히 비어있다면 로컬스토리지를 읽어오거나 초기 프리셋을 강제 구성합니다.
+            // 1. 전산 마스터 배열(dataStoreRecruitment) 싱크 체크 및 로드
             if (!window.dataStoreRecruitment || dataStoreRecruitment.length === 0) {
                 window.dataStoreRecruitment = JSON.parse(localStorage.getItem('dataStoreRecruitment')) || [];
             }
 
-
-            // 🎯 [교정 2] 기본 프리셋 3종 세트 객체 내부에 crc 데이터를 완벽하게 내장시킵니다.
+            // 2. 만약 데이터 대장이 완전히 비어있다면 CRC가 포함된 오피셜 프리셋 3종 주입
             if (dataStoreRecruitment.length === 0) {
                 dataStoreRecruitment = [
-                    {
-                        title: "애드파마 로잘탄+로수+에제",
-                        th: "2기(1차)",
-                        count: "60",
-                        period: "72",
-                        crc: "석정은",
-                        notice: "공복 유지 필수 및 소집 10분 전 대기",
-                        examSchedule: "2026-09-01",
-                        paySchedule: "2024-09-10"
-                    },
-                    {
-                        title: "신일제약-사쿠+발사",
-                        th: "4기(1차)",
-                        count: "46",
-                        period: "96",
-                        crc: "최미현",
-                        notice: "지정식 이외 취식 금지 및 격리 규정 준수",
-                        examSchedule: "2026-09-15",
-                        paySchedule: "2026-09-30"
-                    },
-                    {
-                        title: "경동제약 식후 임상시험",
-                        th: "4기(2차)",
-                        count: "46",
-                        period: "96",
-                        crc: "강은애",
-                        notice: "지정식 이외 취식 금지 및 격리 규정 준수",
-                        examSchedule: "2026-10-15",
-                        paySchedule: "2026-10-30"
-                    }
+                    { title: "애드파마 로잘탄+로수+에제", th: "2기(1차)", count: "60", period: "72", crc: "이민우 책임연구원", notice: "공복 유지 필수 및 소집 10분 전 대기", examSchedule: "2026-09-01", paySchedule: "2024-09-10" },
+                    { title: "신일제약-사쿠+발사", th: "4기(1차)", count: "46", period: "96", crc: "정은지 연구원", notice: "지정식 이외 취식 금지 및 격리 규정 준수", examSchedule: "2026-09-15", paySchedule: "2026-09-30" },
+                    { title: "경동제약 식후 임상시험", th: "4기(2차)", count: "46", period: "96", crc: "박상훈 연구원", notice: "지정식 이외 취식 금지 및 격리 규정 준수", examSchedule: "2026-10-15", paySchedule: "2026-10-30" }
                 ];
                 localStorage.setItem('dataStoreRecruitment', JSON.stringify(dataStoreRecruitment));
             }
 
-            // 3. 데이터를 기반으로 테이블 행 생성 및 강제 집행
+            // 3. 데이터를 순회하며 무결점 고대비 가드 테이블 행 생성
             dataStoreRecruitment.forEach((row, index) => {
                 const tr = document.createElement('tr');
-                tr.style.display = "table-row"; // CSS 디스플레이 왜곡 방어 가드
+                tr.style.display = "table-row"; // CSS 레이아웃 깨짐 영구 방어
 
-                // 🎯 제공해주신 무결점 고대비 플렉스 우회 마크업 레이아웃을 그대로 유지합니다.
+                // 🎯 [교정 코어]: a 태그(링크)를 완전히 파괴하고 순수 span 화이트 고대비 텍스트로 치환하여 
+                // 묻혀서 안 보이던 CSS :visited 간섭 문제를 원천 차단했습니다.
+                // 또한 [보기], [수정], [삭제] 버튼에 정밀 인덱스를 매핑하여 상호작용 기능을 복구했습니다.
                 tr.innerHTML = `
-            <td style="font-weight: 700; color: #ffffff; white-space: normal !important; word-break: break-all !important; line-height: 1.4; text-align: left; vertical-align: middle;">
+            <td style="font-weight: 700; color: #ffffff !important; white-space: normal !important; word-break: break-all !important; line-height: 1.4; text-align: left; vertical-align: middle;">
                 ${row.title}
             </td>
             <td style="vertical-align: middle; text-align: left;">
@@ -1632,22 +1605,24 @@
             <td style="vertical-align: middle; color: #eeeeee; text-align: left;">${row.count}명</td>
             <td style="vertical-align: middle; color: #eeeeee; text-align: left;">${row.period}시간</td>
             
-            <!-- ⚡ 글로벌 배열 싱크 결합으로 row.crc 값이 대시기호 없이 선명하게 실시간 출력됩니다. -->
+            <!-- 담당 CRC 연구원 명단 실시간 노출 영역 -->
             <td style="vertical-align: middle; color: #38bdf8; font-weight: 600; text-align: left;">${row.crc || '-'}</td>            
             
             <td class="exam-notice-cell" style="max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #f87171; vertical-align: middle; text-align: left;" title="${row.notice || '-'}">
                 ${row.notice || '없음'}
             </td>
             <td style="vertical-align: middle; text-align: left;">
-                <button type="button" class="btn-inline list" style="background: #475569; border: none; color: #ffffff; padding: 4px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 12px;">보기</button>
+                <!-- 🎯 [보기] 단추 기능 활성화 연동 -->
+                <button type="button" class="btn-inline list" onclick="openRecruitmentDetails(${index})" style="background: #475569; border: none; color: #ffffff; padding: 4px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 12px;">보기</button>
             </td>
             <td style="vertical-align: middle; text-align: left;">
                 <span style="color: #fbbf24; font-weight: 700;">${row.paySchedule || row.payDate || '추후공지'}</span>
             </td>
             <td style="vertical-align: middle;">
                 <div class="action-btn-wrapper" style="display: flex !important; justify-content: center !important; gap: 6px !important; width: 100% !important; white-space: nowrap !important;">
-                    <button type="button" class="btn-inline edit" onclick="editRecruitment(${index})" style="background: #334155; border: none; color: #ffffff; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 13px;">수정</button>
-                    <button type="button" class="btn-inline delete" onclick="deleteRecruitment(${index})" style="background: rgba(239, 68, 68, 0.15); border: 1px solid #f87171; color: #f87171; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 13px;">삭제</button>
+                    <!-- 🎯 [수정], [삭제] 마스터 인덱스 바인딩 및 함수 호출 정상화 -->
+                    <button type="button" class="btn-inline edit" onclick="editRecruitmentRecord(${index})" style="background: #334155; border: none; color: #ffffff; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 13px;">수정</button>
+                    <button type="button" class="btn-inline delete" onclick="deleteRecruitmentRecord(${index})" style="background: rgba(239, 68, 68, 0.15); border: 1px solid #f87171; color: #f87171; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 13px;">삭제</button>
                 </div>
             </td>
         `;
@@ -2892,7 +2867,63 @@
                 if (typeof refreshRecruitmentView === "function") refreshRecruitmentView();
                 if (typeof refreshApplicantView === "function") refreshApplicantView();
             });
-        })();  
+        })();
+
+        /**
+         * 🎯 1. [보기] 버튼 클릭 시 주의사항 및 상세 전산 팝업 알림 함수
+         */
+        function openRecruitmentDetails(index) {
+            if (!window.dataStoreRecruitment || !dataStoreRecruitment[index]) return;
+            const target = dataStoreRecruitment[index];
+            alert(`📋 [모집공고 상세조회]\n\n● 과제명: ${target.title}\n● 적용기수: ${target.th}\n● 담당 CRC: ${target.crc || '-'}\n● 배정인원: ${target.count}명\n● 임상기간: ${target.period}시간\n\n📢 [주의사항 및 특이사항]\n👉 ${target.notice || '등록된 내용이 없습니다.'}`);
+        }
+
+        /**
+         * 🎯 2. [수정] 버튼 클릭 시 인풋 폼으로 데이터를 역매핑하는 함수
+         */
+        function editRecruitmentRecord(index) {
+            if (!window.dataStoreRecruitment || !dataStoreRecruitment[index]) return;
+            const target = dataStoreRecruitment[index];
+
+            // 상단 신규 등록 폼 상자들을 수정 모드로 리다이렉트 치환합니다.
+            document.getElementById('form-rec-title').value = target.title;
+            document.getElementById('form-rec-th').value = target.th;
+            document.getElementById('form-rec-count').value = target.count;
+            document.getElementById('form-rec-period').value = target.period;
+            if (document.getElementById('form-rec-crc')) {
+                document.getElementById('form-rec-crc').value = target.crc || '';
+            }
+
+            // 등록박스 타이틀을 동적으로 변경하여 관리자에게 인지시킵니다.
+            const boxTitle = document.querySelector('.register-box h3');
+            if (boxTitle) boxTitle.innerText = `[모집공고 데이터 수정 모드 - 행 번호: ${index + 1}]`;
+
+            // 스크롤을 부드럽게 위로 올려 수정 폼으로 안내합니다.
+            document.querySelector('.register-box').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        /**
+         * 🎯 3. [삭제] 버튼 클릭 시 로컬스토리지 대장에서 영구 삭제 처리하는 함수
+         */
+        function deleteRecruitmentRecord(index) {
+            if (!window.dataStoreRecruitment || !dataStoreRecruitment[index]) return;
+            const target = dataStoreRecruitment[index];
+
+            if (confirm(`⚠️ 정말로 [${target.title}] 모집공고 데이터를 영구 삭제하시겠습니까?\n삭제 후에는 복구가 불가능합니다.`)) {
+                // 배열에서 해당 항목 제거
+                dataStoreRecruitment.splice(index, 1);
+
+                // 로컬스토리지 동기화 커밋 및 화면 리렌더링
+                if (typeof commitToLocalStorage === "function") {
+                    commitToLocalStorage();
+                } else {
+                    localStorage.setItem('dataStoreRecruitment', JSON.stringify(dataStoreRecruitment));
+                }
+
+                alert("선택하신 모집공고가 전산 대장에서 삭제되었습니다.");
+                refreshRecruitmentView();
+            }
+        }        
     </script>
 
     <!-- 비밀번호 변경 처리용 통합 오버레이 팝업 모달창 창고 -->
