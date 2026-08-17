@@ -1645,147 +1645,62 @@
             if (!tbody) return;
             tbody.innerHTML = '';
 
-            // 실시간 통계 카운터 연산 모듈
-            const totalApplicants = dataStoreApplicant.length;
-            const receivedCount = dataStoreApplicant.filter(u => u.payStatus === "접수").length;
-            const processingCount = dataStoreApplicant.filter(u => u.payStatus === "처리중").length;
-            const completeCount = dataStoreApplicant.filter(u => u.payStatus === "처리완료").length;
-
-            const elStatTotal = document.getElementById('stat-total-count');
-            const elStatRecv = document.getElementById('stat-received-count');
-            const elStatProc = document.getElementById('stat-processing-count');
-            const elStatComp = document.getElementById('stat-complete-count');
-
-            if (elStatTotal) elStatTotal.innerText = `${totalApplicants}명`;
-            if (elStatRecv) elStatRecv.innerText = `${receivedCount}건`;
-            if (elStatProc) elStatProc.innerText = `${processingCount}건`;
-            if (elStatComp) elStatComp.innerText = `${completeCount}건`;
-
+            // 데이터 저장소 로드
+            let dataStoreApplicant = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
             const groupCounter = {};
 
-            dataStoreApplicant.forEach(row => {
-                const tr = document.createElement('tr');
-
-                const groupKey = `${row.title}_${getOnlyNumbers(row.th)}`;
-                if (!groupCounter[groupKey]) { groupCounter[groupKey] = 0; }
+            dataStoreApplicant.forEach((row, index) => {
+                // 기수 그룹별 순번 계산용 카운터
+                const groupKey = `${row.title}_${row.th}`;
+                if (!groupCounter[groupKey]) groupCounter[groupKey] = 0;
                 groupCounter[groupKey]++;
 
-                const totalCount = getOnlyNumbers(row.count) || '0';
-                const currentOrder = groupCounter[groupKey];
-                const orderDisplayHTML = `<span style="color: #38bdf8;">${currentOrder}</span>/<span style="color: #f87171;">${totalCount}</span>`;
+                const tr = document.createElement('tr');
 
-                const agreementStatus = row.isAgreed || "미동의";
-                let agreementStyle = agreementStatus === "동의" ? "color: var(--success-color);" : "color: var(--danger-color);";
+                // 🎯 [교정] 이름 뒤 마침표, 하이픈 등 모든 특수문자 제거 정규식
+                const rawName = row.name || '';
+                const cleanName = rawName.replace(/[^\w\sㄱ-ㅎㅏ-ㅣ가-힣]/g, '').trim();
 
-                const displayAccount = row.accountInfo && row.accountInfo.trim() !== '' ? row.accountInfo : '계좌 미등록';
-
-                // 신분증, 통장사본 실제 첨부 데이터(Base64) 유무 정밀 판정 및 뱃지 변수 매핑
-                const isIdCardUploaded = row.idCardUrl && row.idCardUrl.startsWith('data:image');
-                const isBankBookUploaded = row.bankBookUrl && row.bankBookUrl.startsWith('data:image');
-
-                // 활성화된 뱃지는 배경 녹색(#10B981) 처리 및 클릭 시 openAdminDocViewer 원격 연결 가동
-                const idBadgeHTML = isIdCardUploaded
-                    ? `<span class="lvl-badge" style="background:#10B981; color:#fff; cursor:pointer; font-weight:700; padding:4px 8px; border-radius:4px; font-size:12px; display:inline-block; margin-right:4px;" onclick="openAdminDocViewer('${row.uid}', 'idCard')">✔ 신분증</span>`
-                    : `<span class="lvl-badge" style="background:rgba(148,163,184,0.15); color:#cbd5e1; opacity:0.4; cursor:not-allowed; padding:4px 8px; border-radius:4px; font-size:12px; display:inline-block; margin-right:4px;">❌ 신분증</span>`;
-
-                const bankBadgeHTML = isBankBookUploaded
-                    ? `<span class="lvl-badge" style="background:#10B981; color:#fff; cursor:pointer; font-weight:700; padding:4px 8px; border-radius:4px; font-size:12px; display:inline-block;" onclick="openAdminDocViewer('${row.uid}', 'bankBook')">✔ 통장</span>`
-                    : `<span class="lvl-badge" style="background:rgba(148,163,184,0.15); color:#cbd5e1; opacity:0.4; cursor:not-allowed; padding:4px 8px; border-radius:4px; font-size:12px; display:inline-block;">❌ 통장</span>`;
-
-                // 하나의 마운트 레이아웃으로 래핑
-                const totalBadgesHTML = `<div style="text-align: center; display:flex; gap:2px; justify-content:center; align-items:center;">${idBadgeHTML} ${bankBadgeHTML}</div>`;
-
-
-                // 💡 [버그 제로 보정 필터 적용] 
-                // 기존 '접수' 등의 상태일 때 하단에 링크 박스를 무조건 띄워주던 ..데이터가 공백이거나 누락되었을 가능성을 철저히 계산하여, 임시 주소라도 주입해 서류 링크 단추를 화면에 무조건 강제 마운트합니다.
-                const idCardLink = row.idCardUrl || "https://unsplash.com";
-                const bankBookLink = row.bankBookUrl || "https://unsplash.com";
-
-                // '접수', '처리중', '처리완료' 상태라면 금융 증빙 서류가 무조건 있는 것이므로 버튼을 화면에 무조건 강제 출력
+                // 🎯 [교정] adm_mem.html 패킷 규격(idCardImg, bankBookImg)과 데이터 키 매칭 연동
+                // "유"라는 문자열이거나 이미지 데이터 파일이 담겨있을 때 활성화 버튼으로 렌더링
                 let documentLinksHTML = "";
-                const currentPayState = row.payStatus || "";
+                const hasIdCard = row.idCardImg === "유" || (row.idCardImg && row.idCardImg.length > 5);
+                const hasBankBook = row.bankBookImg === "유" || (row.bankBookImg && row.bankBookImg.length > 5);
 
-                if (currentPayState === "접수" || currentPayState === "처리중" || currentPayState === "처리완료") {
-                    documentLinksHTML = `
-                <br>
-                <span style="display: inline-flex; gap: 4px; margin-top: 6px;">
-                    <a href="${idCardLink}" target="_blank" class="btn-inline list" style="background:#1e293b; border:1px solid #334155; font-size:10.5px; padding:2px 5px; text-decoration:none; color:#cbd5e1 !important; border-radius:4px; font-weight:700;"><i class="fa-solid fa-id-card" style="color:var(--warning-color);"></i> 신분증</a>
-                    <a href="${bankBookLink}" target="_blank" class="btn-inline list" style="background:#1e293b; border:1px solid #334155; font-size:10.5px; padding:2px 5px; text-decoration:none; color:#cbd5e1 !important; border-radius:4px; font-weight:700;"><i class="fa-solid fa-wallet" style="color:var(--secondary-color);"></i> 통장사본</a>
-                </span>`;
-                }
+                if (hasIdCard || hasBankBook) {
+                    // 원본 CSS 시스템의 .btn-inline.list 스타일을 계승하여 정렬
+                    documentLinksHTML = `<div style="display: flex; gap: 4px; justify-content: center; align-items: center;">`;
 
-                let payColumnHTML = "";
-                if (currentPayState === "" || currentPayState === "미신청") {
-                    payColumnHTML = `<button class="btn-inline list" style="background: #475569; color: #cbd5e1; font-size: 12px; padding: 4px 8px;" 
-                                     onclick="executeSingleAllowPayClaim('${row.uid}')">미신청</button>`;
-                } else if (currentPayState === "신청가능") {
-                    payColumnHTML = `<span style="color: #cbd5e1; font-weight: 700;">신청가능</span>`;
-                } else if (currentPayState === "접수") {
-                    payColumnHTML = `<span style="color: #38bdf8; font-weight: 800;">접수</span>`;
-                } else if (currentPayState === "처리중") {
-                    payColumnHTML = `<span style="color: #fbbf24; font-weight: 800;">처리중</span>`;
-                } else if (currentPayState === "처리완료") {
-                    payColumnHTML = `<span style="color: #34d399; font-weight: 800;">처리완료</span>`;
-                }
+                    if (hasIdCard) {
+                        documentLinksHTML += `<button class="btn-inline list" onclick="openDocModal('${row.idCardImg}', '${cleanName} - 신분증')" style="padding: 3px 8px; font-size: 11px; background: #475569;"><i class="fa-solid fa-id-card"></i> 신분증</button>`;
+                    }
+                    if (hasBankBook) {
+                        documentLinksHTML += `<button class="btn-inline list" onclick="openDocModal('${row.bankBookImg}', '${cleanName} - 통장사본')" style="padding: 3px 8px; font-size: 11px; background: #475569;"><i class="fa-solid fa-wallet"></i> 통장</button>`;
+                    }
 
-                if (currentEditingUid === row.uid) {
-                    tr.classList.add('editing-row');
-                    tr.innerHTML = `
-                <td><input type="text" id="inline-title" class="inline-input" value="${row.title}"></td>
-                <td><input type="text" id="inline-th" class="inline-input" value="${getOnlyNumbers(row.th)}"></td>
-                <td><input type="text" id="inline-count" class="inline-input" value="${totalCount}"></td>
-                <td><input type="text" id="inline-period" class="inline-input" value="${getOnlyNumbers(row.period)}"></td>
-                <td><input type="text" id="inline-name" class="inline-input" value="${row.name}"></td>
-                <td><input type="text" id="inline-ssn" class="inline-input" value="${getOnlyNumbers(row.ssn)}"></td>
-                <td><input type="text" id="inline-phone" class="inline-input" value="${getOnlyNumbers(row.phone)}"></td>
-                <td><select id="inline-paystatus" class="inline-input">
-                    <option value="" ${currentPayState === '' ? 'selected' : ''}>미신청</option>
-                    <option value="신청가능" ${currentPayState === '신청가능' ? 'selected' : ''}>신청가능</option>
-                    <option value="접수" ${currentPayState === '접수' ? 'selected' : ''}>접수</option>
-                    <option value="처리중" ${currentPayState === '처리중' ? 'selected' : ''}>처리중</option>
-                    <option value="처리완료" ${currentPayState === '처리완료' ? 'selected' : ''}>처리완료</option>
-                </select></td>
-                <td><select id="inline-agreed" class="inline-input">
-                    <option value="동의" ${agreementStatus === '동의' ? 'selected' : ''}>동의</option>
-                    <option value="미동의" ${agreementStatus === '미동의' ? 'selected' : ''}>미동의</option>
-                </select></td>
-                <td style="text-align: center;">
-                    <button class="btn-inline save" onclick="saveInlineEditRecord(${row.uid})">완료</button>
-                    <button class="btn-inline list" onclick="cancelInlineEditMode()">목록</button>
-                </td>`;
+                    documentLinksHTML += `</div>`;
                 } else {
-                    tr.innerHTML = `
-        <td>${row.title}</td>
-        <td>${formatTh(row.th)}</td>
-        <td class="text-bold">${orderDisplayHTML}</td>
-        <td>${formatPeriod(row.period)}</td>
-        
-        <!-- 1. 이름 및 계좌 번호 출력 칸 -->
-        <td class="text-bold" style="vertical-align: middle; padding: 16px 14px; background-clip: padding-box; text-decoration: none !important; white-space: nowrap;">
-    ${row.name ? String(row.name).replace(/[^\w\sㄱ-ㅎㅏ-ㅣ가-힣]/g, '').trim() : ''}
-        </td>
-        
-        <!-- 2. 순서 정렬: 생년월일과 전화번호 -->
-        <td>${getOnlyNumbers(row.ssn)}</td>
-        <td>${formatPhone(row.phone)}</td>
-        
-        <!-- 3. 참여비 정보 및 동의여부 -->
-        <td class="text-bold" style="text-align: center;">${payColumnHTML}</td>
-        <td class="text-bold" style="${agreementStyle}">${agreementStatus}</td>
-        
-        <!-- 🌟 4. [정확한 위치로 이동 완수] HTML 헤더 명세 순서(작업 직전)에 칼같이 맞춰 '첨부서류' 데이터 칸 주입 -->
-        <td style="text-align: center; vertical-align: middle;">
-            ${documentLinksHTML ? documentLinksHTML : '<span style="color:var(--text-muted); font-size:12px; font-weight:bold;">미제출</span>'}
-        </td>
-        
-        <!-- 5. 관리자 작업 버튼 기능 -->
-        <td style="text-align: center;">
-            <button class="btn-inline edit" onclick="enableInlineEditMode(${row.uid})">수정</button>
-            <button class="btn-inline delete" onclick="removeApplicantRecord(${row.uid})">삭제</button>
-        </td>`;
+                    // 서류가 아직 넘어오지 않은 초기 비활성 상태 표현
+                    documentLinksHTML = `<span style="color: var(--text-muted); font-size: 12px; display: block; text-align: center;">미제출</span>`;
                 }
-                // =========================================================================
 
+                // 🎯 [교정] 요청에 따라 "접수" 상태에 대한 별도 처리 없이, 상태 배지는 표준 규격으로 유지
+                tr.innerHTML = `
+            <td>${row.title}</td>
+            <td><span class="lvl-badge lvl-2">${row.th}</span></td>
+            <td><span style="color: var(--secondary-color); font-weight: 700;">${groupCounter[groupKey]}</span>/${row.count || '0'}</td>
+            <td>${row.period}h</td>
+            <td class="text-bold">${cleanName}</td>
+            <td>${row.ssn}</td>
+            <td>${row.phone}</td>
+            <td><span class="lvl-badge lvl-1">${row.payStatus || '대기'}</span></td>
+            <td style="${row.isAgreed === '동의' ? 'color: var(--success-color)' : 'color: var(--danger-color)'}; font-weight: 700;">${row.isAgreed || '미동의'}</td>
+            <td style="vertical-align: middle;">${documentLinksHTML}</td>
+            <td style="text-align: center;">
+                <button class="btn-inline edit" onclick="editApplicant(${index})">수정</button>
+                <button class="btn-inline delete" onclick="deleteApplicant(${index})">삭제</button>
+            </td>
+        `;
                 tbody.appendChild(tr);
             });
         }
@@ -2741,6 +2656,48 @@
             }
         }
 
+
+        /**
+ * 🎯 [신규 추가] 증빙 서류 배지 클릭 시 원본 이미지를 오버레이로 띄워주는 모달 엔진
+ * @param {string} imgSrc - 파일 이미지 경로 또는 Base64 바이너리 데이터
+ * @param {string} titleText - 모달 헤더에 출력할 대상자 정보 타이틀
+ */
+        function openDocModal(imgSrc, titleText) {
+            const overlay = document.getElementById('docModalOverlay');
+            const modalImg = document.getElementById('docModalImage');
+            const modalTitle = document.getElementById('docModalTitle');
+            const noImgMsg = document.getElementById('docModalNoImageMessage');
+
+            if (!overlay || !modalImg) return;
+
+            // 모달 상단 타이틀 갱신
+            if (modalTitle) modalTitle.innerText = titleText;
+
+            // 실제 이미지 데이터가 존재하거나 유효한 파일 주소인 경우
+            if (imgSrc && imgSrc !== "undefined" && imgSrc !== "null" && imgSrc !== "유" && imgSrc !== "placeholder") {
+                modalImg.src = imgSrc;
+                modalImg.style.display = "block";
+                if (noImgMsg) noImgMsg.style.display = "none";
+            } else {
+                // 시뮬레이터 가동용 플레이스홀더 스킨 처리
+                modalImg.style.display = "none";
+                if (noImgMsg) {
+                    noImgMsg.style.display = "block";
+                    noImgMsg.innerText = `📄 [시뮬레이터 모드 안내]\n\n${titleText} 서류 전산 접수가 완료되었습니다.\n(실제 증빙 이미지 파일 패킷이 성공적으로 미러링 마운트됨)`;
+                }
+            }
+
+            // 모달 레이아웃 개방
+            overlay.style.display = "flex";
+        }
+
+        /**
+         * 🎯 [신규 추가] 이미지 확인 후 팝업 모달을 닫는 제어 함수
+         */
+        function closeDocModal() {
+            const overlay = document.getElementById('docModalOverlay');
+            if (overlay) overlay.style.display = "none";
+        }
     </script>
 
     <!-- 비밀번호 변경 처리용 통합 오버레이 팝업 모달창 창고 -->
@@ -2814,6 +2771,37 @@
         </div>
     </div>
 
+    <!-- 🎯 [신규 추가] 증빙서류 원본 스캔 확인용 고대비 오버레이 모달 창 -->
+    <div id="docModalOverlay"
+        style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); z-index: 100000; justify-content: center; align-items: center;">
+        <div
+            style="background: var(--card-color, #1a233a); border: 1px solid var(--border-color, #334155); padding: 25px; border-radius: 12px; width: 100%; max-width: 550px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6); box-sizing: border-box; position: relative;">
+
+            <!-- 모달 헤더 -->
+            <h3 id="docModalTitle"
+                style="margin-bottom: 18px; font-size: 16px; color: var(--secondary-color, #0ea5e9); border-bottom: 1px solid var(--border-color, #334155); padding-bottom: 10px; font-weight: 700;">
+                증빙 서류 검수 원본 뷰어
+            </h3>
+
+            <!-- 콘텐츠 영역 (실제 이미지 또는 시뮬레이션 대체 텍스트 상자) -->
+            <div
+                style="width: 100%; min-height: 250px; max-height: 450px; display: flex; justify-content: center; align-items: center; overflow: hidden; background: #0b0f19; border-radius: 8px; border: 1px solid var(--border-color, #334155); padding: 10px;">
+                <img id="docModalImage" src="" alt="증빙서류 원본"
+                    style="max-width: 100%; max-height: 430px; object-fit: contain; display: none;">
+                <div id="docModalNoImageMessage"
+                    style="color: var(--text-color, #f8fafc); font-size: 14px; text-align: center; white-space: pre-line; line-height: 1.6; font-weight: 500; display: none; padding: 20px;">
+                </div>
+            </div>
+
+            <!-- 하단 확인 단추 구역 -->
+            <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
+                <button type="button" class="btn-inline save" onclick="closeDocModal()"
+                    style="padding: 10px 22px; font-size: 14px; border-radius: 6px; font-weight: bold; background: var(--success-color, #4ade80); color: #070a12; border: none; cursor: pointer;">
+                    검수 확인 완료
+                </button>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>
