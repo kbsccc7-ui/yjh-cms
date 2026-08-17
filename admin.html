@@ -1815,25 +1815,30 @@
                 const rawName = row.name || '';
                 const cleanName = rawName.replace(/[^\w\sㄱ-ㅎㅏ-ㅣ가-힣]/g, '').trim();
 
-                // 🎯 [전화번호 변환 가드]: 디폴트 "01012345678" 등 숫자로만 된 값도 실시간으로 하이픈 치환
-                const rawPhone = (row.phone || '').replace(/[^0-9]/g, ''); // 숫자 제외 문자 제거
+                // 🎯 [실시간 강제 포맷팅]: 디폴트든 수정값이든 숫자만 남기고 무조건 "010-XXXX-XXXX" 포맷으로 실시간 조립
+                const rawPhone = (row.phone || '').replace(/[^0-9]/g, ''); // 문자가 있든 없든 숫자만 발라냄
                 let formattedPhone = '-';
 
                 if (rawPhone.length === 11) {
+                    // 01012345678 -> 010-1234-5678
                     formattedPhone = rawPhone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
                 } else if (rawPhone.length === 10) {
                     if (rawPhone.indexOf('02') === 0) {
+                        // 0212345678 -> 02-1234-5678
                         formattedPhone = rawPhone.replace(/(\d{2})(\d{4})(\d{4})/, '$1-$2-$3');
                     } else {
+                        // 0311234567 -> 031-123-4567
                         formattedPhone = rawPhone.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
                     }
                 } else if (rawPhone.length === 9 && rawPhone.indexOf('02') === 0) {
+                    // 021234567 -> 02-123-4567
                     formattedPhone = rawPhone.replace(/(\d{2})(\d{3})(\d{4})/, '$1-$2-$3');
                 } else if (rawPhone.length > 0) {
-                    formattedPhone = row.phone; // 그 외 예외 숫자는 원본 유지
+                    // 규격 외 숫자는 예외적으로 원본 출력
+                    formattedPhone = row.phone;
                 }
 
-                // 🎯 [교정] adm_mem.html 전송 패킷 키 규격 일치화 (idCardImg, bankBookImg)
+                // [교정] adm_mem.html 전송 패킷 키 규격 일치화 (idCardImg, bankBookImg)
                 let documentLinksHTML = "";
                 const hasIdCard = row.idCardImg === "유" || (row.idCardImg && row.idCardImg.length > 5);
                 const hasBankBook = row.bankBookImg === "유" || (row.bankBookImg && row.bankBookImg.length > 5);
@@ -1851,9 +1856,14 @@
                     documentLinksHTML = `<span style="color: var(--text-muted); font-size: 12px; display: block; text-align: center;">미제출</span>`;
                 }
 
-                // 🎯 [인라인 수정 모드 플래그 분기]: currentAppEditingIndex와 일치할 때 수정 창 드로잉
-                if (typeof currentAppEditingIndex !== 'undefined' && currentAppEditingIndex === index) {
-                    tr.className = "editing-row";
+                // 초기값 강제 가드: 당직동의, 소집동의 값이 없을 경우 기본값 '동의' 주입
+                if (row.isDutyAgreed === undefined) row.isDutyAgreed = "동의";
+                if (row.isCallAgreed === undefined) row.isCallAgreed = "동의";
+
+                // [A 분기] 현재 인덱스가 인라인 편집 활성화 상태인 경우
+                if (currentAppEditingIndex === index) {
+                    tr.className = "editing-row"; // 원본 스타일시트 하이라이트 주입
+
                     tr.innerHTML = `
                 <td><input type="text" class="inline-input" id="edit-row-title-${index}" value="${row.title || ''}"></td>
                 <td><input type="text" class="inline-input" id="edit-row-th-${index}" value="${row.th || ''}" style="width:75px;"></td>
@@ -1861,7 +1871,8 @@
                 <td><input type="text" class="inline-input" id="edit-row-period-${index}" value="${row.period || ''}" style="width:50px;"></td>
                 <td><input type="text" class="inline-input" id="edit-row-name-${index}" value="${row.name || ''}"></td>
                 <td><input type="text" class="inline-input" id="edit-row-ssn-${index}" value="${row.ssn || ''}"></td>
-                <td><input type="text" class="inline-input" id="edit-row-phone-${index}" value="${row.phone || ''}"></td>
+                <!-- 💡 수정 모드 진입 시 입력창에도 무조건 깔끔하게 하이픈이 붙어 있도록 가공 변수(formattedPhone) 배치 -->
+                <td><input type="text" class="inline-input" id="edit-row-phone-${index}" value="${formattedPhone}"></td>
                 <td><input type="text" class="inline-input" id="edit-row-payStatus-${index}" value="${row.payStatus || '대기'}"></td>
                 <td style="text-align: center;">
                     <select class="inline-input" id="edit-row-duty-${index}" style="padding: 2px;">
@@ -1881,8 +1892,9 @@
                     <button type="button" class="btn-inline list" onclick="cancelApplicantInline()" style="background: #475569; border:none; padding:4px 8px; border-radius:4px; color:#fff; font-weight:700; cursor:pointer;">취소</button>
                 </td>
             `;
-                } else {
-                    // 원본 템플릿의 가로 매칭을 완벽하게 따르되, 동의 여부 분리 및 전화번호 치환 반영
+                }
+                // [B 분기] 일반 데이터 조회 상태인 경우
+                else {
                     tr.innerHTML = `
                 <td>${row.title || '-'}</td>
                 <td>
@@ -1894,17 +1906,19 @@
                 <td>${row.period || '0'}h</td>
                 <td class="text-bold" style="color: #ffffff;">${cleanName}</td>
                 <td>${row.ssn || '-'}</td>
+                <!-- 🎯 디폴트 데이터("01012345678")도 실시간 변환된 변수(formattedPhone)로 타겟 바인딩 -->
                 <td>${formattedPhone}</td>
                 <td><span class="lvl-badge lvl-1">${row.payStatus || '대기'}</span></td>
-                <td style="text-align: center; ${row.isDutyAgreed === '동의' ? 'color: var(--success-color)' : 'color: var(--danger-color)'}; font-weight: 700;">${row.isDutyAgreed || '동의'}</td>
-                <td style="text-align: center; ${row.isCallAgreed === '동의' ? 'color: var(--success-color)' : 'color: var(--danger-color)'}; font-weight: 700;">${row.isCallAgreed || '동의'}</td>
+                <td style="text-align: center; ${row.isDutyAgreed === '동의' ? 'color: var(--success-color)' : 'color: var(--danger-color)'}; font-weight: 700;">${row.isDutyAgreed}</td>
+                <td style="text-align: center; ${row.isCallAgreed === '동의' ? 'color: var(--success-color)' : 'color: var(--danger-color)'}; font-weight: 700;">${row.isCallAgreed}</td>
                 <td style="vertical-align: middle;">${documentLinksHTML}</td>
-                <td style="text-align: center;">
+                <td style="text-align: center; white-space: nowrap;">
                     <button type="button" class="btn-inline edit" onclick="editApplicant(${index})" style="background: #334155; border:none; padding:4px 8px; border-radius:4px; color:#fff; font-weight:700; cursor:pointer;">수정</button>
                     <button type="button" class="btn-inline delete" onclick="deleteApplicant(${index})" style="background: rgba(239, 68, 68, 0.15); border: 1px solid #f87171; color: #f87171; padding: 4px 8px; border-radius: 4px; font-weight:700; cursor:pointer;">삭제</button>
                 </td>
             `;
                 }
+
                 tbody.appendChild(tr);
             });
         }
