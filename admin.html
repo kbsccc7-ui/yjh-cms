@@ -992,6 +992,11 @@
             <div id="applicantView" class="content-section">
                 <h2>대상자 관리</h2>
 
+                <!-- admin.html 내부 적당한 위치에 추가 (예: 상단 탑바 유저 구역 등) -->
+                <button onclick="openMobileForm()" class="btn-inline" style="background:#0ea5e9; color:#fff;">
+                    📱 피험자 모바일 정산창 열기
+                </button>
+
                 <!-- 💡 실시간 재무 정산 프로세스 통계 대시보드 현황판 뷰 패널 -->
                 <div class="dashboard-stats-row"
                     style="display: flex; gap: 14px; margin-top: 20px; margin-bottom: 20px; width: 100%;">
@@ -2454,51 +2459,55 @@
 
             const pName = payload.patientName;
 
-            // 1. 인메모리 저장소에 업로드 스트림 데이터 보관
+            // 1. 메모리에 파일 바이너리 보관
             window.adminDocumentMemoryStore[pName] = {
                 idCard: payload.idCardImg,
                 bankBook: payload.bankBookImg
             };
 
-            // 2. 💡 [오류 수정] DOM을 정확하게 스캔하여 배지 즉시 리렌더링
-            // data-name 속성 매칭 또는 테이블 내 성명 텍스트 검색 통합 트래킹
-            let targetRow = document.querySelector(`tr[data-name="${pName}"]`);
+            // 2. 🎯 [완전 교정] 깃허브 동적 테이블 내 tr/td 전수 조사 및 실시간 배지 강제 인젝션
+            let targetRow = null;
+            const allRows = document.querySelectorAll("table tbody tr");
 
-            // 만약 data-name 속성이 없을 경우를 대비한 하이브리드 텍스트 매칭 검색 기법
-            if (!targetRow) {
-                const allRows = document.querySelectorAll("table tbody tr");
-                for (let row of allRows) {
-                    if (row.cells[0] && row.cells[0].innerText.trim() === pName) {
+            for (let row of allRows) {
+                // 행 자체가 data-name을 가졌거나 내부 td 중 하나라도 '홍길동'과 일치하는지 트래킹
+                if (row.getAttribute('data-name') === pName) {
+                    targetRow = row;
+                    break;
+                }
+                for (let cell of row.cells) {
+                    if (cell.innerText.trim() === pName) {
                         targetRow = row;
                         break;
                     }
                 }
+                if (targetRow) break;
             }
 
-            // 3. 대상 행을 발견했다면 즉시 락을 풀고 배지 노출 실행
+            // 3. 대상 행을 발견했다면 즉시 전산 활성화
             if (targetRow) {
-                const docCell = targetRow.querySelector(".target-doc-cell");
-                const statusCell = targetRow.querySelector(".target-status-cell");
+                // 테이블 내부에서 '첨부서류'가 들어가야 할 컬럼 위치(보통 4번째 혹은 5번째 td)를 강제 지정하거나
+                // 클래스 기반(.target-doc-cell)으로 셀을 지정합니다.
+                let docCell = targetRow.querySelector(".target-doc-cell") || targetRow.cells[3]; // 구조에 맞게 인덱스 조정 (0부터 시작)
+                let statusCell = targetRow.querySelector(".target-status-cell") || targetRow.cells[2];
 
-                // A. 첨부서류 영역을 즉시 신분증 및 통장 뱃지로 변경 반영
                 if (docCell) {
                     docCell.innerHTML = `
-                <span class="doc-badge status-id" style="cursor:pointer;" onclick="openAdminDocModal('${pName}', 'idCard')">
-                    <i class="fa-solid fa-id-card"></i> 신분증
-                </span>
-                <span class="doc-badge status-bank" style="cursor:pointer;" onclick="openAdminDocModal('${pName}', 'bankBook')">
-                    <i class="fa-solid fa-wallet"></i> 통장
-                </span>
+                <span class="doc-badge status-id" style="display:inline-block; padding:4px 8px; background:rgba(74,222,128,0.15); border:1px solid #4ade80; color:#4ade80; border-radius:4px; font-size:11px; font-weight:700; margin:2px; cursor:pointer;" onclick="openAdminDocModal('${pName}', 'idCard')">신분증</span>
+                <span class="doc-badge status-bank" style="display:inline-block; padding:4px 8px; background:rgba(14,165,233,0.15); border:1px solid #0ea5e9; color:#38bdf8; border-radius:4px; font-size:11px; font-weight:700; margin:2px; cursor:pointer;" onclick="openAdminDocModal('${pName}', 'bankBook')">통장</span>
             `;
                 }
 
-                // B. 대장 내부의 심사 상태 레이블도 즉시 "접수" 상태 배지로 동시 동기화
                 if (statusCell) {
-                    statusCell.innerHTML = `<span class="lvl-badge lvl-2" style="background:rgba(14,165,233,0.15); color:#38bdf8; border:1px solid rgba(14,165,233,0.3);">접수</span>`;
+                    statusCell.innerHTML = `<span class="lvl-badge lvl-2" style="padding:5px 10px; border-radius:6px; font-weight:700; font-size:12px; display:inline-block; background:rgba(14,165,233,0.15); color:#38bdf8; border:1px solid rgba(14,165,233,0.3);">접수</span>`;
                 }
+                console.log(`[연동 완료] ${pName} 행의 증빙서류 배지 활성화 성공.`);
             } else {
-                console.error(`대시보드 명단 그리드에서 [${pName}] 피험자의 데이터 행을 전산 매칭하지 못했습니다.`);
+                console.error(`[연동 실패] 대시보드 명단 그리드에서 [${pName}] 대상자 행을 찾지 못했습니다.`);
             }
+
+            // 자식창이 전역 스코프에서 부모 함수를 즉각 노출 추적할 수 있도록 윈도우 인가 바인딩 보완
+            window.receiveSubjectDocumentPayload = receiveSubjectDocumentPayload;
 
             // 4. 상단 대시보드 통계 카운트 UI 실시간 동적 +1 증액 가동
             let receivedStat = document.getElementById('stat-received-count');
@@ -2581,6 +2590,11 @@
         </body></html>`;
             printWindow.document.write(htmlContent);
             printWindow.document.close();
+        }
+
+        function openMobileForm() {
+            // 💡 주소를 깃허브 상대경로로 지정하여 자식 팝업창을 정식으로 가동합니다.
+            window.open('adm_mem.html', 'mobileFormPopup', 'width=450,height=850,scrollbars=yes');
         }        
     </script>
 
