@@ -1417,7 +1417,7 @@
                 const tr = document.createElement('tr');
 
                 // 테이블 행을 생성한 바로 아랫줄에 코드를 삽입합니다.
-                const cleanName = row.name ? String(row.name).replace(/[.\-]/g, '').trim() : '';
+                let cleanName = item.name.replace(/[\.\-]$/, "").trim();
 
                 const note = (row.note && row.note.trim() !== '') ? row.note : '-';
                 const schedule = (row.schedule && row.schedule.trim() !== '') ? row.schedule : '-';
@@ -1626,10 +1626,9 @@
         <td>${formatPeriod(row.period)}</td>
         
         <!-- 1. 이름 및 계좌 번호 출력 칸 -->
-        <td class="text-bold">
-               ${row.name ? String(row.name).replace(/[^\w\sㄱ-ㅎㅏ-ㅣ가-힣]/g, '').trim() : ''}
-            <br><span style="font-size:11px; color:var(--text-muted); font-weight:normal;">${displayAccount}</span>
-        </td>
+<td class="text-bold">
+    ${row.name ? String(row.name).replace(/[^\w\sㄱ-ㅎㅏ-ㅣ가-힣]/g, '').trim() : ''}<br><span style="font-size:11px; color:var(--text-muted); font-weight:normal;">${displayAccount}</span>
+</td>
         
         <!-- 2. 순서 정렬: 생년월일과 전화번호 -->
         <td>${getOnlyNumbers(row.ssn)}</td>
