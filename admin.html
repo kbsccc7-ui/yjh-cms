@@ -1524,16 +1524,18 @@
             return v;
         }
 
-        // =========================================================================
-        // [4파트] 모집공고 전용 렌더링 엔진 및 스케줄러 동적 트랜잭션 제어 모듈
-        // =========================================================================
+        // ========================================================
+        // 🎯 [교체] 모집공고 테이블 렌더링 및 오피셜 디폴트 3종 락인 엔진
+        // ========================================================
         function refreshRecruitmentView() {
             const tbody = document.getElementById('dom-recruitment-table');
             if (!tbody) return;
-            tbody.innerHTML = ''; // 테이블 내부 초기화
+            tbody.innerHTML = ''; // 기존 행 청소
 
-            // 1. 모집공고 마스터 데이터 초기 락인 (3종)
+            // 1. LocalStorage에서 모집공고 데이터 로드
             let adminRecruitmentDB = JSON.parse(localStorage.getItem('dataStoreRecruitment')) || [];
+
+            // 2. 💥 [데이터 규격 일치화] 완전히 비어있을 경우 요청하신 원본 3종 데이터 강제 주입
             if (adminRecruitmentDB.length === 0) {
                 adminRecruitmentDB = [
                     {
@@ -1543,7 +1545,7 @@
                         period: "72",
                         notice: "공복 유지 필수 및 소집 10분 전 대기",
                         examDate: "2026-09-01",
-                        payDate: "2024-09-10" // join_login 연동용 과거 고정값
+                        payDate: "2024-09-10" // join_login 크로스체크 연동 날짜
                     },
                     {
                         title: "신일제약-사쿠+발사",
@@ -1565,106 +1567,40 @@
                     }
                 ];
                 localStorage.setItem('dataStoreRecruitment', JSON.stringify(adminRecruitmentDB));
-                console.log("[데이터 빌드] 새 모집공고 디폴트 3종이 정상 등록되었습니다.");
+                console.log("[시스템 데이터 엔진] 새 모집공고 디폴트 3종 등록 완료.");
             }
 
-            // 2. 대상자 마스터 데이터 초기 락인 (명단 연동 싱크)
-            let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
-            if (adminApplicantDB.length === 0) {
-                adminApplicantDB = [
-                    {
-                        title: "애드파마 로잘탄+로수+에제",
-                        th: "2기(1차)",
-                        count: "60",
-                        period: "72",
-                        name: "홍길동",
-                        ssn: "950505",
-                        phone: "01012345678",
-                        payStatus: "대기",
-                        isAgreed: "동의",
-                        idCardImg: "무",
-                        bankBookImg: "무",
-                        stage: "2 기 [1 차 차수분] 분할 사례비"
-                    },
-                    {
-                        title: "신일제약-사쿠+발사",
-                        th: "4기(1차)",
-                        count: "46",
-                        period: "96",
-                        name: "강남구",
-                        ssn: "960606",
-                        phone: "01098765432",
-                        payStatus: "대기",
-                        isAgreed: "동의",
-                        idCardImg: "무",
-                        bankBookImg: "무",
-                        stage: "4 기 [1 차 차수분] 분할 사례비"
-                    },
-                    {
-                        title: "신일제약-사쿠+발사",
-                        th: "4기(1차)",
-                        count: "46",
-                        period: "96",
-                        name: "진재영",
-                        ssn: "970707",
-                        phone: "01055554444",
-                        payStatus: "대기",
-                        isAgreed: "동의",
-                        idCardImg: "무",
-                        bankBookImg: "무",
-                        stage: "4 기 [1 차 차수분] 분할 사례비"
-                    }
-                ];
-                localStorage.setItem('dataStoreApplicant', JSON.stringify(adminApplicantDB));
-                console.log("[데이터 빌드] 피험자(홍길동/강남구/진재영) 대상자 대장 이관 마운트 완료.");
-            }
-
-            // 브라우저 렌더링 완료 시 두 테이블을 일제히 동적 리프레시 실행
-            window.addEventListener('load', function () {
-                if (typeof refreshRecruitmentView === "function") refreshRecruitmentView();
-                if (typeof refreshApplicantView === "function") refreshApplicantView();
-            });
-
-
-            // 3. 데이터를 기반으로 테이블 행 생성 및 강제 집행
+            // 3. 데이터를 기반으로 안전하게 표 행(tr) 동적 생성
             adminRecruitmentDB.forEach((row, index) => {
                 const tr = document.createElement('tr');
+                tr.style.display = "table-row"; // CSS display: flex 간섭 강제 우회 가드
 
-                // 🎯 [교정 핵심]: CSS의 td:last-child { display: flex } 가 테이블 세포(Cell) 구조를 찢어발기지 못하도록,
-                // 마지막 작업칸 내부에 중첩 디브 컨테이너(div style="display:flex")를 레이어로 한 번 더 묶어 처리합니다.
-                // 이로써 표의 레이아웃 너비가 0px로 터져버리는 CSS 버그가 완전히 소멸합니다.
                 tr.innerHTML = `
-            <td style="font-weight: 700; color: #ffffff; white-space: normal !important; word-break: break-all !important; line-height: 1.4; text-align: left; vertical-align: middle;">
+            <td style="font-weight: 700; color: #ffffff; white-space: normal !important; word-break: break-all !important; line-height: 1.4; vertical-align: middle;">
                 ${row.title}
             </td>
-            <td style="vertical-align: middle; text-align: left;">
-                <span class="lvl-badge lvl-2" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3); font-weight: 700; display: inline-block;">
+            <td style="vertical-align: middle;">
+                <span class="lvl-badge lvl-2" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3); font-weight: 700;">
                     ${row.th}
                 </span>
             </td>
-            <td style="vertical-align: middle; color: #eeeeee; text-align: left;">${row.count}명</td>
-            <td style="vertical-align: middle; color: #eeeeee; text-align: left;">${row.period}시간</td>
-            <td class="exam-notice-cell" style="max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #f87171; vertical-align: middle; text-align: left;" title="${row.notice || '-'}">
+            <td style="vertical-align: middle; color: #eeeeee;">${row.count}명</td>
+            <td style="vertical-align: middle; color: #eeeeee;">${row.period}시간</td>
+            <td class="exam-notice-cell" style="max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #f87171; vertical-align: middle;" title="${row.notice || '-'}">
                 ${row.notice || '없음'}
             </td>
-            <td style="vertical-align: middle; text-align: left;">
-                <button type="button" class="btn-inline list" style="background: #475569; border: none; color: #ffffff; padding: 4px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 12px;">보기</button>
-            </td>
-            <td style="vertical-align: middle; text-align: left;">
-                <span style="color: #fbbf24; font-weight: 700;">${row.payDate || '추후공지'}</span>
-            </td>
+            <td style="vertical-align: middle;"><button type="button" class="btn-inline list" style="background: #475569; border:none; padding:4px 8px; border-radius:4px; color:#fff; cursor:pointer;">보기</button></td>
+            <td style="vertical-align: middle;"><span style="color: #fbbf24; font-weight: 700;">${row.payDate || '추후공지'}</span></td>
             <td style="vertical-align: middle;">
-                <!-- 🎯 CSS display: flex 간섭을 물리적으로 완전히 방어하는 안전 패딩 브릿지 구역 -->
+                <!-- 🎯 [CSS 파괴 차단 핵심 브릿지] 외부 flex 간섭을 div 래퍼로 흡수 차단 -->
                 <div class="action-btn-wrapper" style="display: flex !important; justify-content: center !important; gap: 6px !important; width: 100% !important; white-space: nowrap !important;">
-                    <button type="button" class="btn-inline edit" onclick="editRecruitment(${index})" style="background: #334155; border: none; color: #ffffff; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 13px;">수정</button>
-                    <button type="button" class="btn-inline delete" onclick="deleteRecruitment(${index})" style="background: rgba(239, 68, 68, 0.15); border: 1px solid #f87171; color: #f87171; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 13px;">삭제</button>
+                    <button type="button" class="btn-inline edit" onclick="editRecruitment(${index})" style="background: #334155; border:none; padding:5px 10px; border-radius:4px; color:#fff; font-weight:700; cursor:pointer;">수정</button>
+                    <button type="button" class="btn-inline delete" onclick="deleteRecruitment(${index})" style="background: rgba(239, 68, 68, 0.15); border: 1px solid #f87171; color: #f87171; padding: 5px 10px; border-radius: 4px; font-weight:700; cursor:pointer;">삭제</button>
                 </div>
             </td>
         `;
                 tbody.appendChild(tr);
             });
-
-            console.log(`[시뮬레이터 최종] CSS 간섭 우회 완료. 모집공고 대장 목록 ${adminRecruitmentDB.length}개 전체 마운트 종결.`);
         }
 
 
@@ -2783,6 +2719,68 @@
             if (overlay) overlay.style.display = "none";
         }
 
+        // ========================================================
+        // 🎯 [추가] admin.html 스크립트 최하단: 대상자 대장 초기 인가 및 연동 명령셋
+        // ========================================================
+        (function () {
+            // 페이지 로드 시 대상자 마스터 데이터(홍길동/강남구/진재영) 정밀 동기화 주입
+            let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
+
+            if (adminApplicantDB.length === 0) {
+                adminApplicantDB = [
+                    {
+                        title: "애드파마 로잘탄+로수+에제",
+                        th: "2기(1차)",
+                        count: "60",
+                        period: "72",
+                        name: "홍길동",
+                        ssn: "950505",
+                        phone: "01012345678",
+                        payStatus: "대기",
+                        isAgreed: "동의",
+                        idCardImg: "무",
+                        bankBookImg: "무",
+                        stage: "2 기 [1 차 차수분] 분할 사례비"
+                    },
+                    {
+                        title: "신일제약-사쿠+발사",
+                        th: "4기(1차)",
+                        count: "46",
+                        period: "96",
+                        name: "강남구",
+                        ssn: "960606",
+                        phone: "01098765432",
+                        payStatus: "대기",
+                        isAgreed: "동의",
+                        idCardImg: "무",
+                        bankBookImg: "무",
+                        stage: "4 기 [1 차 차수분] 분할 사례비"
+                    },
+                    {
+                        title: "신일제약-사쿠+발사",
+                        th: "4기(1차)",
+                        count: "46",
+                        period: "96",
+                        name: "진재영",
+                        ssn: "970707",
+                        phone: "01055554444",
+                        payStatus: "대기",
+                        isAgreed: "동의",
+                        idCardImg: "무",
+                        bankBookImg: "무",
+                        stage: "4 기 [1 차 차수분] 분할 사례비"
+                    }
+                ];
+                localStorage.setItem('dataStoreApplicant', JSON.stringify(adminApplicantDB));
+                console.log("[데이터 빌드] 새 피험자 마스터 데이터 3명 인가 완료.");
+            }
+
+            // 브라우저 윈도우가 준비 완료되면 두 테이블 뷰를 새로고침 없이 즉시 화면 호출
+            window.addEventListener('load', function () {
+                if (typeof refreshRecruitmentView === "function") refreshRecruitmentView();
+                if (typeof refreshApplicantView === "function") refreshApplicantView();
+            });
+        })();        
     </script>
 
     <!-- 비밀번호 변경 처리용 통합 오버레이 팝업 모달창 창고 -->
