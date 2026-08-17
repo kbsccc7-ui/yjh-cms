@@ -967,7 +967,21 @@
                                 <th style="width: 185px; min-width: 165px; text-align: center;">작업</th>
                             </tr>
                         </thead>
-                        <tbody id="dom-recruitment-table"></tbody>
+                        <tbody id="dom-recruitment-table">
+                            <tr data-name="홍길동">
+                                <td>홍길동</td>
+                                <td>19900101</td>
+                                <td class="target-status-cell"><span class="lvl-badge lvl-1">대기</span></td>
+                                <td class="target-doc-cell">
+                                    <span class="doc-badge status-none">미제출</span>
+                                </td>
+                                <td>
+                                    <button class="btn-inline edit">수정</button>
+                                    <button class="btn-inline delete">삭제</button>
+                                </td>
+                            </tr>
+
+                        </tbody>
                     </table>
                 </div>
             </div>
@@ -2439,17 +2453,54 @@
             if (!payload || !payload.patientName) return;
 
             const pName = payload.patientName;
-            // 글로벌 메모리 해시에 파일 주소 스냅샷 임베딩 영구 적재
+
+            // 1. 인메모리 저장소에 업로드 스트림 데이터 보관
             window.adminDocumentMemoryStore[pName] = {
                 idCard: payload.idCardImg,
                 bankBook: payload.bankBookImg
             };
 
-            // 하단 대상자 목록 렌더링 구역 내 해당 대상자(예: 홍길동)의 '첨부서류' 데이터 셀 레이어를 가변 배지로 리렌더링 강제
-            // 실제 운영 시스템에서는 고유 ID(uid) 매칭 방식을 적극 권장합니다.
-            updateTableDocumentCellDynamic(pName);
+            // 2. 💡 [오류 수정] DOM을 정확하게 스캔하여 배지 즉시 리렌더링
+            // data-name 속성 매칭 또는 테이블 내 성명 텍스트 검색 통합 트래킹
+            let targetRow = document.querySelector(`tr[data-name="${pName}"]`);
 
-            // 대상자 통계 대시보드 현황판의 '청구서 접수 현황' 스코어 보드 수치 실시간 가중 가동
+            // 만약 data-name 속성이 없을 경우를 대비한 하이브리드 텍스트 매칭 검색 기법
+            if (!targetRow) {
+                const allRows = document.querySelectorAll("table tbody tr");
+                for (let row of allRows) {
+                    if (row.cells[0] && row.cells[0].innerText.trim() === pName) {
+                        targetRow = row;
+                        break;
+                    }
+                }
+            }
+
+            // 3. 대상 행을 발견했다면 즉시 락을 풀고 배지 노출 실행
+            if (targetRow) {
+                const docCell = targetRow.querySelector(".target-doc-cell");
+                const statusCell = targetRow.querySelector(".target-status-cell");
+
+                // A. 첨부서류 영역을 즉시 신분증 및 통장 뱃지로 변경 반영
+                if (docCell) {
+                    docCell.innerHTML = `
+                <span class="doc-badge status-id" style="cursor:pointer;" onclick="openAdminDocModal('${pName}', 'idCard')">
+                    <i class="fa-solid fa-id-card"></i> 신분증
+                </span>
+                <span class="doc-badge status-bank" style="cursor:pointer;" onclick="openAdminDocModal('${pName}', 'bankBook')">
+                    <i class="fa-solid fa-wallet"></i> 통장
+                </span>
+            `;
+                }
+
+                // B. 대장 내부의 심사 상태 레이블도 즉시 "접수" 상태 배지로 동시 동기화
+                if (statusCell) {
+                    statusCell.innerHTML = `<span class="lvl-badge lvl-2" style="background:rgba(14,165,233,0.15); color:#38bdf8; border:1px solid rgba(14,165,233,0.3);">접수</span>`;
+                }
+            } else {
+                console.error(`대시보드 명단 그리드에서 [${pName}] 피험자의 데이터 행을 전산 매칭하지 못했습니다.`);
+            }
+
+            // 4. 상단 대시보드 통계 카운트 UI 실시간 동적 +1 증액 가동
             let receivedStat = document.getElementById('stat-received-count');
             if (receivedStat) {
                 let currentCount = parseInt(receivedStat.innerText) || 0;
