@@ -789,12 +789,6 @@
             transition: color 0.2s ease;
         }
 
-        /* 클릭 후 상태 유지 */
-        #dom-recruitment-table a:visited {
-            text-decoration: none !important;
-            color: #333333 !important;
-        }
-
         /* 마우스 오버 시 색상 변환 (포인터 커서 추가) */
         #dom-recruitment-table tr:hover td,
         #dom-recruitment-table a:hover {
@@ -2923,7 +2917,32 @@
                 alert("선택하신 모집공고가 전산 대장에서 삭제되었습니다.");
                 refreshRecruitmentView();
             }
-        }        
+        }
+
+
+        // ========================================================
+        // 🎯 [신규 추가] admin.html 최하단: 악성 CSS 하이퍼링크 간섭 원천 파괴 스크립트
+        // ========================================================
+        (function () {
+            const styleGate = document.createElement('style');
+            styleGate.innerHTML = `
+        /* 과거에 지정된 a:visited 및 하이퍼링크 스타일 시트를 완전히 무력화합니다 */
+        #dom-recruitment-table td, 
+        #dom-recruitment-table span,
+        #dom-recruitment-table a {
+            text-decoration: none !important;
+            color: #ffffff !important; /* 글자색을 고대비 화이트로 강제 고정 */
+            font-weight: 700 !important;
+            cursor: default !important; /* 마우스 손가락 모양 포인터 해제 */
+        }
+        /* 행 자체에 마우스 올렸을 때의 이펙트만 깔끔하게 유지 */
+        #dom-recruitment-table tr:hover td {
+            color: #57a7fd !important;
+        }
+    `;
+            document.head.appendChild(styleGate);
+            console.log("[레이아웃 가드] 구형 하이퍼링크 CSS 간섭 장벽이 원천 파괴되었습니다.");
+        })();        
     </script>
 
     <!-- 비밀번호 변경 처리용 통합 오버레이 팝업 모달창 창고 -->
