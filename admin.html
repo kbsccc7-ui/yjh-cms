@@ -2486,9 +2486,9 @@
                 bankBook: payload.bankBookImg
             };
 
-            // 2. 이름 매칭으로 대상 행(Row) 정확하게 탐색
+            // 2. 전체 테이블에서 '홍길동' 이름이 들어간 행(Row) 정확하게 탐색
             let targetRow = null;
-            const allRows = document.querySelectorAll("#dom-recruitment-table tr");
+            const allRows = document.querySelectorAll("table tbody tr");
 
             for (let row of allRows) {
                 if (row.getAttribute('data-name') === pName) {
@@ -2504,28 +2504,33 @@
                 if (targetRow) break;
             }
 
-            // 3. 🎯 [완전 교정] 인덱스 번호 대신 '클래스명'을 직접 지목하여 대장 틀어짐 방지
-            if (targetRow) {
-                // 행 내부에서 클래스가 .target-doc-cell 인 td를 정확하게 스캔
-                const docCell = targetRow.querySelector(".target-doc-cell");
+            // 3. 🎯 [완전 교정] 인원수/기간 칸 오염 차단 + 오직 첨부서류 칸만 정밀 타격
+            if (targetRow && targetRow.cells.length > 0) {
+                const totalCells = targetRow.cells.length;
+
+                // 💡 맨 오른쪽(cells.length - 1)은 [작업] 버튼 칸이고, 
+                // 💡 오른쪽에서 2번째(cells.length - 2)가 무조건 [첨부서류] 칸입니다.
+                const docCellIndex = totalCells - 2;
+                const docCell = targetRow.cells[docCellIndex];
 
                 if (docCell) {
-                    // 다른 칸은 그대로 두고 오직 '첨부서류' 칸 내용만 배지로 스위칭합니다.
+                    // 다른 앞쪽 칸(인원수, 기간 등)은 일절 건드리지 않고, 오직 첨부서류 칸에만 신분증/통장 배지를 인젝션합니다.
                     docCell.innerHTML = `
                 <span class="doc-badge status-id" style="display:inline-block; padding:4px 6px; background:rgba(74,222,128,0.15); border:1px solid #4ade80; color:#4ade80; border-radius:4px; font-size:11px; font-weight:700; margin:2px; cursor:pointer;" onclick="openAdminDocModal('${pName}', 'idCard')">신분증</span>
                 <span class="doc-badge status-bank" style="display:inline-block; padding:4px 6px; background:rgba(14,165,233,0.15); border:1px solid #0ea5e9; color:#38bdf8; border-radius:4px; font-size:11px; font-weight:700; margin:2px; cursor:pointer;" onclick="openAdminDocModal('${pName}', 'bankBook')">통장</span>
             `;
                 }
 
-                console.log(`[연동 완료] ${pName} 행의 첨부서류 칸에만 정확히 배지가 안착되었습니다.`);
+                console.log(`[연동 성공] [접수] 배지 없이 정확한 첨부서류 열에 증빙 배지만 안착되었습니다.`);
             } else {
                 console.error(`[연동 실패] 대시보드 명단에서 [${pName}] 대상자 행을 찾지 못했습니다.`);
             }
 
-            // 4. 상단 통계판 수치 실시간 연동 업데이트
+            // 4. 상단 '청구서 접수 현황' 스코어보드 통계 실시간 동기화 (+1)
             let receivedStat = document.getElementById('stat-received-count');
             if (receivedStat) {
-                receivedStat.innerText = "1건";
+                let currentCount = parseInt(receivedStat.innerText) || 0;
+                receivedStat.innerText = (currentCount + 1) + "건";
             }
         }
         window.receiveSubjectDocumentPayload = receiveSubjectDocumentPayload;
