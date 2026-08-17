@@ -2920,7 +2920,7 @@
 
             let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
 
-            // 🎯 [정밀화 보안 교정]: 이름으로만 매칭하면 동명이인 문제가 생길 수 있으므로, 
+            // [정밀화 보안 교정]: 이름으로만 매칭하면 동명이인 문제가 생길 수 있으므로, 
             // 가능하면 고유 키(uid 또는 생년월일 ssn 조합)를 우선 비교하도록 뼈대를 보완합니다.
             const idx = adminApplicantDB.findIndex(user => {
                 if (payload.patientUid) {
@@ -2931,18 +2931,30 @@
             });
 
             if (idx !== -1) {
+                // 1. 상태값을 '접수'로 전환
                 adminApplicantDB[idx].payStatus = "접수";
-                adminApplicantDB[idx].idCardUrl = payload.idCardImg;
-                adminApplicantDB[idx].bankBookUrl = payload.bankBookImg;
-                localStorage.setItem('dataStoreApplicant', JSON.stringify(adminApplicantDB));
 
-                // 화면의 대장 목록 테이블을 새로고침 없이 즉각 리렌더링하는 기존 함수 호출
-                if (typeof renderAdminApplicantTable === "function") {
+                // 🎯 [완전 복원 핵심]: refreshApplicantView() 출력 함수가 검사하는 데이터 키 구조와 100% 싱크 결합
+                adminApplicantDB[idx].idCardImg = payload.idCardImg;     // 기존 idCardUrl 대신 원본 배지 키에 매칭
+                adminApplicantDB[idx].bankBookImg = payload.bankBookImg; // 기존 bankBookUrl 대신 원본 배지 키에 매칭
+
+                // 하이브리드 가드(true 부울 값 규칙)까지 함께 활성화하여 완벽하게 방어
+                adminApplicantDB[idx].idCard = true;
+                adminApplicantDB[idx].bankbook = true;
+
+                // 2. 교정된 패킷 데이터를 LocalStorage 가상 DB에 최종 커밋
+                localStorage.setItem('dataStoreApplicant', JSON.stringify(adminApplicantDB));
+                console.log(`🎯 [연동 성공] ${payload.patientName}님의 서류가 대장에 동기화되었습니다.`);
+
+                // 🎯 [리렌더링 함수명 교정]: 실제 12개 컬럼 마스터 테이블을 동적으로 그려주는 진짜 원본 함수를 호출합니다.
+                if (typeof refreshApplicantView === "function") {
+                    refreshApplicantView();
+                } else if (typeof renderAdminApplicantTable === "function") {
+                    // 만약 기존 함수도 시스템 다른 곳에서 쓰고 있다면 예외 방지용 백업 호출 유지
                     renderAdminApplicantTable();
                 }
-
-                // 💡 트랜잭션이 완료되었으므로 안전하게 허브 슬롯 비우기 (선택 사항)
-                // window.currentCertifiedUser = null; 
+            } else {
+                console.warn(`⚠️ [연동 실패] 수신된 성명(${payload.patientName})과 일치하는 대상자를 찾지 못했습니다.`);
             }
         }
 
