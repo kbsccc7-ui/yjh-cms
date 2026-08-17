@@ -968,19 +968,35 @@
                             </tr>
                         </thead>
                         <tbody id="dom-recruitment-table">
+                            <!-- 💡 스크린샷의 11개 컬럼 대칭 구조를 완벽하게 반영한 정밀 전산 행 -->
                             <tr data-name="홍길동">
-                                <td>홍길동</td>
-                                <td>19900101</td>
-                                <td class="target-status-cell"><span class="lvl-badge lvl-1">대기</span></td>
+                                <td>애드피마·로잘탄+로수+에제 2 기 임상과제</td>
+                                <td>2기</td>
+                                <!-- 🎯 수신 시 상태값 전산 연동을 원하시면 여기에 target-status-cell 클래스를 부여합니다 -->
+                                <td class="target-status-cell">1/60</td>
+                                <td>72시간</td>
+                                <td style="font-weight: 700; color: #fff;">홍길동</td>
+                                <td>950505</td>
+                                <td>010-1234-5678</td>
+                                <td><span class="lvl-badge"
+                                        style="background: rgba(148, 163, 184, 0.1); color: #94a3b8;">미신청</span></td>
+                                <td style="color: #4ade80;">동의</td>
+
+                                <!-- 🎯 실시간 배지가 안전하게 안착할 10번째 첨부서류 타겟 셀 -->
                                 <td class="target-doc-cell">
-                                    <span class="doc-badge status-none">미제출</span>
+                                    <span class="doc-badge status-none"
+                                        style="color: #64748b; font-size: 11px;">미제출</span>
                                 </td>
+
                                 <td>
-                                    <button class="btn-inline edit">수정</button>
-                                    <button class="btn-inline delete">삭제</button>
+                                    <div style="display: flex; gap: 4px; justify-content: center;">
+                                        <button class="btn-inline edit"
+                                            style="padding: 2px 6px; font-size: 11px;">수정</button>
+                                        <button class="btn-inline delete"
+                                            style="padding: 2px 6px; font-size: 11px; background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2);">삭제</button>
+                                    </div>
                                 </td>
                             </tr>
-
                         </tbody>
                     </table>
                 </div>
@@ -2470,12 +2486,11 @@
                 bankBook: payload.bankBookImg
             };
 
-            // 2. 🎯 [완전 교정] 깃허브 동적 테이블 내 tr/td 전수 조사 및 실시간 배지 강제 인젝션
+            // 2. 이름 매칭으로 대상 행(Row) 정확하게 탐색
             let targetRow = null;
-            const allRows = document.querySelectorAll("table tbody tr");
+            const allRows = document.querySelectorAll("#dom-recruitment-table tr");
 
             for (let row of allRows) {
-                // 행 자체가 data-name을 가졌거나 내부 td 중 하나라도 '홍길동'과 일치하는지 트래킹
                 if (row.getAttribute('data-name') === pName) {
                     targetRow = row;
                     break;
@@ -2489,38 +2504,31 @@
                 if (targetRow) break;
             }
 
-            // 3. 대상 행을 발견했다면 즉시 전산 활성화
+            // 3. 🎯 [완전 교정] 인덱스 번호 대신 '클래스명'을 직접 지목하여 대장 틀어짐 방지
             if (targetRow) {
-                // 테이블 내부에서 '첨부서류'가 들어가야 할 컬럼 위치(보통 4번째 혹은 5번째 td)를 강제 지정하거나
-                // 클래스 기반(.target-doc-cell)으로 셀을 지정합니다.
-                let docCell = targetRow.querySelector(".target-doc-cell") || targetRow.cells[3]; // 구조에 맞게 인덱스 조정 (0부터 시작)
-                let statusCell = targetRow.querySelector(".target-status-cell") || targetRow.cells[2];
+                // 행 내부에서 클래스가 .target-doc-cell 인 td를 정확하게 스캔
+                const docCell = targetRow.querySelector(".target-doc-cell");
 
                 if (docCell) {
+                    // 다른 칸은 그대로 두고 오직 '첨부서류' 칸 내용만 배지로 스위칭합니다.
                     docCell.innerHTML = `
-                <span class="doc-badge status-id" style="display:inline-block; padding:4px 8px; background:rgba(74,222,128,0.15); border:1px solid #4ade80; color:#4ade80; border-radius:4px; font-size:11px; font-weight:700; margin:2px; cursor:pointer;" onclick="openAdminDocModal('${pName}', 'idCard')">신분증</span>
-                <span class="doc-badge status-bank" style="display:inline-block; padding:4px 8px; background:rgba(14,165,233,0.15); border:1px solid #0ea5e9; color:#38bdf8; border-radius:4px; font-size:11px; font-weight:700; margin:2px; cursor:pointer;" onclick="openAdminDocModal('${pName}', 'bankBook')">통장</span>
+                <span class="doc-badge status-id" style="display:inline-block; padding:4px 6px; background:rgba(74,222,128,0.15); border:1px solid #4ade80; color:#4ade80; border-radius:4px; font-size:11px; font-weight:700; margin:2px; cursor:pointer;" onclick="openAdminDocModal('${pName}', 'idCard')">신분증</span>
+                <span class="doc-badge status-bank" style="display:inline-block; padding:4px 6px; background:rgba(14,165,233,0.15); border:1px solid #0ea5e9; color:#38bdf8; border-radius:4px; font-size:11px; font-weight:700; margin:2px; cursor:pointer;" onclick="openAdminDocModal('${pName}', 'bankBook')">통장</span>
             `;
                 }
 
-                if (statusCell) {
-                    statusCell.innerHTML = `<span class="lvl-badge lvl-2" style="padding:5px 10px; border-radius:6px; font-weight:700; font-size:12px; display:inline-block; background:rgba(14,165,233,0.15); color:#38bdf8; border:1px solid rgba(14,165,233,0.3);">접수</span>`;
-                }
-                console.log(`[연동 완료] ${pName} 행의 증빙서류 배지 활성화 성공.`);
+                console.log(`[연동 완료] ${pName} 행의 첨부서류 칸에만 정확히 배지가 안착되었습니다.`);
             } else {
-                console.error(`[연동 실패] 대시보드 명단 그리드에서 [${pName}] 대상자 행을 찾지 못했습니다.`);
+                console.error(`[연동 실패] 대시보드 명단에서 [${pName}] 대상자 행을 찾지 못했습니다.`);
             }
 
-            // 자식창이 전역 스코프에서 부모 함수를 즉각 노출 추적할 수 있도록 윈도우 인가 바인딩 보완
-            window.receiveSubjectDocumentPayload = receiveSubjectDocumentPayload;
-
-            // 4. 상단 대시보드 통계 카운트 UI 실시간 동적 +1 증액 가동
+            // 4. 상단 통계판 수치 실시간 연동 업데이트
             let receivedStat = document.getElementById('stat-received-count');
             if (receivedStat) {
-                let currentCount = parseInt(receivedStat.innerText) || 0;
-                receivedStat.innerText = (currentCount + 1) + "건";
+                receivedStat.innerText = "1건";
             }
         }
+        window.receiveSubjectDocumentPayload = receiveSubjectDocumentPayload;
 
         // 명단 그리드 내부 특정 대상자 행의 서류 구역을 '미제출' -> '신분증/통장 뱃지' 마크업으로 강제 강전산 스위칭
         function updateTableDocumentCellDynamic(patientName) {
