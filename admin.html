@@ -1626,13 +1626,8 @@
         <td>${formatPeriod(row.period)}</td>
         
         <!-- 1. 이름 및 계좌 번호 출력 칸 -->
-<td class="text-bold" style="vertical-align: middle;">
-    <div style="display: block; line-height: 1.4;">
-        ${row.name ? String(row.name).replace(/[^\w\sㄱ-ㅎㅏ-ㅣ가-힣]/g, '').trim() : ''}
-    </div>
-    <div style="display: block; font-size: 11px; color: var(--text-muted); font-weight: normal; margin-top: 2px;">
-        ${displayAccount}
-    </div>
+<td class="text-bold" style="vertical-align: middle; padding: 16px 14px;">
+    ${row.name ? String(row.name).replace(/[^a-zA-Z0-9 가-힣ㄱ-ㅎㅏ-ㅣ]/g, '').replace(/[\.\-\s]/g, '').trim() : ''}
 </td>
         
         <!-- 2. 순서 정렬: 생년월일과 전화번호 -->
