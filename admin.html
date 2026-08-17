@@ -2698,6 +2698,61 @@
             const overlay = document.getElementById('docModalOverlay');
             if (overlay) overlay.style.display = "none";
         }
+
+
+        // ========================================================
+        // 🎯 [신규 추가] 페이지 로드 시 모집공고 디폴트 데이터 3종 자동 생성 엔진
+        // ========================================================
+        (function () {
+            let adminRecruitmentDB = JSON.parse(localStorage.getItem('dataStoreRecruitment')) || [];
+
+            // 저장소에 아무 공고 데이터도 없을 때만 디폴트 3개 행을 전격 생성합니다.
+            if (adminRecruitmentDB.length === 0) {
+                adminRecruitmentDB = [
+                    {
+                        title: "애드피마 과제",
+                        th: "2기(1차)",
+                        count: "60",
+                        period: "72",
+                        notice: "공복 유지 필수 및 소집 10분 전 대기",
+                        examDate: "2026-09-01",
+                        payDate: "2024-09-10" // 기존 join_login 크로스 체킹 일정과 매칭
+                    },
+                    {
+                        title: "경동제약 식후 임상시험",
+                        th: "4기(1차)",
+                        count: "46",
+                        period: "96",
+                        notice: "지정식 이외 취식 금지 및 격리 규정 준수",
+                        examDate: "2026-09-15",
+                        payDate: "2026-09-30" // 강남구 피험자 연동 타겟 공고
+                    },
+                    {
+                        title: "경동제약 식후 임상시험",
+                        th: "4기(2차)",
+                        count: "46",
+                        period: "96",
+                        notice: "지정식 이외 취식 금지 및 격리 규정 준수",
+                        examDate: "2026-10-15",
+                        payDate: "2026-10-30" // 진재영 피험자 연동 타겟 공고
+                    }
+                ];
+                // 로컬 저장소에 고정 인가
+                localStorage.setItem('dataStoreRecruitment', JSON.stringify(adminRecruitmentDB));
+                console.log("[데이터 빌드] 모집공고 시뮬레이션용 디폴트 데이터 3종 마운트 완료.");
+            }
+
+            // 문서가 준비되었을 때 테이블 화면을 즉시 그려주는 안전장치
+            window.addEventListener('load', function () {
+                if (typeof refreshRecruitmentView === "function") {
+                    refreshRecruitmentView();
+                }
+                if (typeof refreshApplicantView === "function") {
+                    refreshApplicantView();
+                }
+            });
+        })();
+
     </script>
 
     <!-- 비밀번호 변경 처리용 통합 오버레이 팝업 모달창 창고 -->
