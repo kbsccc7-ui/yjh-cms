@@ -1626,9 +1626,9 @@
         <td>${formatPeriod(row.period)}</td>
         
         <!-- 1. 이름 및 계좌 번호 출력 칸 -->
-<td class="text-bold">
+       <td class="text-bold">
     ${row.name ? String(row.name).replace(/[^\w\sㄱ-ㅎㅏ-ㅣ가-힣]/g, '').trim() : ''}<br><span style="font-size:11px; color:var(--text-muted); font-weight:normal;">${displayAccount}</span>
-</td>
+    </td>
         
         <!-- 2. 순서 정렬: 생년월일과 전화번호 -->
         <td>${getOnlyNumbers(row.ssn)}</td>
