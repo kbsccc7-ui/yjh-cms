@@ -1815,6 +1815,30 @@
                 const rawName = row.name || '';
                 const cleanName = rawName.replace(/[^\w\sㄱ-ㅎㅏ-ㅣ가-힣]/g, '').trim();
 
+
+                // 🎯 [신규 추가] 전화번호 숫자만 추출 후 대한민국 표준 휴대폰/일반전화 하이픈(-) 자동 포맷팅 가드
+                const rawPhone = (row.phone || '').replace(/[^0-9]/g, ''); // 숫자 외 문자 원천 제거
+                let formattedPhone = '-';
+
+                if (rawPhone.length === 11) {
+                    // 010-1234-5678 형태
+                    formattedPhone = rawPhone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+                } else if (rawPhone.length === 10) {
+                    if (rawPhone.indexOf('02') === 0) {
+                        // 02-1234-5678 형태
+                        formattedPhone = rawPhone.replace(/(\d{2})(\d{4})(\d{4})/, '$1-$2-$3');
+                    } else {
+                        // 031-123-4567 형태
+                        formattedPhone = rawPhone.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+                    }
+                } else if (rawPhone.length === 9 && rawPhone.indexOf('02') === 0) {
+                    // 02-123-4567 형태
+                    formattedPhone = rawPhone.replace(/(\d{2})(\d{3})(\d{4})/, '$1-$2-$3');
+                } else if (rawPhone.length > 0) {
+                    // 기타 규격 외 숫자는 입력된 그대로 출력 가드
+                    formattedPhone = row.phone;
+                }
+
                 // [교정] adm_mem.html 전송 패킷 키 규격 일치화 (idCardImg, bankBookImg)
                 let documentLinksHTML = "";
                 const hasIdCard = row.idCardImg === "유" || (row.idCardImg && row.idCardImg.length > 5);
@@ -1848,7 +1872,7 @@
                 <td><input type="text" class="inline-input" id="edit-row-period-${index}" value="${row.period || ''}" style="width:50px;"></td>
                 <td><input type="text" class="inline-input" id="edit-row-name-${index}" value="${row.name || ''}"></td>
                 <td><input type="text" class="inline-input" id="edit-row-ssn-${index}" value="${row.ssn || ''}"></td>
-                <td><input type="text" class="inline-input" id="edit-row-phone-${index}" value="${row.phone || ''}"></td>
+                <td><input type="text" class="inline-input" id="edit-row-phone-${index}" value="${formattedPhone}"></td>
                 <td><input type="text" class="inline-input" id="edit-row-payStatus-${index}" value="${row.payStatus || '대기'}"></td>
                 <!-- 분리된 당직동의 인라인 편집 셀렉트 박스 -->
                 <td style="text-align: center;">
