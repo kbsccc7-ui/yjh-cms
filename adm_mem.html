@@ -1155,18 +1155,25 @@
             var msg = "";
             var btn = document.getElementById('ui_submit_btn');
 
-            // 🎯 [동적 피험자 실시간 치환] join_login.html에서 인증 통과 시 저장한 실제 유저 성명을 읽어옵니다.
-            // 만약 세션 값이 비어있다면 시스템이 다운되지 않도록 디폴트값 '홍길동'으로 안전 처리합니다.
-            let realUserName = sessionStorage.getItem('certifiedUserName') || "홍길동";
+            // 🎯 [교정 1] 부모 창(admin.html) 허브에 박제된 진짜 인증 유저 데이터를 최우선으로 가져옵니다.
+            let targetUser = null;
+            if (window.opener && !window.opener.closed && window.opener.currentCertifiedUser) {
+                targetUser = window.opener.currentCertifiedUser;
+            } else {
+                // 부모창 연결이 일시적으로 끊겼을 경우를 대비해 세션에서 이름이라도 가져옵니다.
+                let sessionName = sessionStorage.getItem('certifiedUserName') || "홍길동";
+                targetUser = { name: sessionName };
+            }
 
+            // 🎯 [교정 2] 현재 선택된 스테이지에 따른 메시지 설정
             if (currentTargetStage === 1) msg = "2 기 [1 차 차수분] 분할 사례비";
             else if (currentTargetStage === 2) msg = "2 기 [2 차 최종 차액분] 통합 사례비";
             else if (currentTargetStage === 3) msg = "[소집일 탈락자] 보상 사례비";
             else if (currentTargetStage === 4) msg = "[시험 예비자 퇴원 귀가] 규정 사례비";
             else if (currentTargetStage === 5) msg = "[중도 동의철회자] 이수분 분할 사례비";
 
-            // 알림 팝업창에도 실제 로그인한 피험자 이름이 역동적으로 출력됩니다.
-            alert(`정산 접수 완료\n\n ${realUserName} 피험자의 ${msg} 청구서가 최종 접수되었습니다.`);
+            // 실제 매칭된 피험자 이름으로 알림창 출력
+            alert(`정산 접수 완료\n\n ${targetUser.name} 피험자의 ${msg} 청구서가 최종 접수되었습니다.`);
 
             if (btn) {
                 btn.disabled = true;
@@ -1174,15 +1181,27 @@
                 btn.style.opacity = "0.4";
             }
 
-            // 💡 [양방향 동적 매칭] 부모 대시보드창(admin.html)으로 실시간 바이너리 패킷 송신
+            // 🎯 [교정 3] 부모 대시보드창(admin.html)으로 실시간 패킷 전송
+            // globalUploadedImgSrc 변수가 이미지 데이터(base64)를 담고 있다고 가정합니다.
             let targetDash = window.opener || window.parent;
             if (targetDash && typeof targetDash.receiveSubjectDocumentPayload === "function") {
-                targetDash.receiveSubjectDocumentPayload({
-                    patientName: realUserName, // 🎯 고정 텍스트 해제! 동적으로 바뀐 피험자명 전달
-                    payStatus: "접수",
-                    idCardImg: globalUploadedImgSrc || "placeholder",
-                    bankBookImg: globalUploadedImgSrc || "placeholder"
-                });
+
+                // 전송할 패킷 조립 (admin의 receiveSubjectDocumentPayload 함수가 요구하는 규격)
+                const payload = {
+                    patientName: targetUser.name,     // admin 목록 매칭의 핵심 (박제된 실명)
+                    patientUid: targetUser.uid || "",
+                    patientSsn: targetUser.ssn || "",
+                    idCardImg: globalUploadedImgSrc ? "유" : "무", // 파일 존재 여부 전송
+                    bankBookImg: globalUploadedImgSrc ? "유" : "무"
+                };
+
+                console.log("[실시간 패킷 송신] admin으로 데이터 전송:", payload);
+                targetDash.receiveSubjectDocumentPayload(payload);
+
+                // 💡 선택 사항: 제출 완료 후 창을 닫고 싶다면 아래 주석 해제
+                // setTimeout(() => { window.close(); }, 1500);
+            } else {
+                console.error("부모 창의 수신 함수(receiveSubjectDocumentPayload)를 찾을 수 없습니다.");
             }
         }
     </script>
