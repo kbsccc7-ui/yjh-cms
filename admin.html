@@ -1977,8 +1977,9 @@
             <td style="vertical-align: middle;">${documentLinksHTML}</td>
             
             <td style="text-align: center; white-space: nowrap;">
-                <button type="button" class="btn-inline edit" onclick="enableApplicantEditMode(${index})" style="background: #334155; border:none; padding:4px 8px; border-radius:4px; color:#fff; font-weight:700; cursor:pointer;">수정</button>
-                <button type="button" class="btn-inline delete" onclick="deleteApplicant(${index})" style="background: rgba(239, 68, 68, 0.15); border: 1px solid #f87171; color: #f87171; padding: 4px 8px; border-radius: 4px; font-weight:700; cursor:pointer;">삭제</button>
+              <!-- 🎯 [교정 완료]: onclick 함수를 editApplicant(${index})로 변경하여 상단 폼 밀림 현상을 차단하고 목록 내 즉시 수정을 활성화합니다. -->
+              <button type="button" class="btn-inline edit" onclick="editApplicant(${index})" style="background: #334155; border:none; padding:4px 8px; border-radius:4px; color:#fff; font-weight:700; cursor:pointer;">수정</button>
+              <button type="button" class="btn-inline delete" onclick="deleteApplicant(${index})" style="background: rgba(239, 68, 68, 0.15); border: 1px solid #f87171; color: #f87171; padding: 4px 8px; border-radius: 4px; font-weight:700; cursor:pointer;">삭제</button>
             </td>
         `;
                 }
@@ -2011,16 +2012,19 @@
             let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
             if (!adminApplicantDB[index]) return;
 
-            // 인라인 대칭 인풋 노드로부터 데이터 일체 스캔
+            // 인라인 대칭 인풋 및 셀렉트 노드로부터 데이터 일체 스캔
             const updatedTitle = document.getElementById(`edit-row-title-${index}`).value.trim();
-            const updatedTh = document.getElementById(`edit-row-th-${index}`).value.trim();
+
+            // 🎯 [교정 완료]: select 박스의 value를 추출할 때는 개체 특성상 .trim()을 제거해야 에러(TypeError)가 나지 않습니다.
+            const updatedTh = document.getElementById(`edit-row-th-${index}`).value;
+
             const updatedCount = document.getElementById(`edit-row-count-${index}`).value.trim();
             const updatedPeriod = document.getElementById(`edit-row-period-${index}`).value.trim();
             const updatedName = document.getElementById(`edit-row-name-${index}`).value.trim();
             const updatedSsn = document.getElementById(`edit-row-ssn-${index}`).value.trim();
             const updatedPhone = document.getElementById(`edit-row-phone-${index}`).value.trim();
 
-            // 🎯 [교정 수집]: select 창에서 선택된 대기/접수/처리중/처리완료 벨류값 추출
+            // 🎯 select 창에서 선택된 대기/접수/처리중/처리완료 벨류값 추출
             const updatedPayStatus = document.getElementById(`edit-row-payStatus-${index}`).value;
 
             const updatedDuty = document.getElementById(`edit-row-duty-${index}`).value;
@@ -2040,15 +2044,28 @@
             adminApplicantDB[index].ssn = updatedSsn;
             adminApplicantDB[index].phone = updatedPhone;
 
-            // 🎯 선택된 4단계 프로세스 상태값을 원본 키에 정밀 인가 세이브
+            // 선택된 4단계 프로세스 상태값을 원본 키에 정밀 인가 세이브
             adminApplicantDB[index].payStatus = updatedPayStatus;
+            // 호환성을 위해 result 필드도 동시 업데이트 처리 가드
+            adminApplicantDB[index].result = updatedPayStatus;
 
             adminApplicantDB[index].isDutyAgreed = updatedDuty;
             adminApplicantDB[index].isCallAgreed = updatedCall;
 
+            // 🎯 가변형 동적 배지 규격 연동을 위한 스테이지 정보 강제 업데이트
+            adminApplicantDB[index].stage = `${updatedTh} 참여(소집)`;
+
+            // 🎯 [메모리 데이터셋 동기화]: 로컬 스토리지뿐 아니라 메모리 내부 전역 데이터셋도 실시간 싱크 처리하여 데이터 폭파 현상 방지
+            if (typeof dataStoreApplicant !== 'undefined') {
+                dataStoreApplicant = adminApplicantDB;
+            }
+
             // LocalStorage 영구 영속화 업데이트 및 상태 해제 복원
             localStorage.setItem('dataStoreApplicant', JSON.stringify(adminApplicantDB));
+
+            // 🎯 인라인 활성 플래그를 해제하여 다시 깔끔한 조회 레이아웃 모드로 원상 복구시킵니다.
             currentAppEditingIndex = null;
+
             refreshApplicantView();
             alert("대상자 정보 및 정산 프로세스 상태가 대장에 완전 저장되었습니다.");
         }
