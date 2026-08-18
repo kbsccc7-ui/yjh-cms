@@ -1038,7 +1038,7 @@
 
                     <!-- 🎯 [신규 추가]: 시험명 및 기수를 연속 선택할 수 있는 가로 배치 필터 컨트롤 레이어 -->
                     <div class="dashboard-filter-control-layer"
-                        style="display: flex; gap: 12px; background: var(--card-color); border: 1px solid var(--border-color); padding: 15px 20px; border-radius: 10px; margin-bottom: 14px; align-items: center;">
+                        style="display: flex; gap: 12px; background: var(--card-color); border: 1px solid var(--border-color); padding: 15px 20px; border-radius: 10px; margin-bottom: 14px; align-items: center; width: 50%; margin-right: auto;">
 
                         <span
                             style="font-size: 13px; font-weight: 700; color: var(--secondary-color); white-space: nowrap;">
@@ -1047,13 +1047,13 @@
 
                         <!-- A. 시험명 선택 셀렉트 박스 -->
                         <select id="dashboard-filter-title" onchange="updateDashboardThOptions()"
-                            style="flex: 1; height: 36px; background: #0b0f19; color: #fff; border: 1px solid var(--border-color); border-radius: 6px; padding: 0 10px; font-weight: 700; font-size: 13px; cursor: pointer; outline: none;">
+                            style="flex: 1; min-width: 0; height: 36px; background: #0b0f19; color: #fff; border: 1px solid var(--border-color); border-radius: 6px; padding: 0 10px; font-weight: 700; font-size: 13px; cursor: pointer; outline: none;">
                             <option value="ALL">— 전체 시험 보기 —</option>
                         </select>
 
                         <!-- B. 기수 선택 셀렉트 박스 (시험명 선택 시 연쇄 반응) -->
                         <select id="dashboard-filter-th" onchange="calculateLiveDashboardStats()"
-                            style="width: 180px; height: 36px; background: #0b0f19; color: #fff; border: 1px solid var(--border-color); border-radius: 6px; padding: 0 10px; font-weight: 700; font-size: 13px; cursor: pointer; outline: none;">
+                            style="width: 140px; height: 36px; background: #0b0f19; color: #fff; border: 1px solid var(--border-color); border-radius: 6px; padding: 0 10px; font-weight: 700; font-size: 13px; cursor: pointer; outline: none;">
                             <option value="ALL">— 전체 기수 —</option>
                         </select>
                     </div>
