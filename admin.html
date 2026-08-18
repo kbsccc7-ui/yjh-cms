@@ -1897,24 +1897,23 @@
                 if (typeof currentAppEditingIndex !== 'undefined' && currentAppEditingIndex === index) {
                     tr.className = "editing-row";
                     tr.innerHTML = `
-        <td><input type="text" class="inline-input" id="edit-row-title-${index}" value="${row.title || ''}"></td>
-        <td><input type="text" class="inline-input" id="edit-row-th-${index}" value="${row.th || ''}" style="width:75px;"></td>
-        <td><input type="text" class="inline-input" id="edit-row-count-${index}" value="${row.count || ''}" style="width:50px;"></td>
-        <td><input type="text" class="inline-input" id="edit-row-period-${index}" value="${row.period || ''}" style="width:50px;"></td>
-        <td><input type="text" class="inline-input" id="edit-row-name-${index}" value="${row.name || ''}"></td>
-        <td><input type="text" class="inline-input" id="edit-row-ssn-${index}" value="${row.ssn || ''}"></td>
-        <td><input type="text" class="inline-input" id="edit-row-phone-${index}" value="${formattedPhone}"></td>
+                <td><input type="text" class="inline-input" id="edit-row-title-${index}" value="${row.title || ''}"></td>
+                <td><input type="text" class="inline-input" id="edit-row-th-${index}" value="${row.th || ''}" style="width:75px;"></td>
+                <td><input type="text" class="inline-input" id="edit-row-count-${index}" value="${row.count || ''}" style="width:50px;"></td>
+                <td><input type="text" class="inline-input" id="edit-row-period-${index}" value="${row.period || ''}" style="width:50px;"></td>
+                <td><input type="text" class="inline-input" id="edit-row-name-${index}" value="${row.name || ''}"></td>
+                <td><input type="text" class="inline-input" id="edit-row-ssn-${index}" value="${row.ssn || ''}"></td>
+                <td><input type="text" class="inline-input" id="edit-row-phone-${index}" value="${formattedPhone}"></td>
         
-        <!-- 🎯 [교정 핵심]: 상태 부분을 4단계 select 선택 상자로 변경해 수정이 가능하도록 인가 -->
-        <td>
-           <select class="inline-input" id="edit-row-payStatus-${index}" 
-        style="padding: 4px; background: var(--card-color); color: #ffffff; border: 1px solid var(--border-color); border-radius: 6px; width: 100%; font-weight: 500;">
-        <option value="대기" ${currentStatus === '대기' ? 'selected' : ''}>대기</option>
-        <option value="접수" ${currentStatus === '접수' ? 'selected' : ''}>접수</option>
-        <option value="처리중" ${currentStatus === '처리중' ? 'selected' : ''}>처리중</option>
-        <option value="처리완료" ${currentStatus === '처리완료' ? 'selected' : ''}>처리완료</option>
-    </select>
-        </td>
+               <!-- 🎯 [교정 핵심]: 상태 부분을 4단계 select 선택 상자로 변경해 수정이 가능하도록 인가 -->
+                <td>
+                 <select class="inline-input" id="edit-row-payStatus-${index}" style="padding: 4px; ${statusStyle} font-weight: 700; border-radius: 6px; width: 100%; cursor: pointer; text-align: center;">
+                  <option value="대기" style="background: #1a233a; color: #94a3b8;" ${currentStatus === '대기' ? 'selected' : ''}>대기</option>
+                  <option value="접수" style="background: #1a233a; color: #38bdf8;" ${currentStatus === '접수' ? 'selected' : ''}>접수</option>
+                  <option value="처리중" style="background: #1a233a; color: #fbbf24;" ${currentStatus === '처리중' ? 'selected' : ''}>재무 검토 (처리중)</option>
+                  <option value="처리완료" style="background: #1a233a; color: #34d399;" ${currentStatus === '처리완료' ? 'selected' : ''}>처리완료</option>
+                 </select>
+                </td>
                 <td style="text-align: center;">
                     <select class="inline-input" id="edit-row-duty-${index}" style="padding: 2px;">
                         <option value="동의" ${row.isDutyAgreed === '동의' ? 'selected' : ''}>동의</option>
