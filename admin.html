@@ -2056,18 +2056,23 @@
                 return alert("알림: 시스템 화면 요소를 로드하지 못했습니다.");
             }
 
-            const t = elTitle.value.trim(), th = elTh.value.trim(), c = elCount.value.trim();
-            const p = elPeriod.value.trim(), n = elName.value.trim(), s = elSsn.value.trim(), ph = elPhone.value.trim();
+            let t = elTitle.value.trim(), th = elTh.value.trim(), c = elCount.value.trim();
+            let p = elPeriod.value.trim(), n = elName.value.trim(), s = elSsn.value.trim(), ph = elPhone.value.trim();
 
             if (!t || !th || !c || !p || !n || !s || !ph) {
                 return alert('알림: 빈 필드를 허용할 수 없습니다. 모든 칸을 채워주세요.');
+            }
+
+            // 🎯 [교정 1]: 기수 데이터 추출 및 '0기 0차' 정밀 규격화 보정 가드
+            if (th === '0기(0차)' || th.includes('0기') || th === '') {
+                th = '0기 0차';
             }
 
             // 데이터 삽입 및 연동 규격화 가공 처리
             const payload = {
                 uid: editIndex === "" ? `${Date.now()}_${Math.random().toString(36).substr(2, 9)}` : dataStoreApplicant[editIndex].uid,
                 title: t,
-                th: th, // 셀렉트박스의 "X기 X차" 텍스트 보존
+                th: th, // 🎯 보정된 "0기 0차" 또는 "X기(X차)" 텍스트 보존
                 count: getOnlyNumbers(c),
                 period: getOnlyNumbers(p),
                 name: n,
@@ -2076,13 +2081,23 @@
                 result: editIndex === "" ? "접수" : dataStoreApplicant[editIndex].result,
                 payStatus: editIndex === "" ? "접수" : dataStoreApplicant[editIndex].payStatus,
                 isAgreed: editIndex === "" ? "동의" : dataStoreApplicant[editIndex].isAgreed,
+
+                // 🎯 당직 및 소집동의 초기 상태 가드
+                isDutyAgreed: editIndex === "" ? "동의" : (dataStoreApplicant[editIndex].isDutyAgreed || "동의"),
+                isCallAgreed: editIndex === "" ? "동의" : (dataStoreApplicant[editIndex].isCallAgreed || "동의"),
+
+                // 🎯 [교정 2]: 첨부서류 속성 누락 방지 및 클린 초기화 ("무" 문자열 오염 원천 차단)
+                idCardImg: editIndex === "" ? "" : (dataStoreApplicant[editIndex].idCardImg || ""),
+                bankBookImg: editIndex === "" ? "" : (dataStoreApplicant[editIndex].bankBookImg || ""),
+
                 category: editIndex === "" ? "내분비내과 / 대장 수동 등록" : dataStoreApplicant[editIndex].category,
                 stage: `${th} 참여(소집)`
             };
 
             if (editIndex === "") {
-                // [신규 등록 모드]
-                dataStoreApplicant.push(payload);
+                // [신규 등록 모드] 
+                // 🎯 최신글 상단 정렬 구조를 위해 push 대신 배열의 맨 앞에 요소를 추가하는 unshift 적용
+                dataStoreApplicant.unshift(payload);
                 alert(`📢 신규 대상자 [${n}]님이 대장에 성공적으로 등록 보존되었습니다.`);
             } else {
                 // [수정 완료 모드]
@@ -2091,7 +2106,7 @@
             }
 
             commitToLocalStorage();
-            resetForm(); // 💡 폼 초기화 및 버팅 전환
+            resetForm(); // 💡 폼 초기화 및 버튼 전환
             refreshApplicantView();
         }
 
@@ -2130,19 +2145,28 @@
             document.querySelector(".register-box").scrollIntoView({ behavior: 'smooth' });
         }
 
-        /** 💡 [추가] 입력 폼 공란 초기화 및 등록 모드 원상 복귀 함수 */
+        /** 입력 폼 공란 초기화 및 등록 모드 원상 복귀 함수 */
         function resetForm() {
             const formTitle = document.querySelector(".register-box h3");
             if (formTitle) formTitle.innerText = "[신규 대상자 등록]";
 
             document.getElementById("editIndex").value = "";
             document.getElementById("form-app-title").value = "";
+
+            // 셀렉트박스의 첫 번째 옵션인 '0기 0차'로 깔끔하게 리셋됩니다.
             document.getElementById("form-app-th").selectedIndex = 0;
+
             document.getElementById("form-app-count").value = "";
             document.getElementById("form-app-period").value = "";
             document.getElementById("form-app-name").value = "";
             document.getElementById("form-app-ssn").value = "";
             document.getElementById("form-app-phone").value = "";
+
+            // 혹시 수동 등록 폼 영역에 당직/소집동의 선택 상자가 개별 ID로 존재한다면 함께 '동의'(첫 번째 옵션)로 리셋
+            const formDuty = document.getElementById("form-app-duty");
+            const formCall = document.getElementById("form-app-call");
+            if (formDuty) formDuty.selectedIndex = 0;
+            if (formCall) formCall.selectedIndex = 0;
 
             const submitBtn = document.querySelector(".register-box .action-btn");
             if (submitBtn) submitBtn.innerText = "대상자 등록";
@@ -2151,7 +2175,7 @@
             if (cancelBtn) cancelBtn.style.display = "none";
         }
 
-        /** 💡 [추가] 기수 셀렉트박스 옵션(1기 1차 ~ 4기 4차) 동적 생성 함수 */
+        /** 기수 셀렉트박스 옵션(1기 1차 ~ 4기 4차) 동적 생성 함수 */
         function initThSelectOptions() {
             const thSelect = document.getElementById("form-app-th");
             if (!thSelect) return;
@@ -3340,6 +3364,137 @@
                 }
             }
         });
+
+        // 편집 대상 인덱스를 보관할 전역 변수 (만약 상단에 없다면 선언)
+        let currentAppEditingIndex = undefined;
+
+        /** 최신순 정렬(reverse) 상태에서 실제 원본 데이터 인덱스를 매칭해주는 브릿지 함수 */
+        function startApplicantInlineEdit(visibleIndex) {
+            // 로컬스토리지에서 원본 데이터베이스 배열 로드
+            let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
+
+            // 면에 보이는 순서(visibleIndex)를 원본 데이터셋 배열의 실제 뒤쪽 인덱스로 역계산 매칭
+            const realIndex = adminApplicantDB.length - 1 - visibleIndex;
+
+            // 계산된 진짜 원본 인덱스를 편집 타겟으로 지정
+            currentAppEditingIndex = realIndex;
+
+            // 화면을 새로고침하여 수정 칸(<input>, <select>)이 표시되도록 처리
+            refreshApplicantView();
+        }
+
+        /** 인라인 편집 모드를 취소하고 다시 일반 목록으로 되돌리는 함수 */
+        function cancelApplicantInlineEdit() {
+            currentAppEditingIndex = undefined; // 편집 타겟 초기화
+            refreshApplicantView(); // 화면 리프레시
+        }
+
+        /** 🎯 [필수 추가]: 인라인 편집 상태에서 [저장] 버튼을 누를 때 실행되는 신규 매스터 함수 */
+        function saveApplicantInlineRecord(visibleIndex) {
+            // 1. 로컬스토리지에서 최신 원본 데이터셋 배열을 로드합니다.
+            let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
+
+            // 💡 [치명적 버그 방지]: 화면상의 표시 순서(visibleIndex)를 원본 데이터셋의 실제 뒤쪽 인덱스로 역산 매칭합니다.
+            const realIndex = adminApplicantDB.length - 1 - visibleIndex;
+
+            // 대상 레코드 존재 유무 가드
+            if (!adminApplicantDB[realIndex]) {
+                return alert("오류: 수정하려는 대상자의 원본 레코드를 찾을 수 없습니다.");
+            }
+
+            // 2. 인라인 테이블 행에 생성된 각각의 input/select 요소 ID를 기준으로 변경값들을 낚아챕니다.
+            const elTitle = document.getElementById(`edit-row-title-${visibleIndex}`);
+            const elTh = document.getElementById(`edit-row-th-${visibleIndex}`);
+            const elCount = document.getElementById(`edit-row-count-${visibleIndex}`);
+            const elPeriod = document.getElementById(`edit-row-period-${visibleIndex}`);
+            const elName = document.getElementById(`edit-row-name-${visibleIndex}`);
+            const elSsn = document.getElementById(`edit-row-ssn-${visibleIndex}`);
+            const elPhone = document.getElementById(`edit-row-phone-${visibleIndex}`);
+
+            // 이전 단계에서 추가한 정산상태, 당직동의, 소집동의 셀렉트박스 엘리먼트 낚아채기
+            const elPayStatus = document.getElementById(`edit-row-payStatus-${visibleIndex}`);
+            const elDuty = document.getElementById(`edit-row-duty-${visibleIndex}`);
+            const elCall = document.getElementById(`edit-row-call-${visibleIndex}`);
+
+            // 화면 요소 안전 검증 가드
+            if (!elTitle || !elTh || !elCount || !elPeriod || !elName || !elSsn || !elPhone || !elPayStatus || !elDuty || !elCall) {
+                return alert("알림: 수정된 입력 값을 읽어오는 데 실패했습니다.");
+            }
+
+            // 🎯 기수 데이터 추출 및 '0기 0차' 규격화 일치 가드
+            let thValue = elTh.value.trim();
+            if (thValue === '0기(0차)' || thValue.includes('0기') || thValue === '') {
+                thValue = '0기 0차';
+            }
+
+            // 3. 원본 데이터베이스 배열의 해당 칸을 사용자가 변경한 값으로 정밀 갱신(오버라이드)합니다.
+            adminApplicantDB[realIndex].title = elTitle.value.trim();
+            adminApplicantDB[realIndex].th = thValue;
+            adminApplicantDB[realIndex].count = getOnlyNumbers(elCount.value.trim());
+            adminApplicantDB[realIndex].period = getOnlyNumbers(elPeriod.value.trim());
+            adminApplicantDB[realIndex].name = elName.value.trim();
+            adminApplicantDB[realIndex].ssn = getOnlyNumbers(elSsn.value.trim());
+            adminApplicantDB[realIndex].phone = getOnlyNumbers(elPhone.value.trim());
+
+            // 선택 상자에서 수정한 새로운 상태 및 동의값 데이터 주입
+            adminApplicantDB[realIndex].payStatus = elPayStatus.value;
+            adminApplicantDB[realIndex].isDutyAgreed = elDuty.value;
+            adminApplicantDB[realIndex].isCallAgreed = elCall.value;
+            adminApplicantDB[realIndex].stage = `${thValue} 참여(소집)`;
+
+            // 4. 프로젝트의 전역 메모리 변수(dataStoreApplicant) 동기화 처리
+            if (typeof dataStoreApplicant !== 'undefined') {
+                dataStoreApplicant = adminApplicantDB;
+            }
+
+            // 5. 로컬스토리지 최종 영구 저장 및 편집모드 해제 후 화면 새로고침
+            localStorage.setItem('dataStoreApplicant', JSON.stringify(adminApplicantDB));
+
+            // 전역 편집 인덱스 변수 초기화 (수정 완료)
+            currentAppEditingIndex = undefined;
+
+            // 테이블 다시 그리기
+            refreshApplicantView();
+            alert(`📋 [${adminApplicantDB[realIndex].name}] 피험자의 정보 수정 저장이 완료되었습니다.`);
+        }
+
+        /** 🎯 [필수 추가]: 최신순 정렬 상태를 반영하여 대상을 안전하게 삭제하는 신규 매스터 함수 */
+        function deleteApplicantRecord(visibleIndex) {
+            // 1. 로컬스토리지에서 최신 원본 데이터셋 배열을 로드합니다.
+            let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
+
+            // 💡 [치명적 버그 방지]: 최신순 정렬(reverse) 상태이므로 화면상의 인덱스를 원본 실제 인덱스로 역산 매칭합니다.
+            const realIndex = adminApplicantDB.length - 1 - visibleIndex;
+
+            // 대상 레코드 존재 유무 검증 가드
+            if (!adminApplicantDB[realIndex]) {
+                return alert("오류: 삭제하려는 대상자의 원본 레코드를 찾을 수 없습니다.");
+            }
+
+            // 2. 관리자 실수 방지를 위한 최종 삭제 확인 피드백 창 출력
+            const targetName = adminApplicantDB[realIndex].name || "선택한 대상자";
+            if (!confirm(`⚠️ 정말로 [${targetName}] 피험자의 마스터 레코드를 대장에서 영구 삭제하시겠습니까?`)) {
+                return; // 사용자가 취소를 누르면 함수 즉시 종료
+            }
+
+            // 3. 원본 배열에서 해당 인덱스의 데이터 1건 완전히 제거
+            adminApplicantDB.splice(realIndex, 1);
+
+            // 4. 프로젝트 전역 메모리 변수(dataStoreApplicant)가 존재한다면 데이터 동기화
+            if (typeof dataStoreApplicant !== 'undefined') {
+                dataStoreApplicant = adminApplicantDB;
+            }
+
+            // 5. 로컬스토리지 최종 영구 저장 커밋 및 화면 리프레시 호출
+            localStorage.setItem('dataStoreApplicant', JSON.stringify(adminApplicantDB));
+
+            // 혹시 삭제 대상이 현재 인라인 편집 중인 행이었다면 편집 모드 해제
+            currentAppEditingIndex = undefined;
+
+            // 테이블 목록 다시 그리기
+            refreshApplicantView();
+            alert(`🗑️ [${targetName}] 피험자의 레코드가 정상적으로 파기 청소되었습니다.`);
+        }
 
     </script>
 
