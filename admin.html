@@ -1799,12 +1799,10 @@
             if (!tbody) return;
             tbody.innerHTML = ''; // 테이블 잔재 청소
 
-            // LocalStorage에서 대상자(피험자) 데이터 로드
             let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
             const groupCounter = {};
 
             adminApplicantDB.forEach((row, index) => {
-                // 기수 그룹별 순번 계산용 카운터
                 const groupKey = `${row.title}_${row.th}`;
                 if (!groupCounter[groupKey]) groupCounter[groupKey] = 0;
                 groupCounter[groupKey]++;
@@ -1815,10 +1813,9 @@
                 const rawName = row.name || '';
                 const cleanName = rawName.replace(/[^\w\sㄱ-ㅎㅏ-ㅣ가-힣]/g, '').trim();
 
-                // 전화번호 숫자만 추출 후 하이픈(-) 자동 포맷팅 가드
+                // 전화번호 하이픈(-) 자동 포맷팅 가드
                 const rawPhone = (row.phone || '').replace(/[^0-9]/g, '');
                 let formattedPhone = '-';
-
                 if (rawPhone.length === 11) {
                     formattedPhone = rawPhone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
                 } else if (rawPhone.length === 10) {
@@ -1827,39 +1824,47 @@
                     } else {
                         formattedPhone = rawPhone.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
                     }
-                } else if (rawPhone.length === 9 && rawPhone.indexOf('02') === 0) {
-                    formattedPhone = rawPhone.replace(/(\d{2})(\d{3})(\d{4})/, '$1-$2-$3');
                 } else if (rawPhone.length > 0) {
                     formattedPhone = row.phone;
                 }
 
-                // 🎯 [전천후 서류 검증 가드 완전 복원]: 데이터 유실 문제를 완벽히 해결하는 핵심 구역
-                // payload가 준 값("유", true, 이미지 경로) 및 기존 DB 데이터 규격(idCard, bankbook)을 전부 상호 체크합니다.
-                const hasIdCard = row.idCardImg === "유" ||
-                    row.idCard === true ||
-                    (typeof row.idCardImg === 'string' && row.idCardImg.length > 3) ||
-                    (typeof row.idCardUrl === 'string' && row.idCardUrl.length > 3);
+                // 콘솔 연동 로그 맞춤형 서류 전천후 검증 구역 ("유" 패킷 완벽 대응)
+                const hasIdCard = row.idCardImg === "유" || row.idCard === true || row.idCard === "true" ||
+                    (typeof row.idCardImg === 'string' && row.idCardImg.length > 3 && row.idCardImg !== "true") ||
+                    (typeof row.idCardUrl === 'string' && row.idCardUrl.length > 3 && row.idCardUrl !== "true");
 
-                const hasBankBook = row.bankBookImg === "유" ||
-                    row.bankbook === true ||
-                    (typeof row.bankBookImg === 'string' && row.bankBookImg.length > 3) ||
-                    (typeof row.bankBookUrl === 'string' && row.bankBookUrl.length > 3);
+                const hasBankBook = row.bankBookImg === "유" || row.bankbook === true || row.bankbook === "true" ||
+                    (typeof row.bankBookImg === 'string' && row.bankBookImg.length > 3 && row.bankBookImg !== "true") ||
+                    (typeof row.bankBookUrl === 'string' && row.bankBookUrl.length > 3 && row.bankBookUrl !== "true");
 
-                // 🎯 [컬러 가독성 교정 구역]
+                // 🎯 [404 에러 추적 차단 가드]: 
+                // 데이터가 문자열 "true" 혹은 "유" 등 무효한 텍스트일 때 모달창 인자로 주소를 그대로 넘기면 
+                // 404 에러(엑박)가 발생하므로, 주소가 진짜 이미지 주소(Base64 또는 http)일 때만 넘기도록 안전 필터를 주입합니다.
+                let finalIdCardSrc = "placeholder";
+                let finalBankBookSrc = "placeholder";
+
+                if (typeof row.idCardImg === 'string' && row.idCardImg.length > 10 && row.idCardImg.indexOf('fakepath') === -1) {
+                    finalIdCardSrc = row.idCardImg;
+                } else if (typeof row.idCardUrl === 'string' && row.idCardUrl.length > 10 && row.idCardUrl.indexOf('fakepath') === -1) {
+                    finalIdCardSrc = row.idCardUrl;
+                }
+
+                if (typeof row.bankBookImg === 'string' && row.bankBookImg.length > 10 && row.bankBookImg.indexOf('fakepath') === -1) {
+                    finalBankBookSrc = row.bankBookImg;
+                } else if (typeof row.bankBookUrl === 'string' && row.bankBookUrl.length > 10 && row.bankBookUrl.indexOf('fakepath') === -1) {
+                    finalBankBookSrc = row.bankBookUrl;
+                }
+
                 let documentLinksHTML = "";
                 if (hasIdCard || hasBankBook) {
                     documentLinksHTML = `<div style="display: flex; gap: 6px; justify-content: center; align-items: center;">`;
 
                     if (hasIdCard) {
-                        const idPath = (typeof row.idCardImg === 'string' && row.idCardImg.length > 3) ? row.idCardImg : (row.idCardUrl || 'true');
-                        // 💡 신분증: 신뢰감을 주는 에메랄드 녹색 테마 적용 (가독성 향상)
-                        documentLinksHTML += `<button type="button" class="btn-inline list" onclick="openDocModal('${idPath}', '${cleanName} - 신분증')" style="padding: 4px 9px; font-size: 11px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; border-radius: 4px; font-weight: 700; cursor:pointer;"><i class="fa-solid fa-id-card"></i> 신분증</button>`;
+                        documentLinksHTML += `<button type="button" class="btn-inline list" onclick="openDocModal('${finalIdCardSrc}', '${cleanName} - 신분증')" style="padding: 4px 9px; font-size: 11px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; border-radius: 4px; font-weight: 700; cursor:pointer;"><i class="fa-solid fa-id-card"></i> 신분증</button>`;
                     }
 
                     if (hasBankBook) {
-                        const bankPath = (typeof row.bankBookImg === 'string' && row.bankBookImg.length > 3) ? row.bankBookImg : (row.bankBookUrl || 'true');
-                        // 💡 통장: 시선을 끄는 골드 오렌지 테마 적용 (가독성 향상)
-                        documentLinksHTML += `<button type="button" class="btn-inline list" onclick="openDocModal('${bankPath}', '${cleanName} - 통장사본')" style="padding: 4px 9px; font-size: 11px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; border-radius: 4px; font-weight: 700; cursor:pointer;"><i class="fa-solid fa-wallet"></i> 통장</button>`;
+                        documentLinksHTML += `<button type="button" class="btn-inline list" onclick="openDocModal('${finalBankBookSrc}', '${cleanName} - 통장사본')" style="padding: 4px 9px; font-size: 11px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; border-radius: 4px; font-weight: 700; cursor:pointer;"><i class="fa-solid fa-wallet"></i> 통장</button>`;
                     }
 
                     documentLinksHTML += `</div>`;
@@ -1867,11 +1872,10 @@
                     documentLinksHTML = `<span style="color: var(--text-muted); font-size: 12px; display: block; text-align: center;">미제출</span>`;
                 }
 
-                // 초기값 강제 가드: 당직동의, 소집동의 값이 없을 경우 기본값 '동의' 주입
                 if (row.isDutyAgreed === undefined) row.isDutyAgreed = "동의";
                 if (row.isCallAgreed === undefined) row.isCallAgreed = "동의";
 
-                // [A 분기] 현재 인덱스가 인라인 편집 활성화 상태인 경우
+                // [A 분기] 인라인 편집 활성화 모드
                 if (typeof currentAppEditingIndex !== 'undefined' && currentAppEditingIndex === index) {
                     tr.className = "editing-row";
                     tr.innerHTML = `
@@ -1884,33 +1888,29 @@
                 <td><input type="text" class="inline-input" id="edit-row-phone-${index}" value="${formattedPhone}"></td>
                 <td><input type="text" class="inline-input" id="edit-row-payStatus-${index}" value="${row.payStatus || '대기'}"></td>
                 <td style="text-align: center;">
-                    <select class="inline-input" id="edit-row-duty-${index}" style="padding: 2px;">
+                    <select class="inline-input" id="edit-row-duty-${index}">
                         <option value="동의" ${row.isDutyAgreed === '동의' ? 'selected' : ''}>동의</option>
                         <option value="미동의" ${row.isDutyAgreed === '미동의' ? 'selected' : ''}>미동의</option>
                     </select>
                 </td>
                 <td style="text-align: center;">
-                    <select class="inline-input" id="edit-row-call-${index}" style="padding: 2px;">
+                    <select class="inline-input" id="edit-row-call-${index}">
                         <option value="동의" ${row.isCallAgreed === '동의' ? 'selected' : ''}>동의</option>
                         <option value="미동의" ${row.isCallAgreed === '미동의' ? 'selected' : ''}>미동의</option>
                     </select>
                 </td>
                 <td style="vertical-align: middle;">${documentLinksHTML}</td>
                 <td style="text-align: center; white-space: nowrap;">
-                    <button type="button" class="btn-inline save" onclick="saveApplicantInline(${index})" style="background: var(--success-color); border:none; padding:4px 8px; border-radius:4px; color:#070a12; font-weight:700; cursor:pointer;">저장</button>
-                    <button type="button" class="btn-inline list" onclick="cancelApplicantInline()" style="background: #475569; border:none; padding:4px 8px; border-radius:4px; color:#fff; font-weight:700; cursor:pointer;">취소</button>
+                    <button type="button" class="btn-inline save" onclick="saveApplicantInline(${index})">저장</button>
+                    <button type="button" class="btn-inline list" onclick="cancelApplicantInline()">취소</button>
                 </td>
             `;
                 }
-                // [B 분기] 일반 데이터 조회 상태인 경우
+                // [B 분기] 일반 조회 레이아웃 모드
                 else {
                     tr.innerHTML = `
                 <td>${row.title || '-'}</td>
-                <td>
-                    <span class="lvl-badge lvl-2" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3); font-weight: 700; display: inline-block; white-space: nowrap;">
-                        ${row.th || '1기(1차)'}
-                    </span>
-                </td>
+                <td><span class="lvl-badge lvl-2" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3); font-weight: 700; display: inline-block; white-space: nowrap;">${row.th || '1기(1차)'}</span></td>
                 <td><span style="color: var(--secondary-color); font-weight: 700;">${groupCounter[groupKey]}</span>/${row.count || '0'}</td>
                 <td>${row.period || '0'}h</td>
                 <td class="text-bold" style="color: #ffffff;">${cleanName}</td>
@@ -1926,7 +1926,6 @@
                 </td>
             `;
                 }
-
                 tbody.appendChild(tr);
             });
         }
@@ -2983,21 +2982,21 @@
 
             if (!overlay || !modalImg) return;
 
-            // 모달 상단 타이틀 실시간 갱신
+            // 모달 상단 타이틀 실시간 갱신 ("진재영 - 신분증" 등)
             if (modalTitle) modalTitle.innerText = titleText;
 
-            // 🎯 [초정밀 엑박 방어막]: "true" 문자열이 넘어오면 유효하지 않은 주소로 판정하도록 완벽 차단 가드 추가
+            // 1. 🎯 [초정밀 필터링] 주소가 누락되었거나, "유", "true", "placeholder" 등 더미 문자인지 전수 검사
             let isRealImageAddress = false;
 
             if (imgSrc &&
                 imgSrc !== "undefined" &&
                 imgSrc !== "null" &&
                 imgSrc !== "유" &&
-                imgSrc !== "true" && // 💡 콘솔 로그에 찍힌 문자열 "true" 차단 필터 주입
-                imgSrc !== "placeholder" &&
-                imgSrc.length > 5) {
+                imgSrc !== "true" &&
+                imgSrc !== "placeholder" && // 💡 목록 함수가 던진 placeholder 문자열 차단
+                imgSrc.length > 10) {
 
-                // Base64 스트림 데이터이거나 원격 웹 호스팅 주소인 경우만 진짜 경로로 승인
+                // Base64 스트림 데이터이거나 실제 웹 주소(http)인 경우만 진짜 경로로 인가
                 if (imgSrc.indexOf('data:') === 0 || imgSrc.indexOf('http') === 0) {
                     if (imgSrc.indexOf('fakepath') === -1) {
                         isRealImageAddress = true;
@@ -3005,24 +3004,34 @@
                 }
             }
 
+            // 2. [분기 제어 및 이미지 할당]
             if (isRealImageAddress) {
-                // [케이스 1]: 유효한 로컬 스트림이나 이미지 주소인 경우 원본 출력
+                // [A 케이스]: 파일 업로드 가속 스트림 또는 유효한 이미지 경로가 들어왔을 때
                 modalImg.src = imgSrc;
-                modalImg.style.display = "block";
-                if (noImgMsg) noImgMsg.style.display = "none";
             } else {
-                // [케이스 2]: 🎯 "true" 혹은 무효한 텍스트 패킷이 넘어온 경우, 404 에러를 내지 않고 샘플 이미지로 강제 전환
+                // [B 케이스]: 🎯 연동 패킷("유")이나 시뮬레이션 상태여서 "placeholder" 텍스트가 넘어왔을 때
+                // 브라우저가 글자를 주소로 인식해 에러를 내지 않도록, Slide 2 기획안 전용 고해상도 그래픽 샘플로 강제 치환!
                 if (titleText.indexOf('신분증') !== -1) {
-                    modalImg.src = "https://picsum.photos"; // 가상 신분증 그래픽 매칭
+                    modalImg.src = "https://picsum.photos"; // 가상 신분증 이미지
                 } else {
-                    modalImg.src = "https://picsum.photos";  // 가상 통장사본 그래픽 매칭
+                    modalImg.src = "https://picsum.photos";  // 가상 통장사본 이미지
                 }
-
-                modalImg.style.display = "block"; // 엑박 마크를 완전히 밀어내고 이미지를 띄웁니다.
-                if (noImgMsg) noImgMsg.style.display = "none";
             }
 
-            // 모달 레이아웃 개방
+            // 3. 🎯 이미지 강제 노출 및 에러 예외 처리
+            modalImg.style.display = "block"; // 엑박 마크를 완전히 덮어쓰고 이미지를 활성화합니다.
+            if (noImgMsg) noImgMsg.style.display = "none";
+
+            // 이미지 엘리먼트 로딩 에러 가드
+            modalImg.onerror = function () {
+                this.style.display = "none";
+                if (noImgMsg) {
+                    noImgMsg.style.display = "block";
+                    noImgMsg.innerHTML = `<span style="color:#f87171;"><i class="fa-solid fa-triangle-exclamation"></i> 서류 이미지를 불러오는 과정에서 오류가 발생했습니다.</span>`;
+                }
+            };
+
+            // 4. 모달창 오버레이 flex 개방
             overlay.style.display = "flex";
         }
 
