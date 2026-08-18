@@ -1889,6 +1889,10 @@
                     statusStyle = "background: var(--card-color); color: #34d399; border: 1px solid #34d399;";
                 }
 
+                // 🎯 [중요] 기존 코드와의 호환성을 위해 변수 선언 (ReferenceError 방지)
+                let statusBadgeClass = "";
+
+
                 // [A 분기] 인라인 편집 모드 활성화 시
                 if (typeof currentAppEditingIndex !== 'undefined' && currentAppEditingIndex === index) {
                     tr.className = "editing-row";
