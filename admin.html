@@ -1828,7 +1828,7 @@
                     formattedPhone = row.phone;
                 }
 
-                // 서류 존재 여부 판단 통합 가드
+                // 🎯 서류 존재 여부 판단 통합 가드
                 const hasIdCard = (row.idCardImg && row.idCardImg.length > 3) || row.idCard === true || row.idCard === "true";
                 const hasBankBook = (row.bankBookImg && row.bankBookImg.length > 3) || row.bankbook === true || row.bankbook === "true";
 
@@ -1848,115 +1848,143 @@
                     finalBankBookSrc = row.bankBookUrl;
                 }
 
-                let documentLinksHTML = "";
-                if (hasIdCard || hasBankBook) {
-                    documentLinksHTML = `<div style="display: flex; gap: 6px; justify-content: center; align-items: center;">`;
-                    if (hasIdCard) {
-                        documentLinksHTML += `<button type="button" class="btn-inline list" onclick="openDocModal('${finalIdCardSrc}', '${cleanName} - 신분증')" style="padding: 4px 9px; font-size: 11px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; border-radius: 4px; font-weight: 700; cursor:pointer;"><i class="fa-solid fa-id-card"></i> 신분증</button>`;
-                    }
-                    if (hasBankBook) {
-                        documentLinksHTML += `<button type="button" class="btn-inline list" onclick="openDocModal('${finalBankBookSrc}', '${cleanName} - 통장사본')" style="padding: 4px 9px; font-size: 11px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; border-radius: 4px; font-weight: 700; cursor:pointer;"><i class="fa-solid fa-wallet"></i> 통장</button>`;
-                    }
-                    documentLinksHTML += `</div>`;
+                // 🎯 [교정 완료]: 신규 데이터 등록 시에도 실제 제출 여부에 따라 개별 배지 스타일 동적 처리
+                let documentLinksHTML = `<div style="display: flex; gap: 4px; justify-content: center; align-items: center; white-space: nowrap;">`;
+
+                // A. 신분증 영역 판단
+                if (hasIdCard) {
+                    documentLinksHTML += `<button type="button" class="btn-inline list" onclick="openDocModal('${finalIdCardSrc}', '${cleanName} - 신분증')" style="padding: 4px 9px; font-size: 11px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; border-radius: 4px; font-weight: 700; cursor:pointer;"><i class="fa-solid fa-id-card"></i> 신분증</button>`;
                 } else {
-                    documentLinksHTML = `<span style="color: var(--text-muted); font-size: 12px; display: block; text-align: center;">미제출</span>`;
+                    documentLinksHTML += `<span class="doc-badge status-none" style="padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(148, 163, 184, 0.1); border: 1px solid rgba(148, 163, 184, 0.3); color: #94a3b8; cursor: not-allowed;">신분증 미제출</span>`;
                 }
+
+                // B. 통장사본 영역 판단
+                if (hasBankBook) {
+                    documentLinksHTML += `<button type="button" class="btn-inline list" onclick="openDocModal('${finalBankBookSrc}', '${cleanName} - 통장사본')" style="padding: 4px 9px; font-size: 11px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; border-radius: 4px; font-weight: 700; cursor:pointer;"><i class="fa-solid fa-wallet"></i> 통장</button>`;
+                } else {
+                    documentLinksHTML += `<span class="doc-badge status-none" style="padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(148, 163, 184, 0.1); border: 1px solid rgba(148, 163, 184, 0.3); color: #94a3b8; cursor: not-allowed;">통장 미제출</span>`;
+                }
+                documentLinksHTML += `</div>`;
 
                 if (row.isDutyAgreed === undefined) row.isDutyAgreed = "동의";
                 if (row.isCallAgreed === undefined) row.isCallAgreed = "동의";
 
-                // 🎯 [상태 배지 고대비 색상 매칭 허브 구역] - 상단 현황판 위젯과 1:1 색상 동기화
+                // 🎯 상태 배지 고대비 색상 매칭 허브 구역
                 let currentStatus = row.payStatus || '대기';
                 if (currentStatus === '확인' || currentStatus === '접수완료') currentStatus = '접수';
 
-                // 상태별 인라인 스타일 정의 (배경, 글자색, 테두리)
                 let statusStyle = "";
-                // 🎯 [상태별 스타일 정의] - 상단 위젯 카드와 동일한 디자인 시스템 적용
                 if (currentStatus === '대기') {
-                    // 💡 대기: 차분한 Slate 테마
                     statusStyle = "background: var(--card-color); color: #94a3b8; border: 1px solid #334155;";
-                }
-                else if (currentStatus === '접수') {
-                    // 💡 접수: 상단 [청구서 접수현황] 스카이블루 테마
+                } else if (currentStatus === '접수') {
                     statusStyle = "background: var(--card-color); color: #38bdf8; border: 1px solid #38bdf8;";
-                }
-                else if (currentStatus === '처리중') {
-                    // 💡 처리중: 상단 [처리중] 옐로우 오렌지 테마 (재무 검토 단계)
+                } else if (currentStatus === '처리중') {
                     statusStyle = "background: var(--card-color); color: #fbbf24; border: 1px solid #fbbf24;";
-                }
-                else if (currentStatus === '처리완료') {
-                    // 💡 처리완료: 상단 [지급완료] 에메랄드 그린 테마
+                } else if (currentStatus === '처리완료') {
                     statusStyle = "background: var(--card-color); color: #34d399; border: 1px solid #34d399;";
                 }
 
-                // 🎯 [중요] 기존 코드와의 호환성을 위해 변수 선언 (ReferenceError 방지)
-                let statusBadgeClass = "";
-
+                // 기수 텍스트에 매칭되는 지능형 CSS 배지 클래스 분기 처리
+                const thNumMatch = (row.th || "").match(/\d+/);
+                const thNum = thNumMatch ? parseInt(thNumMatch) : 1;
+                let thBadgeClass = "lvl-1";
+                if (thNum === 2 || thNum === 3) thBadgeClass = "lvl-2";
+                else if (thNum === 4 || thNum === 5) thBadgeClass = "lvl-4";
+                else if (thNum >= 6) thBadgeClass = "lvl-6";
 
                 // [A 분기] 인라인 편집 모드 활성화 시
                 if (typeof currentAppEditingIndex !== 'undefined' && currentAppEditingIndex === index) {
                     tr.className = "editing-row";
                     tr.innerHTML = `
-                <td><input type="text" class="inline-input" id="edit-row-title-${index}" value="${row.title || ''}"></td>
-                <td><input type="text" class="inline-input" id="edit-row-th-${index}" value="${row.th || ''}" style="width:75px;"></td>
-                <td><input type="text" class="inline-input" id="edit-row-count-${index}" value="${row.count || ''}" style="width:50px;"></td>
-                <td><input type="text" class="inline-input" id="edit-row-period-${index}" value="${row.period || ''}" style="width:50px;"></td>
-                <td><input type="text" class="inline-input" id="edit-row-name-${index}" value="${row.name || ''}"></td>
-                <td><input type="text" class="inline-input" id="edit-row-ssn-${index}" value="${row.ssn || ''}"></td>
-                <td><input type="text" class="inline-input" id="edit-row-phone-${index}" value="${formattedPhone}"></td>
-        
-               <!-- 🎯 [교정 핵심]: 상태 부분을 4단계 select 선택 상자로 변경해 수정이 가능하도록 인가 -->
-                <td>
-                 <select class="inline-input" id="edit-row-payStatus-${index}" style="padding: 4px; ${statusStyle} font-weight: 700; border-radius: 6px; width: 100%; cursor: pointer; text-align: center;">
-                  <option value="대기" style="background: #1a233a; color: #94a3b8;" ${currentStatus === '대기' ? 'selected' : ''}>대기</option>
-                  <option value="접수" style="background: #1a233a; color: #38bdf8;" ${currentStatus === '접수' ? 'selected' : ''}>접수</option>
-                  <option value="처리중" style="background: #1a233a; color: #fbbf24;" ${currentStatus === '처리중' ? 'selected' : ''}>처리중</option>
-                  <option value="처리완료" style="background: #1a233a; color: #34d399;" ${currentStatus === '처리완료' ? 'selected' : ''}>처리완료</option>
-                 </select>
-                </td>
-                <td style="text-align: center;">
-                    <select class="inline-input" id="edit-row-duty-${index}" style="padding: 2px;">
-                        <option value="동의" ${row.isDutyAgreed === '동의' ? 'selected' : ''}>동의</option>
-                        <option value="미동의" ${row.isDutyAgreed === '미동의' ? 'selected' : ''}>미동의</option>
-                    </select>
-                </td>
-                <td style="text-align: center;">
-                    <select class="inline-input" id="edit-row-call-${index}" style="padding: 2px;">
-                        <option value="동의" ${row.isCallAgreed === '동의' ? 'selected' : ''}>동의</option>
-                        <option value="미동의" ${row.isCallAgreed === '미동의' ? 'selected' : ''}>미동의</option>
-                    </select>
-                </td>
-                <td style="vertical-align: middle;">${documentLinksHTML}</td>
-                <td style="text-align: center; white-space: nowrap;">
-                    <button type="button" class="btn-inline save" onclick="saveApplicantInline(${index})">저장</button>
-                    <button type="button" class="btn-inline list" onclick="cancelApplicantInline()">취소</button>
-                </td>
-            `;
+            <td><input type="text" class="inline-input" id="edit-row-title-${index}" value="${row.title || ''}"></td>
+            
+            <!-- 🎯 인라인 수정 시에도 규격 셀렉트 상자로 통일 제공 -->
+            <td>
+                <select class="inline-input" id="edit-row-th-${index}" style="width:100px; padding: 4px; font-weight: 700; border-radius: 6px;">
+                    <optgroup label="1기">
+                        <option value="1기(1차)" ${row.th === '1기(1차)' ? 'selected' : ''}>1기 1차</option>
+                        <option value="1기(2차)" ${row.th === '1기(2차)' ? 'selected' : ''}>1기 2차</option>
+                        <option value="1기(3차)" ${row.th === '1기(3차)' ? 'selected' : ''}>1기 3차</option>
+                        <option value="1기(4차)" ${row.th === '1기(4차)' ? 'selected' : ''}>1기 4차</option>
+                    </optgroup>
+                    <optgroup label="2기">
+                        <option value="2기(1차)" ${row.th === '2기(1차)' ? 'selected' : ''}>2기 1차</option>
+                        <option value="2기(2차)" ${row.th === '2기(2차)' ? 'selected' : ''}>2기 2차</option>
+                        <option value="2기(3차)" ${row.th === '2기(3차)' ? 'selected' : ''}>2기 3차</option>
+                        <option value="2기(4차)" ${row.th === '2기(4차)' ? 'selected' : ''}>2기 4차</option>
+                    </optgroup>
+                    <optgroup label="3기">
+                        <option value="3기(1차)" ${row.th === '3기(1차)' ? 'selected' : ''}>3기 1차</option>
+                        <option value="3기(2차)" ${row.th === '3기(2차)' ? 'selected' : ''}>3기 2차</option>
+                        <option value="3기(3차)" ${row.th === '3기(3차)' ? 'selected' : ''}>3기 3차</option>
+                        <option value="3기(4차)" ${row.th === '3기(4차)' ? 'selected' : ''}>3기 4차</option>
+                    </optgroup>
+                    <optgroup label="4기">
+                        <option value="4기(1차)" ${row.th === '4기(1차)' ? 'selected' : ''}>4기 1차</option>
+                        <option value="4기(2차)" ${row.th === '4기(2차)' ? 'selected' : ''}>4기 2차</option>
+                        <option value="4기(3차)" ${row.th === '4기(3차)' ? 'selected' : ''}>4기 3차</option>
+                        <option value="4기(4차)" ${row.th === '4기(4차)' ? 'selected' : ''}>4기 4차</option>
+                    </optgroup>
+                </select>
+            </td>
+            <td><input type="text" class="inline-input" id="edit-row-count-${index}" value="${row.count || ''}" style="width:50px;"></td>
+            <td><input type="text" class="inline-input" id="edit-row-period-${index}" value="${row.period || ''}" style="width:50px;"></td>
+            <td><input type="text" class="inline-input" id="edit-row-name-${index}" value="${row.name || ''}"></td>
+            <td><input type="text" class="inline-input" id="edit-row-ssn-${index}" value="${row.ssn || ''}"></td>
+            <td><input type="text" class="inline-input" id="edit-row-phone-${index}" value="${formattedPhone}"></td>
+    
+            <td>
+                <select class="inline-input" id="edit-row-payStatus-${index}" style="padding: 4px; ${statusStyle} font-weight: 700; border-radius: 6px; width: 100%; cursor: pointer; text-align: center;">
+                    <option value="대기" style="background: #1a233a; color: #94a3b8;" ${currentStatus === '대기' ? 'selected' : ''}>대기</option>
+                    <option value="접수" style="background: #1a233a; color: #38bdf8;" ${currentStatus === '접수' ? 'selected' : ''}>접수</option>
+                    <option value="처리중" style="background: #1a233a; color: #fbbf24;" ${currentStatus === '처리중' ? 'selected' : ''}>처리중</option>
+                    <option value="처리완료" style="background: #1a233a; color: #34d399;" ${currentStatus === '처리완료' ? 'selected' : ''}>처리완료</option>
+                </select>
+            </td>
+            <td style="text-align: center;">
+                <select class="inline-input" id="edit-row-duty-${index}" style="padding: 2px;">
+                    <option value="동의" ${row.isDutyAgreed === '동의' ? 'selected' : ''}>동의</option>
+                    <option value="미동의" ${row.isDutyAgreed === '미동의' ? 'selected' : ''}>미동의</option>
+                </select>
+            </td>
+            <td style="text-align: center;">
+                <select class="inline-input" id="edit-row-call-${index}" style="padding: 2px;">
+                    <option value="동의" ${row.isCallAgreed === '동의' ? 'selected' : ''}>동의</option>
+                    <option value="미동의" ${row.isCallAgreed === '미동의' ? 'selected' : ''}>미동의</option>
+                </select>
+            </td>
+            <td style="vertical-align: middle;">${documentLinksHTML}</td>
+            <td style="text-align: center; white-space: nowrap;">
+                <button type="button" class="btn-inline save" onclick="saveApplicantInline(${index})">저장</button>
+                <button type="button" class="btn-inline list" onclick="cancelApplicantInline()">취소</button>
+            </td>
+        `;
                 }
                 // [B 분기] 일반 데이터 조회 레이아웃 모드 시
                 else {
                     tr.innerHTML = `
-                <td>${row.title || '-'}</td>
-                <td><span class="lvl-badge lvl-2" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3); font-weight: 700; display: inline-block; white-space: nowrap;">${row.th || '1기(1차)'}</span></td>
-                <td><span style="color: var(--secondary-color); font-weight: 700;">${groupCounter[groupKey]}</span>/${row.count || '0'}</td>
-                <td>${row.period || '0'}h</td>
-                <td class="text-bold" style="color: #ffffff;">${cleanName}</td>
-                <td>${row.ssn || '-'}</td>
-                <td>${formattedPhone}</td>
-
-                <!-- 🎯 정립된 4단계 규격 상태 배지 마킹 영역 -->
-                <td><span class="lvl-badge" style="${statusStyle} font-weight: 700; white-space: nowrap;">${(currentStatus === '처리중') ? '처리중' : currentStatus}</span></td>
-                <td style="text-align: center; ${row.isDutyAgreed === '동의' ? 'color: var(--success-color)' : 'color: var(--danger-color)'}; font-weight: 700;">${row.isDutyAgreed}</td>
-                <td style="text-align: center; ${row.isCallAgreed === '동의' ? 'color: var(--success-color)' : 'color: var(--danger-color)'}; font-weight: 700;">${row.isCallAgreed}</td>
-                <td style="vertical-align: middle;">${documentLinksHTML}</td>
-                <td style="text-align: center; white-space: nowrap;">
-                    <button type="button" class="btn-inline edit" onclick="editApplicant(${index})" style="background: #334155; border:none; padding:4px 8px; border-radius:4px; color:#fff; font-weight:700; cursor:pointer;">수정</button>
-                    <button type="button" class="btn-inline delete" onclick="deleteApplicant(${index})" style="background: rgba(239, 68, 68, 0.15); border: 1px solid #f87171; color: #f87171; padding: 4px 8px; border-radius: 4px; font-weight:700; cursor:pointer;">삭제</button>
-                </td>
-            `;
+            <td>${row.title || '-'}</td>
+            <td><span class="lvl-badge ${thBadgeClass}" style="font-weight: 700; display: inline-block; white-space: nowrap;">${row.th || '1기(1차)'}</span></td>
+            <td><span style="color: var(--secondary-color); font-weight: 700;">${groupCounter[groupKey]}</span>/${row.count || '0'}</td>
+            <td>${row.period || '0'}h</td>
+            <td class="text-bold" style="color: #ffffff;">${cleanName}</td>
+            <td>${row.ssn || '-'}</td>
+            <td>${formattedPhone}</td>
+            <td><span class="lvl-badge" style="${statusStyle} font-weight: 700; white-space: nowrap;">${currentStatus}</span></td>
+            <td style="text-align: center; ${row.isDutyAgreed === '동의' ? 'color: var(--success-color)' : 'color: var(--danger-color)'}; font-weight: 700;">${row.isDutyAgreed}</td>
+            <td style="text-align: center; ${row.isCallAgreed === '동의' ? 'color: var(--success-color)' : 'color: var(--danger-color)'}; font-weight: 700;">${row.isCallAgreed}</td>
+            
+            <td style="vertical-align: middle;">${documentLinksHTML}</td>
+            
+            <td style="text-align: center; white-space: nowrap;">
+                <button type="button" class="btn-inline edit" onclick="enableApplicantEditMode(${index})" style="background: #334155; border:none; padding:4px 8px; border-radius:4px; color:#fff; font-weight:700; cursor:pointer;">수정</button>
+                <button type="button" class="btn-inline delete" onclick="deleteApplicant(${index})" style="background: rgba(239, 68, 68, 0.15); border: 1px solid #f87171; color: #f87171; padding: 4px 8px; border-radius: 4px; font-weight:700; cursor:pointer;">삭제</button>
+            </td>
+        `;
                 }
                 tbody.appendChild(tr);
-            });
+            }); // 🎯 루프 종료 마감
+
         }
 
 
@@ -2405,7 +2433,7 @@
             // 2. 가상 DB 순회하며 로우 데이터 로깅 가공 처리
             const counterMap = {};
             dataStoreApplicant.forEach(row => {
-                const groupKey = `${row.title}_${getOnlyNumbers(row.th)}`;
+                const groupKey = `${row.title}_${row.th}`;
                 if (!counterMap[groupKey]) counterMap[groupKey] = 0;
                 counterMap[groupKey]++;
 
