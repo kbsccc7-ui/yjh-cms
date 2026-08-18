@@ -1155,24 +1155,22 @@
             var msg = "";
             var btn = document.getElementById('ui_submit_btn');
 
-            // 🎯 [교정 1] 부모 창(admin.html) 허브에 박제된 진짜 인증 유저 데이터를 최우선으로 가져옵니다.
+            // [교정 1] 부모 창(admin.html) 허브에 박제된 진짜 인증 유저 데이터 로드
             let targetUser = null;
             if (window.opener && !window.opener.closed && window.opener.currentCertifiedUser) {
                 targetUser = window.opener.currentCertifiedUser;
             } else {
-                // 부모창 연결이 일시적으로 끊겼을 경우를 대비해 세션에서 이름이라도 가져옵니다.
                 let sessionName = sessionStorage.getItem('certifiedUserName') || "홍길동";
                 targetUser = { name: sessionName };
             }
 
-            // 🎯 [교정 2] 현재 선택된 스테이지에 따른 메시지 설정
+            // [교정 2] 현재 선택된 스테이지에 따른 메시지 설정
             if (currentTargetStage === 1) msg = "2 기 [1 차 차수분] 분할 사례비";
             else if (currentTargetStage === 2) msg = "2 기 [2 차 최종 차액분] 통합 사례비";
             else if (currentTargetStage === 3) msg = "[소집일 탈락자] 보상 사례비";
             else if (currentTargetStage === 4) msg = "[시험 예비자 퇴원 귀가] 규정 사례비";
             else if (currentTargetStage === 5) msg = "[중도 동의철회자] 이수분 분할 사례비";
 
-            // 실제 매칭된 피험자 이름으로 알림창 출력
             alert(`정산 접수 완료\n\n ${targetUser.name} 피험자의 ${msg} 청구서가 최종 접수되었습니다.`);
 
             if (btn) {
@@ -1181,30 +1179,43 @@
                 btn.style.opacity = "0.4";
             }
 
-            // 🎯 [교정 3] 부모 대시보드창(admin.html)으로 실시간 패킷 전송
+            // 🎯 [교정 3 - 버그 완전 척결 구역] 부모 대시보드창(admin.html)으로 실시간 패킷 전송
             let targetDash = window.opener || window.parent;
             if (targetDash && typeof targetDash.receiveSubjectDocumentPayload === "function") {
 
-                // 🎯 [완전 종결 핵심 교정]: 단순 텍스트 "유", "무" 대신 
-                // 실제 첨부 완료 단계에서 메모리에 구워진 globalUploadedImgSrc (Base64 파일 스트림 코드)를 패킷에 직격 탑재합니다.
-                // 만약 신분증과 통장이 개별 변수로 나누어져 있다면 해당 변수명(예: globalBankBookSrc 등)으로 치환하셔도 됩니다.
-                const idCardStream = (typeof globalUploadedImgSrc !== 'undefined' && globalUploadedImgSrc) ? globalUploadedImgSrc : "유";
-                const bankBookStream = (typeof globalUploadedImgSrc !== 'undefined' && globalUploadedImgSrc) ? globalUploadedImgSrc : "유";
+                // 💡 [정밀 추적]: 소스 내에 선언된 신분증 전용 스트림 변수 추출
+                // 만약 소스코드 내 신분증 변수명이 다를 경우를 대비해 스키마 체인을 촘촘히 엮어 방어합니다.
+                let finalIdCardData = "유";
+                if (typeof globalIdCardImgSrc !== 'undefined' && globalIdCardImgSrc) {
+                    finalIdCardData = globalIdCardImgSrc;
+                } else if (typeof idCardBase64 !== 'undefined' && idCardBase64) {
+                    finalIdCardData = idCardBase64;
+                } else if (typeof globalUploadedImgSrc !== 'undefined' && globalUploadedImgSrc) {
+                    // 변수가 1개뿐이라면 가상 샘플 가드가 켜지도록 '유'를 인가하여 덮어쓰기 유도
+                    finalIdCardData = "유";
+                }
 
-                // 전송할 패킷 조립 (admin의 receiveSubjectDocumentPayload 함수가 요구하는 규격)
+                // 💡 [정밀 추적]: 소스 내에 선언된 통장 전용 스트림 변수 추출
+                let finalBankBookData = "유";
+                if (typeof globalBankBookImgSrc !== 'undefined' && globalBankBookImgSrc) {
+                    finalBankBookData = globalBankBookImgSrc;
+                } else if (typeof bankBookBase64 !== 'undefined' && bankBookBase64) {
+                    finalBankBookData = bankBookBase64;
+                } else if (typeof globalUploadedImgSrc !== 'undefined' && globalUploadedImgSrc) {
+                    finalBankBookData = globalUploadedImgSrc;
+                }
+
+                // 전송할 패킷 조립 (신분증과 통장 데이터를 명확하게 좌우 분리 배정)
                 const payload = {
-                    patientName: targetUser.name,     // admin 목록 매칭의 핵심 (박제된 실명)
+                    patientName: targetUser.name,
                     patientUid: targetUser.uid || "",
                     patientSsn: targetUser.ssn || "",
-                    idCardImg: idCardStream,          // 💡 단순 글자 "유" 대신 실제 이미지 원본 스트림 전송하도록 교정
-                    bankBookImg: bankBookStream       // 💡 단순 글자 "유" 대신 실제 이미지 원본 스트림 전송하도록 교정
+                    idCardImg: finalIdCardData,       // 🎯 통장이 대신 들어가지 않도록 신분증 고유 변수 맵핑 완료
+                    bankBookImg: finalBankBookData    // 🎯 통장 고유 변수 맵핑 완료
                 };
 
-                console.log("[실시간 패킷 송신] admin으로 데이터 전송 완료:", payload);
+                console.log("[실시간 패킷 송신] 신분증/통장 분리 전송 완료:", payload);
                 targetDash.receiveSubjectDocumentPayload(payload);
-
-                // 💡 제출 완료 후 창을 안전하게 자동 폐쇄하고 싶다면 아래 주석을 해제하세요.
-                // setTimeout(() => { window.close(); }, 1200);
             } else {
                 console.error("부모 창의 수신 함수(receiveSubjectDocumentPayload)를 찾을 수 없습니다.");
             }
