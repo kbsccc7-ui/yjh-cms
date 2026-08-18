@@ -2009,65 +2009,76 @@
          * 🎯 인라인 편집본 최종 유효성 검사 및 LocalStorage 원본 데이터베이스 커밋 연동 함수
          */
         function saveApplicantInline(index) {
+            // 1. 로컬 스토리지 원본 데이터 배열 안전하게 로드
             let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
-            if (!adminApplicantDB[index]) return;
-
-            // 인라인 대칭 인풋 및 셀렉트 노드로부터 데이터 일체 스캔
-            const updatedTitle = document.getElementById(`edit-row-title-${index}`).value.trim();
-
-            // 🎯 [교정 완료]: select 박스의 value를 추출할 때는 개체 특성상 .trim()을 제거해야 에러(TypeError)가 나지 않습니다.
-            const updatedTh = document.getElementById(`edit-row-th-${index}`).value;
-
-            const updatedCount = document.getElementById(`edit-row-count-${index}`).value.trim();
-            const updatedPeriod = document.getElementById(`edit-row-period-${index}`).value.trim();
-            const updatedName = document.getElementById(`edit-row-name-${index}`).value.trim();
-            const updatedSsn = document.getElementById(`edit-row-ssn-${index}`).value.trim();
-            const updatedPhone = document.getElementById(`edit-row-phone-${index}`).value.trim();
-
-            // 🎯 select 창에서 선택된 대기/접수/처리중/처리완료 벨류값 추출
-            const updatedPayStatus = document.getElementById(`edit-row-payStatus-${index}`).value;
-
-            const updatedDuty = document.getElementById(`edit-row-duty-${index}`).value;
-            const updatedCall = document.getElementById(`edit-row-call-${index}`).value;
-
-            if (!updatedName) {
-                alert("대상자 성명은 필수 입력사항입니다.");
+            if (!adminApplicantDB[index]) {
+                alert("알림: 대장에서 해당 인덱스의 대상자를 찾을 수 없습니다.");
                 return;
             }
 
-            // 대상자 마스터 DB 레코드 실시간 동기화 업데이트
-            adminApplicantDB[index].title = updatedTitle;
-            adminApplicantDB[index].th = updatedTh;
-            adminApplicantDB[index].count = updatedCount;
-            adminApplicantDB[index].period = updatedPeriod;
-            adminApplicantDB[index].name = updatedName;
-            adminApplicantDB[index].ssn = updatedSsn;
-            adminApplicantDB[index].phone = updatedPhone;
+            try {
+                // 2. 인라인 엘리먼트 존재 여부를 검증하며 실시간 데이터 수집 (예외 오류 방지)
+                const elTitle = document.getElementById(`edit-row-title-${index}`);
+                const elTh = document.getElementById(`edit-row-th-${index}`);
+                const elCount = document.getElementById(`edit-row-count-${index}`);
+                const elPeriod = document.getElementById(`edit-row-period-${index}`);
+                const elName = document.getElementById(`edit-row-name-${index}`);
+                const elSsn = document.getElementById(`edit-row-ssn-${index}`);
+                const elPhone = document.getElementById(`edit-row-phone-${index}`);
+                const elPayStatus = document.getElementById(`edit-row-payStatus-${index}`);
+                const elDuty = document.getElementById(`edit-row-duty-${index}`);
+                const elCall = document.getElementById(`edit-row-call-${index}`);
 
-            // 선택된 4단계 프로세스 상태값을 원본 키에 정밀 인가 세이브
-            adminApplicantDB[index].payStatus = updatedPayStatus;
-            // 호환성을 위해 result 필드도 동시 업데이트 처리 가드
-            adminApplicantDB[index].result = updatedPayStatus;
+                if (elName && !elName.value.trim()) {
+                    alert("대상자 성명은 필수 입력사항입니다.");
+                    return;
+                }
 
-            adminApplicantDB[index].isDutyAgreed = updatedDuty;
-            adminApplicantDB[index].isCallAgreed = updatedCall;
+                // 3. 수집된 가변 데이터를 객체 릴레이션 스펙에 맞춰 정밀 주입 업데이트
+                adminApplicantDB[index].title = elTitle ? elTitle.value.trim() : adminApplicantDB[index].title;
+                adminApplicantDB[index].th = elTh ? elTh.value : adminApplicantDB[index].th; // select 개체 value 안심 추출
+                adminApplicantDB[index].count = elCount ? elCount.value.trim() : adminApplicantDB[index].count;
+                adminApplicantDB[index].period = elPeriod ? elPeriod.value.trim() : adminApplicantDB[index].period;
+                adminApplicantDB[index].name = elName ? elName.value.trim() : adminApplicantDB[index].name;
+                adminApplicantDB[index].ssn = elSsn ? elSsn.value.trim() : adminApplicantDB[index].ssn;
+                adminApplicantDB[index].phone = elPhone ? elPhone.value.trim() : adminApplicantDB[index].phone;
 
-            // 🎯 가변형 동적 배지 규격 연동을 위한 스테이지 정보 강제 업데이트
-            adminApplicantDB[index].stage = `${updatedTh} 참여(소집)`;
+                // 프로세스 진행 상태 교차 동기화 마킹 (payStatus와 result 필드 동시 주입)
+                const finalStatus = elPayStatus ? elPayStatus.value : (adminApplicantDB[index].payStatus || "접수");
+                adminApplicantDB[index].payStatus = finalStatus;
+                adminApplicantDB[index].result = finalStatus;
 
-            // 🎯 [메모리 데이터셋 동기화]: 로컬 스토리지뿐 아니라 메모리 내부 전역 데이터셋도 실시간 싱크 처리하여 데이터 폭파 현상 방지
-            if (typeof dataStoreApplicant !== 'undefined') {
-                dataStoreApplicant = adminApplicantDB;
+                adminApplicantDB[index].isDutyAgreed = elDuty ? elDuty.value : (adminApplicantDB[index].isDutyAgreed || "동의");
+                adminApplicantDB[index].isCallAgreed = elCall ? elCall.value : (adminApplicantDB[index].isCallAgreed || "동의");
+                adminApplicantDB[index].stage = `${adminApplicantDB[index].th} 참여(소집)`;
+
+                // 4. 🌟 [핵심 가드 1]: 로컬 스토리지뿐 아니라, 메모리 전역 대장(배열 변수 2종 모두) 강제 동기화 시켜 폭파 차단
+                if (typeof dataStoreApplicant !== 'undefined') dataStoreApplicant = adminApplicantDB;
+                if (typeof adminApplicantDBGlobal !== 'undefined') adminApplicantDBGlobal = adminApplicantDB; // 다른 전역 변수 대응용 가드
+
+                // 5. 로컬 스토리지 최종 세이브 커밋
+                localStorage.setItem('dataStoreApplicant', JSON.stringify(adminApplicantDB));
+
+                // 6. 🌟 [핵심 가드 2]: 문자열 혼선 방지를 위해 인라인 편집 활성 인덱스를 완전히 비웁니다 (null 및 undefined 교차 초기화)
+                if (typeof currentAppEditingIndex !== 'undefined') currentAppEditingIndex = undefined;
+                currentEditingUid = null; // 시스템 우회용 플래그 동시 해제
+
+                // 7. 🌟 [핵심 가드 3]: 뷰 새로고침 함수가 깨져있을 때를 대비한 안전 예외 분기 처리
+                if (typeof refreshApplicantView === 'function') {
+                    refreshApplicantView();
+                } else if (typeof renderApplicantTable === 'function') {
+                    renderApplicantTable();
+                } else {
+                    console.error("화면 새로고침 함수를 호출할 수 없어 브라우저를 강제 새로고침합니다.");
+                    window.location.reload(); // 최후의 수단으로 데이터 유실 없이 화면 강제 복구
+                }
+
+                alert("📢 대상자 정보 및 정산 프로세스 상태가 대장에 완전 저장되었습니다.");
+
+            } catch (error) {
+                console.error("saveApplicantInline 트랜잭션 도중 치명적인 오류가 발생했습니다:", error);
+                alert("시스템 오류: 저장 중 문제가 발생했습니다. 개발자 도구(F12) 콘솔 로그를 확인하세요.");
             }
-
-            // LocalStorage 영구 영속화 업데이트 및 상태 해제 복원
-            localStorage.setItem('dataStoreApplicant', JSON.stringify(adminApplicantDB));
-
-            // 🎯 인라인 활성 플래그를 해제하여 다시 깔끔한 조회 레이아웃 모드로 원상 복구시킵니다.
-            currentAppEditingIndex = null;
-
-            refreshApplicantView();
-            alert("대상자 정보 및 정산 프로세스 상태가 대장에 완전 저장되었습니다.");
         }
 
         /**
