@@ -3295,6 +3295,24 @@
             document.head.appendChild(linkDestroyer);
             console.log("[시스템 가드] 물리적 하이퍼링크 기능이 완벽하게 소멸 처리되었습니다.");
         })();
+
+
+        // ========================================================
+        // 🎯 [완전 종결] LocalStorage 실시간 크로스 브라우징 가속 리스너
+        // 💡 신청자가 서류를 제출하는 즉시 관리자 화면이 새로고침 없이 100% 감지하여 배지를 그립니다.
+        // ========================================================
+        window.addEventListener('storage', function (event) {
+            // 우리가 사용하는 대상자 데이터베이스 키값이 변경되었는지 감시
+            if (event.key === 'dataStoreApplicant') {
+                console.log("⚡ [실시간 레이더] 대상자 마스터 DB 변동 감지! 목록을 즉시 리렌더링합니다.");
+
+                // 데이터가 유실되지 않도록 즉시 최신화하여 화면 갱신
+                if (typeof refreshApplicantView === 'function') {
+                    refreshApplicantView();
+                }
+            }
+        });
+
     </script>
 
     <!-- 비밀번호 변경 처리용 통합 오버레이 팝업 모달창 창고 -->
