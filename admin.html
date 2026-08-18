@@ -1788,12 +1788,12 @@
         // [5-A 파트] 대상자 마스터 대장 동적 테이블 렌더러 및 단일 통제 엔진
         // =========================================================================
         // ========================================================
-        // 🎯 [인라인 튜닝] 현재 인라인 수정 모드가 활성화된 행의 index 기록 변수
+        // 현재 인라인 수정 모드가 활성화된 행의 index 기록 변수
         // ========================================================
         var currentAppEditingIndex = null;
 
         // ========================================================
-        // 🎯 [완전 종결] 대상자 마스터 테이블 기수 문자열 싱크 및 배지 드로잉 엔진 (당직/소집 분리형)
+        // 대상자 마스터 테이블 기수 문자열 싱크 및 배지 드로잉 엔진 (당직/소집 분리형)
         // ========================================================
         function refreshApplicantView() {
             const tbody = document.getElementById('dom-applicant-table');
@@ -1801,6 +1801,10 @@
             tbody.innerHTML = ''; // 테이블 잔재 청소
 
             let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
+
+            //최신 등록된 데이터가 맨 위로 오도록 배열을 역순 처리합니다.
+            adminApplicantDB.reverse();
+
             const groupCounter = {};
 
             adminApplicantDB.forEach((row, index) => {
@@ -1927,7 +1931,7 @@
                       <option value="미동의" ${row.isDutyAgreed === '미동의' ? 'selected' : ''}>미동의</option>
                      </select>
                     </td>
-        `;         
+        `;
                 }
                 // [B 분기] 일반 데이터 조회 레이아웃 모드 시
                 else {
