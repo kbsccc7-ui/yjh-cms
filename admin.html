@@ -1907,12 +1907,13 @@
         
         <!-- 🎯 [교정 핵심]: 상태 부분을 4단계 select 선택 상자로 변경해 수정이 가능하도록 인가 -->
         <td>
-            <select class="inline-input" id="edit-row-payStatus-${index}" style="padding: 2px; background: #0f172a; color: #fff; border: 1px solid #334155;">
-                <option value="대기" ${currentStatus === '대기' ? 'selected' : ''}>대기</option>
-                <option value="접수" ${currentStatus === '접수' ? 'selected' : ''}>접수</option>
-                <option value="처리중" ${currentStatus === '처리중' ? 'selected' : ''}>처리중</option>
-                <option value="처리완료" ${currentStatus === '처리완료' ? 'selected' : ''}>처리완료</option>
-            </select>
+           <select class="inline-input" id="edit-row-payStatus-${index}" 
+        style="padding: 4px; background: var(--card-color); color: #ffffff; border: 1px solid var(--border-color); border-radius: 6px; width: 100%; font-weight: 500;">
+        <option value="대기" ${currentStatus === '대기' ? 'selected' : ''}>대기</option>
+        <option value="접수" ${currentStatus === '접수' ? 'selected' : ''}>접수</option>
+        <option value="처리중" ${currentStatus === '처리중' ? 'selected' : ''}>처리중</option>
+        <option value="처리완료" ${currentStatus === '처리완료' ? 'selected' : ''}>처리완료</option>
+    </select>
         </td>
                 <td style="text-align: center;">
                     <select class="inline-input" id="edit-row-duty-${index}" style="padding: 2px;">
@@ -1945,7 +1946,7 @@
                 <td>${formattedPhone}</td>
 
                 <!-- 🎯 정립된 4단계 규격 상태 배지 마킹 영역 -->
-                <td><span class="lvl-badge ${statusBadgeClass}">${currentStatus}</span></td>
+                <td><span class="lvl-badge" style="${statusStyle} font-weight: 700; white-space: nowrap;">${(currentStatus === '처리중') ? '처리중' : currentStatus}</span></td>
                 <td style="text-align: center; ${row.isDutyAgreed === '동의' ? 'color: var(--success-color)' : 'color: var(--danger-color)'}; font-weight: 700;">${row.isDutyAgreed}</td>
                 <td style="text-align: center; ${row.isCallAgreed === '동의' ? 'color: var(--success-color)' : 'color: var(--danger-color)'}; font-weight: 700;">${row.isCallAgreed}</td>
                 <td style="vertical-align: middle;">${documentLinksHTML}</td>
