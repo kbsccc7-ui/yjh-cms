@@ -2930,38 +2930,38 @@
 
             let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
 
-            // [정밀화 보안 교정]: 이름으로만 매칭하면 동명이인 문제가 생길 수 있으므로, 
-            // 가능하면 고유 키(uid 또는 생년월일 ssn 조합)를 우선 비교하도록 뼈대를 보완합니다.
+            // 이름과 주민번호 앞자리를 결합하여 대상자 대장에서 정확한 행(Index)을 검색합니다.
             const idx = adminApplicantDB.findIndex(user => {
                 if (payload.patientUid) {
                     return String(user.uid) === String(payload.patientUid);
                 }
-                // 고유 ID 패킷이 없을 경우 예외적으로 이름과 생년월일(ssn) 조건 결합 검증
                 return user.name === payload.patientName && (!payload.patientSsn || user.ssn === payload.patientSsn);
             });
 
             if (idx !== -1) {
-                // 1. 상태값을 '접수'로 전환
                 adminApplicantDB[idx].payStatus = "접수";
 
-                // 🎯 [완전 복원 핵심]: refreshApplicantView() 출력 함수가 검사하는 데이터 키 구조와 100% 싱크 결합
-                adminApplicantDB[idx].idCardImg = payload.idCardImg;     // 기존 idCardUrl 대신 원본 배지 키에 매칭
-                adminApplicantDB[idx].bankBookImg = payload.bankBookImg; // 기존 bankBookUrl 대신 원본 배지 키에 매칭
+                // 🎯 [오타 전면 교정 구역] 
+                // 1. 신분증 방에는 패킷이 보내준 신분증 이미지(payload.idCardImg)만 정확하게 마운트!
+                adminApplicantDB[idx].idCardImg = payload.idCardImg;
+                adminApplicantDB[idx].idCardUrl = payload.idCardImg; // 백업 키 동시 동기화
 
-                // 하이브리드 가드(true 부울 값 규칙)까지 함께 활성화하여 완벽하게 방어
+                // 2. 통장 방에는 패킷이 보내준 통장 이미지(payload.bankBookImg)만 정확하게 마운트!
+                // 💡 주의: 기존 소스의 payload.bankBookUrl 이나 오타를 실제 로그에 찍힌 'bankBookImg' 규격으로 정밀 일치화했습니다.
+                adminApplicantDB[idx].bankBookImg = payload.bankBookImg;
+                adminApplicantDB[idx].bankBookUrl = payload.bankBookImg; // 백업 키 동시 동기화
+
+                // 서류 통과 부울값 활성화
                 adminApplicantDB[idx].idCard = true;
                 adminApplicantDB[idx].bankbook = true;
 
-                // 2. 교정된 패킷 데이터를 LocalStorage 가상 DB에 최종 커밋
+                // 교정된 개별 이미지 스트림을 LocalStorage 가상 DB에 최종 커밋
                 localStorage.setItem('dataStoreApplicant', JSON.stringify(adminApplicantDB));
-                console.log(`🎯 [연동 성공] ${payload.patientName}님의 서류가 대장에 동기화되었습니다.`);
+                console.log(`🎯 [정렬 성공] ${payload.patientName}님의 신분증 및 통장 원본 데이터가 대장에 각각 격리 저장되었습니다.`);
 
-                // 🎯 [리렌더링 함수명 교정]: 실제 12개 컬럼 마스터 테이블을 동적으로 그려주는 진짜 원본 함수를 호출합니다.
+                // 12개 컬럼 마스터 테이블 목록 실시간 리렌더링 호출
                 if (typeof refreshApplicantView === "function") {
                     refreshApplicantView();
-                } else if (typeof renderAdminApplicantTable === "function") {
-                    // 만약 기존 함수도 시스템 다른 곳에서 쓰고 있다면 예외 방지용 백업 호출 유지
-                    renderAdminApplicantTable();
                 }
             } else {
                 console.warn(`⚠️ [연동 실패] 수신된 성명(${payload.patientName})과 일치하는 대상자를 찾지 못했습니다.`);
