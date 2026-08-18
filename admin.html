@@ -839,6 +839,12 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
             filter: brightness(1.2);
         }
+
+        .doc-badge:hover:not(.status-none) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            filter: brightness(1.2);
+        }
     </style>
 
 <body>
@@ -3432,6 +3438,110 @@
             }
         });
 
+
+        // 1. 글로벌 데이터 배열
+        let recruitmentData = [
+            { title: "[임상] 경동제약 소화제 테스트", th: "1기(1차)", count: "60", period: "72", crc: "최미현" },
+            { title: "[임상] 경동제약 소화제 테스트", th: "1기(2차)", count: "40", period: "72", crc: "최미현" },
+            { title: "[임상] 한미약품 비타민 합성 연구", th: "1기(1차)", count: "30", period: "48", crc: "김CRC" }
+        ];
+
+        // 2. 시험명 셀렉트 박스 초기화 함수
+        function initDashboardFilter() {
+            const titleSelect = document.getElementById("dashboard-filter-title");
+            if (!titleSelect) return;
+
+            const currentSelected = titleSelect.value;
+            const uniqueTitles = [...new Set(recruitmentData.map(item => item.title))];
+
+            titleSelect.innerHTML = '<option value="ALL">— 전체 시험 보기 —</option>';
+
+            uniqueTitles.forEach(title => {
+                const option = document.createElement("option");
+                option.value = title;
+                option.textContent = title;
+                titleSelect.appendChild(option);
+            });
+
+            if (uniqueTitles.includes(currentSelected)) {
+                titleSelect.value = currentSelected;
+            } else {
+                titleSelect.value = "ALL";
+            }
+
+            updateDashboardThOptions();
+        }
+
+        // 3. 기수 셀렉트 박스 연쇄 동기화 함수
+        function updateDashboardThOptions() {
+            const titleSelect = document.getElementById("dashboard-filter-title");
+            const thSelect = document.getElementById("dashboard-filter-th");
+            if (!titleSelect || !thSelect) return;
+
+            const selectedTitle = titleSelect.value;
+            thSelect.innerHTML = '<option value="ALL">— 전체 기수 —</option>';
+
+            if (selectedTitle !== "ALL") {
+                const filteredThs = recruitmentData
+                    .filter(item => item.title === selectedTitle)
+                    .map(item => item.th);
+
+                const uniqueThs = [...new Set(filteredThs)];
+
+                uniqueThs.forEach(th => {
+                    const option = document.createElement("option");
+                    option.value = th;
+                    option.textContent = th;
+                    thSelect.appendChild(option);
+                });
+            }
+
+            if (typeof calculateLiveDashboardStats === "function") {
+                calculateLiveDashboardStats();
+            }
+        }
+
+        // 4. 신규 공고 등록 버튼 연동 함수
+        function insertRecruitmentRecord() {
+            const inputTitle = document.getElementById("form-rec-title");
+            const selectTh = document.getElementById("form-rec-th");
+            const inputCount = document.getElementById("form-rec-count");
+            const inputPeriod = document.getElementById("form-rec-period");
+            const inputCrc = document.getElementById("form-rec-crc");
+
+            if (!inputTitle.value.trim()) {
+                alert("시험명을 입력해 주세요.");
+                inputTitle.focus();
+                return;
+            }
+
+            const newRecord = {
+                title: inputTitle.value.trim(),
+                th: selectTh.value,
+                count: inputCount.value.trim() || "0",
+                period: inputPeriod.value.trim() || "0",
+                crc: inputCrc.value.trim() || "미정"
+            };
+
+            recruitmentData.push(newRecord);
+
+            // 상단 셀렉트 박스 필터 목록 실시간 갱신
+            initDashboardFilter();
+
+            // 인풋 폼 비우기
+            inputTitle.value = "";
+            inputCount.value = "";
+            inputPeriod.value = "";
+            inputCrc.value = "";
+            selectTh.selectedIndex = 0;
+
+            alert("신규 모집공고가 성공적으로 등록 및 반영되었습니다.");
+        }
+
+        // 최초 로드 시 실행
+        document.addEventListener("DOMContentLoaded", () => {
+            initDashboardFilter();
+        });        
     </script>
 
     <!-- 비밀번호 변경 처리용 통합 오버레이 팝업 모달창 창고 -->
