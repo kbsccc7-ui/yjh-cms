@@ -1946,7 +1946,7 @@
                 <td>${formattedPhone}</td>
 
                 <!-- 🎯 정립된 4단계 규격 상태 배지 마킹 영역 -->
-                <td><span class="lvl-badge" style="${statusStyle} font-weight: 700; white-space: nowrap;">${(currentStatus === '처리중') ? '처리중' : currentStatus}</span></td>
+                <td><span class="lvl-badge" style="${statusStyle} font-weight: 700; white-space: nowrap;">${(currentStatus === '처리중') ? '재무 검토(처리중)' : currentStatus}</span></td>
                 <td style="text-align: center; ${row.isDutyAgreed === '동의' ? 'color: var(--success-color)' : 'color: var(--danger-color)'}; font-weight: 700;">${row.isDutyAgreed}</td>
                 <td style="text-align: center; ${row.isCallAgreed === '동의' ? 'color: var(--success-color)' : 'color: var(--danger-color)'}; font-weight: 700;">${row.isCallAgreed}</td>
                 <td style="vertical-align: middle;">${documentLinksHTML}</td>
