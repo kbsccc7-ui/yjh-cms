@@ -1871,21 +1871,22 @@
 
                 // 상태별 인라인 스타일 정의 (배경, 글자색, 테두리)
                 let statusStyle = "";
+                // 🎯 [상태별 스타일 정의] - 상단 위젯 카드와 동일한 디자인 시스템 적용
                 if (currentStatus === '대기') {
-                    // 💡 대기: 차분한 회색 테마
-                    statusStyle = "background: rgba(148, 163, 184, 0.1); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3);";
+                    // 💡 대기: 차분한 Slate 테마
+                    statusStyle = "background: var(--card-color); color: #94a3b8; border: 1px solid #334155;";
                 }
                 else if (currentStatus === '접수') {
-                    // 💡 접수: 상단 [청구서 접수현황]과 동일한 시원한 스카이블루
-                    statusStyle = "background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.4);";
+                    // 💡 접수: 상단 [청구서 접수현황] 스카이블루 테마
+                    statusStyle = "background: var(--card-color); color: #38bdf8; border: 1px solid #38bdf8;";
                 }
                 else if (currentStatus === '처리중') {
-                    // 💡 처리중: 상단 [처리중]과 동일한 주의/경고 옐로우 오렌지
-                    statusStyle = "background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4);";
+                    // 💡 처리중: 상단 [처리중] 옐로우 오렌지 테마 (재무 검토 단계)
+                    statusStyle = "background: var(--card-color); color: #fbbf24; border: 1px solid #fbbf24;";
                 }
                 else if (currentStatus === '처리완료') {
-                    // 💡 처리완료: 상단 [지급완료]와 동일한 성공/안정 그린 테마
-                    statusStyle = "background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4);";
+                    // 💡 처리완료: 상단 [지급완료] 에메랄드 그린 테마
+                    statusStyle = "background: var(--card-color); color: #34d399; border: 1px solid #34d399;";
                 }
 
                 // [A 분기] 인라인 편집 모드 활성화 시
