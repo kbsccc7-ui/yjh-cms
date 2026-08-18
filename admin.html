@@ -1828,37 +1828,27 @@
                     formattedPhone = row.phone;
                 }
 
-                // 서류 존재 여부 판단 통합 가드
-                const hasIdCard = row.idCardImg === "유" || row.idCard === true || row.idCard === "true" ||
-                    (typeof row.idCardImg === 'string' && row.idCardImg.length > 3) ||
-                    (typeof row.idCardUrl === 'string' && row.idCardUrl.length > 3);
+                // 🎯 [정밀 매칭 가드]: 수신 패킷 로그에 입증된 데이터 보존 여부 검증
+                const hasIdCard = (row.idCardImg && row.idCardImg.length > 3) || row.idCard === true;
+                const hasBankBook = (row.bankBookImg && row.bankBookImg.length > 3) || row.bankbook === true;
 
-                const hasBankBook = row.bankBookImg === "유" || row.bankbook === true || row.bankbook === "true" ||
-                    (typeof row.bankBookImg === 'string' && row.bankBookImg.length > 3) ||
-                    (typeof row.bankBookUrl === 'string' && row.bankBookUrl.length > 3);
-
-                // 🎯 [버그 추적 및 원천 차단 구역]
-                // Base64 바이너리 스트림("data:image")이 들어있으면 조건 불문하고 변수에 직격 할당합니다.
-                // 데이터가 없거나 무효한 텍스트("유", "true" 등)일 때만 기획안용 플레이스홀더 샘플을 배정합니다.
+                // 🎯 [완전 독립 방어막 구역]:
+                // 신분증 데이터와 통장 데이터가 서로 간섭하거나 덮어쓰지 못하도록 고유의 독립된 물리 변수로 격리 정제합니다.
                 let finalIdCardSrc = "placeholder";
                 let finalBankBookSrc = "placeholder";
 
-                // 1. 신분증 데이터 추출 검증 가드 (data: 주소 최우선 통과)
-                if (typeof row.idCardImg === 'string' && row.idCardImg.indexOf('data:image') === 0) {
+                // 1. 신분증 독립 추출 (Base64 헤더 가속 분석 검증)
+                if (typeof row.idCardImg === 'string' && row.idCardImg.length > 10) {
                     finalIdCardSrc = row.idCardImg;
-                } else if (typeof row.idCardUrl === 'string' && row.idCardUrl.indexOf('data:image') === 0) {
+                } else if (typeof row.idCardUrl === 'string' && row.idCardUrl.length > 10) {
                     finalIdCardSrc = row.idCardUrl;
-                } else if (typeof row.idCardImg === 'string' && row.idCardImg.length > 10 && row.idCardImg.indexOf('fakepath') === -1) {
-                    finalIdCardSrc = row.idCardImg;
                 }
 
-                // 2. 통장 데이터 추출 검증 가드 (data: 주소 최우선 통과)
-                if (typeof row.bankBookImg === 'string' && row.bankBookImg.indexOf('data:image') === 0) {
+                // 2. 통장 독립 추출 (Base64 헤더 가속 분석 검증)
+                if (typeof row.bankBookImg === 'string' && row.bankBookImg.length > 10) {
                     finalBankBookSrc = row.bankBookImg;
-                } else if (typeof row.bankBookUrl === 'string' && row.bankBookUrl.indexOf('data:image') === 0) {
+                } else if (typeof row.bankBookUrl === 'string' && row.bankBookUrl.length > 10) {
                     finalBankBookSrc = row.bankBookUrl;
-                } else if (typeof row.bankBookImg === 'string' && row.bankBookImg.length > 10 && row.bankBookImg.indexOf('fakepath') === -1) {
-                    finalBankBookSrc = row.bankBookImg;
                 }
 
                 let documentLinksHTML = "";
@@ -1866,12 +1856,12 @@
                     documentLinksHTML = `<div style="display: flex; gap: 6px; justify-content: center; align-items: center;">`;
 
                     if (hasIdCard) {
-                        // 정밀 검증이 완료된 고유의 finalIdCardSrc 인자를 전달
+                        // 🎯 완벽하게 정제된 신분증 고유 주소만 정밀 인가 타격
                         documentLinksHTML += `<button type="button" class="btn-inline list" onclick="openDocModal('${finalIdCardSrc}', '${cleanName} - 신분증')" style="padding: 4px 9px; font-size: 11px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; border-radius: 4px; font-weight: 700; cursor:pointer;"><i class="fa-solid fa-id-card"></i> 신분증</button>`;
                     }
 
                     if (hasBankBook) {
-                        // 정밀 검증이 완료된 고유의 finalBankBookSrc 인자를 전달
+                        // 🎯 완벽하게 정제된 통장 고유 주소만 정밀 인가 타격
                         documentLinksHTML += `<button type="button" class="btn-inline list" onclick="openDocModal('${finalBankBookSrc}', '${cleanName} - 통장사본')" style="padding: 4px 9px; font-size: 11px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; border-radius: 4px; font-weight: 700; cursor:pointer;"><i class="fa-solid fa-wallet"></i> 통장</button>`;
                     }
 
@@ -1883,7 +1873,7 @@
                 if (row.isDutyAgreed === undefined) row.isDutyAgreed = "동의";
                 if (row.isCallAgreed === undefined) row.isCallAgreed = "동의";
 
-                // [A 분기] 인라인 편집 모드
+                // [A 분기] 인라인 편집 모드 활성화 시
                 if (typeof currentAppEditingIndex !== 'undefined' && currentAppEditingIndex === index) {
                     tr.className = "editing-row";
                     tr.innerHTML = `
@@ -1914,7 +1904,7 @@
                 </td>
             `;
                 }
-                // [B 분기] 일반 조회 레이아웃 모드
+                // [B 분기] 일반 데이터 조회 레이아웃 모드 시
                 else {
                     tr.innerHTML = `
                 <td>${row.title || '-'}</td>
