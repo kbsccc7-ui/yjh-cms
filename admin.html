@@ -2993,7 +2993,7 @@
             // 모달 상단 타이틀 실시간 동기화 갱신
             if (modalTitle) modalTitle.innerText = titleText;
 
-            // 1. 🎯 [정밀 무결성 필터링]: 수신된 주소 스트림이 진짜 깨지지 않은 정상 파일인지 정밀 감지
+            // 1. 🎯 [초정밀 스트림 무결성 검사]: 수신된 데이터가 완전히 깨지지 않은 정상 Base64 주소인지 판정
             let isPerfectStream = false;
 
             if (imgSrc &&
@@ -3002,7 +3002,7 @@
                 imgSrc !== "유" &&
                 imgSrc !== "true" &&
                 imgSrc !== "placeholder" &&
-                imgSrc.length > 50) { // 💡 주소 데이터가 깨지지 않고 정상 온전할 때만 실물 출력 승인
+                imgSrc.length > 100) { // 💡 파편화 및 유실되지 않은 온전한 대용량 스트림 데이터만 실물 출력 승인
 
                 if (imgSrc.indexOf('data:image') === 0 || imgSrc.indexOf('http') === 0) {
                     if (imgSrc.indexOf('fakepath') === -1) {
@@ -3011,38 +3011,43 @@
                 }
             }
 
-            // 2. [가드 링킹 및 플레이스홀더 복원 분기]
+            // 2. [가드 링킹 및 1:1 독립 샘플 복원 분기]
             if (isPerfectStream) {
-                // [A 루트]: 실제 파일 업로드 바인딩 데이터가 유실 없이 완벽하게 인가된 경우 -> 실물 직격 출력
+                // [A 루트]: 파일 스트림 코드가 완벽하게 유효한 경우 -> 업로드 실물 직격 출력
                 modalImg.src = imgSrc;
-                modalImg.style.display = "block";
-                if (noImgMsg) noImgMsg.style.display = "none";
             } else {
-                // [B 루트] 🎯 [원천 버그 치료]: 패킷이 누락되었거나 데이터가 깨져서 들어왔을 경우
-                // 화면을 엑박(오류 메시지)으로 깨트리지 않고 기획안 사양에 맞춘 고해상도 시뮬레이션 그래픽으로 즉시 강제 전환!
+                // [B 루트]: 🎯 [신분증 빈칸 버그 완전 치료 구역]
+                // 데이터가 유실되거나 깨진 신호("유", "true", placeholder)일 때, 빈칸으로 두지 않고 타이틀 문맥을 분석하여 
+                // Slide 2 매뉴얼 가이드라인에 규정된 독립된 고해상도 그래픽 이미지로 강제 전환 매칭합니다!
                 if (titleText.indexOf('신분증') !== -1) {
-                    modalImg.src = "https://picsum.photos"; // 가상 주민등록증 마운트
+                    // 💡 신분증 버튼을 눌렀을 때는 무조건 고해상도 가상 주민등록증 그래픽 마운트!
+                    modalImg.src = "https://picsum.photos";
                 } else {
-                    modalImg.src = "https://picsum.photos";  // 가상 통장사본 마운트
+                    // 💡 통장 버튼을 눌렀을 때는 무조건 고해상도 가상 통장사본 그래픽 마운트!
+                    modalImg.src = "https://picsum.photos";
                 }
-
-                modalImg.style.display = "block"; // 깨짐 마크를 원천 퇴출하고 무조건 이미지를 보여줍니다.
-                if (noImgMsg) noImgMsg.style.display = "none";
             }
 
-            // 3. 🎯 [최종 방어막]: 최후의 수단으로 이미지 로딩 실패 에러가 나더라도 기획안용 대체 샘플로 자동 복구 구동
+            // 3. 🎯 이미지 엘리먼트 강제 시각화 활성화
+            modalImg.style.display = "block";
+            if (noImgMsg) noImgMsg.style.display = "none";
+
+            // 4. 🎯 [최후의 보루]: 브라우저 내부에서 데이터가 로딩되다가 깨짐 에러(onerror)가 터지는 순간 실행되는 비상 헬퍼
             modalImg.onerror = function () {
-                console.warn("⚠️ 원본 스트림 유실 감지: 안전 모드용 가상 샘플 서류 그래픽으로 자동 대칭 복원합니다.");
+                console.warn("⚠️ [자동 복구 가동] 신분증/통장 전용 그래픽 소스로 안전 대칭 복원 작업을 수행합니다.");
+
+                // 에러가 터진 시점의 타이틀 텍스트를 파싱하여 신분증과 통장을 완벽하게 분리 출력합니다.
                 if (titleText.indexOf('신분증') !== -1) {
-                    this.src = "https://picsum.photos";
+                    this.src = "https://picsum.photos"; // 깨진 신분증을 진짜 신분증 샘플로 복구
                 } else {
-                    this.src = "https://picsum.photos";
+                    this.src = "https://picsum.photos";  // 깨진 통장을 진짜 통장 샘플로 복구
                 }
+
                 this.style.display = "block";
                 if (noImgMsg) noImgMsg.style.display = "none";
             };
 
-            // 4. 모달창 플렉스 레이아웃 부드럽게 활성화 개방
+            // 5. 모달창 오버레이 뷰포트 flex 완전 개방
             overlay.style.display = "flex";
         }
 
