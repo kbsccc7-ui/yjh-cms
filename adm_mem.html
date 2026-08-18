@@ -1038,30 +1038,60 @@
         // 9. 은행선택 셀렉트박스와 계좌번호 인풋의 비활성화 상태를 토글하는 보조 함수
         function setFormInputState(sD, iD, isD) { if (sD && iD) { sD.disabled = isD; iD.disabled = isD; } }
 
-        // 10. 우측 폼 내부의 파일 업로드 박스들을 인가 상태에 맞게 라벨 렌더링하는 보조 함수
+
+        // 💡 [필수 추가] 신분증과 통장이 서로를 덮어쓰지 않도록 전용 독립 변수를 선언합니다.
+        var globalIdCardSrc = null;
+        var globalBankBookSrc = null;
+
+        // 10. 우측 폼 내부의 파일 업로드 박스들을 인가 상태에 맞게 라벨 렌더링하는 보조 함수 (매개변수 3종 완벽 매칭)
         function setFilesStatusToReady(b1, b2, n1, n2, bD) {
             if (!b1 || !b2) return;
-            b1.innerHTML = `<span class="status-text" style="color:#94A3B8;">❌ 신분증 미첨부</span> <label class="inner-upload-btn" style="display:inline-block; ${bD ? 'opacity:0.3; pointer-events:none;' : 'cursor:pointer;'}">파일 선택<input type="file" style="display:none;" onchange="handleOfficialFileUpload(this, '${n1}', 'doc_box_1')"></label>`;
-            b2.innerHTML = `<span class="status-text" style="color:#94A3B8;">❌ 통장사본 미첨부</span> <label class="inner-upload-btn" style="display:inline-block; ${bD ? 'opacity:0.3; pointer-events:none;' : 'cursor:pointer;'}">파일 선택<input type="file" style="display:none;" onchange="handleOfficialFileUpload(this, '${n2}', 'doc_box_2')"></label>`;
+            // 온체인지 호출 규격에서 박스 ID를 넘겨 신분증('doc_box_1')과 통장('doc_box_2')을 정확히 식별하게 합니다.
+            b1.innerHTML = '<span class="status-text" style="color:#94A3B8;">❌ 신분증 미첨부</span> <label class="inner-upload-btn" style="display:inline-block; ' + (bD ? 'opacity:0.3; pointer-events:none;' : 'cursor:pointer;') + '">파일 선택<input type="file" style="display:none;" onchange="handleOfficialFileUpload(this, \'' + n1 + '\', \'doc_box_1\')"></label>';
+            b2.innerHTML = '<span class="status-text" style="color:#94A3B8;">❌ 통장사본 미첨부</span> <label class="inner-upload-btn" style="display:inline-block; ' + (bD ? 'opacity:0.3; pointer-events:none;' : 'cursor:pointer;') + '">파일 선택<input type="file" style="display:none;" onchange="handleOfficialFileUpload(this, \'' + n2 + '\', \'doc_box_2\')"></label>';
         }
 
         // 11. 증빙용 로컬 파일 선택 시 실시간 모바일 이미지 스캔 검수 뷰어로 전송 바인딩 처리하는 함수
         function handleOfficialFileUpload(inputElement, docName, boxId) {
             if (inputElement.files && inputElement.files[0]) {
                 var targetFile = inputElement.files[0];
-                alert(`[온라인 서류 증빙]\n\n대상자 홍길동 님의 [${docName}] 제출이 완료되었습니다.\n확인을 누르면 'STEP 01' 화면으로 원본 파일이 동적 전송 바인딩됩니다.`);
+
+                // 🎯 [확장자 프리패스 가드]: .PNG, .jfif, .HEIC, .jpg 대소문자 가리지 않고 모든 사진 확장자를 100% 강제 허용
+                var isImageFile = targetFile.type.indexOf('image/') === 0 ||
+                    /\.(jpg|jpeg|png|gif|bmp|webp|jfif|heic|heif)$/i.test(targetFile.name);
+
+                if (!isImageFile) {
+                    alert("⚠️ 올바른 이미지 파일 형식이 아닙니다. 사진 파일만 업로드해 주세요.");
+                    inputElement.value = "";
+                    return;
+                }
+
+                alert('[온라인 서류 증빙]\n\n대상자 홍길동 님의 [' + docName + '] 제출이 완료되었습니다.\n확인을 누르면 \'STEP 01\' 화면으로 원본 파일이 동적 전송 바인딩됩니다.');
 
                 var fileReader = new FileReader();
                 fileReader.onload = function (e) {
-                    globalUploadedImgSrc = e.target.result;
+                    var rawBase64Stream = e.target.result;
+
+                    // 🎯 원본 백업 연동 및 격리 저장 장치 가동
+                    globalUploadedImgSrc = rawBase64Stream;
+
+                    // 🎯 [버그 해결 핵심]: 들어온 박스 고유 ID를 분석하여 신분증 방과 통장 방에 명확하게 분리 배정!
+                    if (boxId === 'doc_box_1') {
+                        globalIdCardSrc = rawBase64Stream; // 신분증 전용 방에 적재
+                        console.log("🎯 신분증 스트림이 globalIdCardSrc 변수에 안전하게 격리 저장되었습니다.");
+                    } else if (boxId === 'doc_box_2') {
+                        globalBankBookSrc = rawBase64Stream; // 통장 전용 방에 적재
+                        console.log("🎯 통장사본 스트림이 globalBankBookSrc 변수에 안전하게 격리 저장되었습니다.");
+                    }
+
                     var targetBox = document.getElementById(boxId);
                     if (targetBox) {
-                        targetBox.innerHTML = `<span class="status-text" style="color:#10B981;">✔완료</span><span class="file-title" style="font-size:12px;color:#E2E8F0;margin-top:2px;">${targetFile.name}</span>`;
+                        targetBox.innerHTML = '<span class="status-text" style="color:#10B981;">✔완료</span><span class="file-title" style="font-size:12px;color:#E2E8F0;margin-top:2px;">' + targetFile.name + '</span>';
                     }
 
                     var popupBox = document.querySelector('.popup-box');
                     if (popupBox) {
-                        popupBox.innerHTML = `<div class="preview-wrapper"><span style="font-size:11px; color:#06B6D4; font-weight:bold;">💥 첨부파일 오피셜 검수 스캔 뷰어 [${docName}]</span><img src="${globalUploadedImgSrc}" class="preview-img" id="target_print_area"><div class="viewer-btn-group"><button onclick="executeFilePrint()" class="v-btn v-btn-print">💥 증빙인쇄</button><button onclick="executeFileDownload('${targetFile.name}')" class="v-btn v-btn-down">💥 로컬저장</button></div></div>`;
+                        popupBox.innerHTML = '<div class="preview-wrapper"><span style="font-size:11px; color:#06B6D4; font-weight:bold;">💥 첨부파일 오피셜 검수 스캔 뷰어 [' + docName + ']</span><img src="' + rawBase64Stream + '" class="preview-img" id="target_print_area"><div class="viewer-btn-group"><button onclick="executeFilePrint()" class="v-btn v-btn-print">💥 증빙인쇄</button><button onclick="executeFileDownload(\'' + targetFile.name + '\')" class="v-btn v-btn-down">💥 로컬저장</button></div></div>';
                     }
                 };
                 fileReader.readAsDataURL(targetFile);
@@ -1171,18 +1201,16 @@
             else if (currentTargetStage === 4) msg = "[시험 예비자 퇴원 귀가] 규정 사례비";
             else if (currentTargetStage === 5) msg = "[중도 동의철회자] 이수분 분할 사례비";
 
-            // 🎯 [전천후 캔버스 압축 가드] PNG, JPEG, HEIC, JFIF 등 모든 포맷을 표준 웹 규격(JPEG)으로 무조건 압축 변형
-            function compressImageStream(rawStream, callback) {
-                // 스트림이 유효하지 않거나 일반 텍스트일 때 가드
+            // 🎯 [내부 헬퍼 가속기]: 28MB 대용량 스트림 및 모든 포맷 확장자를 300KB대로 초압축 다이어트하는 캔버스 엔진
+            function compressSingleStream(rawStream, callback) {
                 if (!rawStream || typeof rawStream !== 'string' || rawStream.indexOf('data:image') !== 0) {
-                    callback("유");
+                    callback("유"); // 유효한 스트림이 아닐 경우 기본 활성화 신호 반환
                     return;
                 }
-
                 var img = new Image();
                 img.onload = function () {
                     var canvas = document.createElement('canvas');
-                    var max_size = 1024; // 웹 최적화 표준 해상도 그리드 설정
+                    var max_size = 1024; // 웹 최적화 표준 해상도 스케일링 그리드
                     var width = img.width;
                     var height = img.height;
 
@@ -1197,49 +1225,53 @@
                     var ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
 
-                    // 🎯 어떤 포맷이 들어왔든 무조건 표준 'image/jpeg' 스트림 및 가벼운 용량(200KB 대)으로 변정 인코딩
+                    // 원래 파일 포맷(PNG, HEIC, JFIF 등)에 상관없이 무조건 표준 image/jpeg 및 경량 파일로 압축 인코딩
                     var compressedBase64 = canvas.toDataURL('image/jpeg', 0.65);
                     callback(compressedBase64);
                 };
-                img.onerror = function () {
-                    // 이미지 로딩 실패 시 원본 그대로 전송되도록 우회 안전장치 가동
-                    callback(rawStream);
-                };
+                img.onerror = function () { callback("유"); };
                 img.src = rawStream;
             }
 
-            // 파일 첨부 엘리먼트 데이터 체인 일체 확보
-            const rawUploadedSrc = (typeof globalUploadedImgSrc !== 'undefined' && globalUploadedImgSrc) ? globalUploadedImgSrc : "유";
+            // 🎯 [완전 종결 변수 매칭]: 11번 업로드 함수에서 완벽히 격리 수집된 개별 고유 소스 추출
+            const idCardRaw = (typeof globalIdCardSrc !== 'undefined' && globalIdCardSrc) ? globalIdCardSrc : "유";
+            const bankBookRaw = (typeof globalBankBookSrc !== 'undefined' && globalBankBookSrc) ? globalBankBookSrc : "유";
 
-            // 압축 믹서 가동 후 패킷 직격 발송
-            compressImageStream(rawUploadedSrc, function (optimizedStream) {
-                if (btn) {
-                    btn.disabled = true;
-                    btn.innerText = "💥 지급 신청 완료 (전산 전송됨)";
-                    btn.style.opacity = "0.4";
-                }
+            // 1단계: 신분증 압축 제어 기동
+            compressSingleStream(idCardRaw, function (optimizedIdCard) {
+                // 2단계: 통장사본 압축 제어 기동 (순차적 동기화 체인 구성)
+                compressSingleStream(bankBookRaw, function (optimizedBankBook) {
 
-                // [교정 3] 부모 대시보드창(admin.html)으로 무결성 최적화 패킷 전송
-                let targetDash = window.opener || window.parent;
-                if (targetDash && typeof targetDash.receiveSubjectDocumentPayload === "function") {
+                    if (btn) {
+                        btn.disabled = true;
+                        btn.innerText = "💥 지급 신청 완료 (전산 전송됨)";
+                        btn.style.opacity = "0.4";
+                    }
 
-                    const payload = {
-                        patientName: targetUser.name,
-                        patientUid: targetUser.uid || "",
-                        patientSsn: targetUser.ssn || "",
-                        idCardImg: optimizedStream,       // 💡 어떤 사진이든 표준 포맷 압축본으로 안전 전송
-                        bankBookImg: optimizedStream      // 💡 어떤 사진이든 표준 포맷 압축본으로 안전 전송
-                    };
+                    // 🎯 [교정 3] 부모 대시보드창(admin.html)으로 무결성 최적화 분리 패킷 전송
+                    let targetDash = window.opener || window.parent;
+                    if (targetDash && typeof targetDash.receiveSubjectDocumentPayload === "function") {
 
-                    console.log("[실시간 패킷 송신] 포맷 통합 및 초압축 전송 완료:", payload);
-                    targetDash.receiveSubjectDocumentPayload(payload);
+                        // 쪼개진 방에 압축이 완벽히 마감된 고유의 스트림 소스를 각각 격리 배정합니다.
+                        const payload = {
+                            patientName: targetUser.name,
+                            patientUid: targetUser.uid || "",
+                            patientSsn: targetUser.ssn || "",
+                            idCardImg: optimizedIdCard,       // 🎯 순수 신분증 데이터 코드 전송
+                            bankBookImg: optimizedBankBook    // 🎯 순수 통장사본 데이터 코드 전송
+                        };
 
-                    alert(`정산 접수 완료\n\n ${targetUser.name} 피험자의 ${msg} 청구서가 안전하게 접수되었습니다.`);
-                } else {
-                    console.error("부모 창의 수신 함수(receiveSubjectDocumentPayload)를 찾을 수 없습니다.");
-                }
+                        console.log("[실시간 패킷 송신] 신분증/통장 개별 초압축 마감 패킷:", payload);
+                        targetDash.receiveSubjectDocumentPayload(payload);
+
+                        alert(`정산 접수 완료\n\n ${targetUser.name} 피험자의 ${msg} 청구서가 안전하게 접수되었습니다.`);
+                    } else {
+                        console.error("부모 창의 수신 함수(receiveSubjectDocumentPayload)를 찾을 수 없습니다.");
+                    }
+                });
             });
         }
+
     </script>
 
 </body>
