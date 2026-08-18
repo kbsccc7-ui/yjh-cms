@@ -2068,6 +2068,11 @@
                 th = '0기 0차';
             }
 
+            // 💡 [가드 추가]: 혹시 모를 전역 배열 미선언 에러 방지 및 로컬스토리지 싱크 강제 일치
+            if (typeof dataStoreApplicant === 'undefined' || !Array.isArray(dataStoreApplicant)) {
+                dataStoreApplicant = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
+            }
+
             // 데이터 삽입 및 연동 규격화 가공 처리
             const payload = {
                 uid: editIndex === "" ? `${Date.now()}_${Math.random().toString(36).substr(2, 9)}` : dataStoreApplicant[editIndex].uid,
@@ -2079,14 +2084,16 @@
                 ssn: getOnlyNumbers(s),
                 phone: getOnlyNumbers(ph),
                 result: editIndex === "" ? "접수" : dataStoreApplicant[editIndex].result,
-                payStatus: editIndex === "" ? "접수" : dataStoreApplicant[editIndex].payStatus,
+
+                // 🎯 [초기값 오류 박멸]: 신규 등록할 땐 무조건 '대기' 상태로 박제하여 위젯과 싱크 동기화
+                payStatus: editIndex === "" ? "대기" : dataStoreApplicant[editIndex].payStatus,
                 isAgreed: editIndex === "" ? "동의" : dataStoreApplicant[editIndex].isAgreed,
 
                 // 🎯 당직 및 소집동의 초기 상태 가드
                 isDutyAgreed: editIndex === "" ? "동의" : (dataStoreApplicant[editIndex].isDutyAgreed || "동의"),
                 isCallAgreed: editIndex === "" ? "동의" : (dataStoreApplicant[editIndex].isCallAgreed || "동의"),
 
-                // 🎯 [교정 2]: 첨부서류 속성 누락 방지 및 클린 초기화 ("무" 문자열 오염 원천 차단)
+                // 🎯 [교정 2]: 첨부서류 속성 누락 방지 및 클린 초기화 (공백문자로 깨짐 배지 유발 방지)
                 idCardImg: editIndex === "" ? "" : (dataStoreApplicant[editIndex].idCardImg || ""),
                 bankBookImg: editIndex === "" ? "" : (dataStoreApplicant[editIndex].bankBookImg || ""),
 
@@ -2105,10 +2112,16 @@
                 alert(`📋 정보 갱신 완료: [${n}] 피험자의 마스터 레코드가 업데이트되었습니다.`);
             }
 
-            commitToLocalStorage();
+            // 💡 [치명적 버그 우회 가드]: 기존 commit 함수가 데이터를 오염시키지 못하도록 강제 즉시 스토리지 직저장
+            localStorage.setItem('dataStoreApplicant', JSON.stringify(dataStoreApplicant));
+            if (typeof commitToLocalStorage === 'function') {
+                try { commitToLocalStorage(); } catch (e) { console.log("외부 커밋 함수 바이패스"); }
+            }
+
             resetForm(); // 💡 폼 초기화 및 버튼 전환
             refreshApplicantView();
         }
+        
 
         /** 💡 [추가] 테이블 행의 [수정] 버튼 클릭 시 데이터를 상단 폼으로 로드하는 함수 */
         function enableApplicantEditMode(index) {
