@@ -1828,50 +1828,35 @@
                     formattedPhone = row.phone;
                 }
 
-                // 🎯 [조건 교정 구역]: "유"라는 텍스트뿐만 아니라, 실제 이미지 스트림(data:)이나 
-                // 5글자 이상의 임의의 주소 데이터가 존재하면 서류가 제출된 것으로 전천후 승인합니다.
-                const hasIdCard = row.idCardImg === "유" || row.idCard === true || row.idCard === "true" ||
-                    (typeof row.idCardImg === 'string' && row.idCardImg.length > 3) ||
-                    (typeof row.idCardUrl === 'string' && row.idCardUrl.length > 3);
+                // 서류 존재 여부 판단 통합 가드
+                const hasIdCard = (row.idCardImg && row.idCardImg.length > 3) || row.idCard === true || row.idCard === "true";
+                const hasBankBook = (row.bankBookImg && row.bankBookImg.length > 3) || row.bankbook === true || row.bankbook === "true";
 
-                const hasBankBook = row.bankBookImg === "유" || row.bankbook === true || row.bankbook === "true" ||
-                    (typeof row.bankBookImg === 'string' && row.bankBookImg.length > 3) ||
-                    (typeof row.bankBookUrl === 'string' && row.bankBookUrl.length > 3);
-
-                // 🎯 [핵심 버그 치료 구역]: 
-                // LocalStorage 방에 문자열 "유"가 들어있으면 가상 플레이스홀더 주소를 세팅하고,
-                // "data:image/jpeg;base64..."로 시작하는 진짜 이미지 코드가 들어있으면 필터를 타지 않고 그대로 통과시켜 모달창에 꽂아줍니다.
+                // 404 추적 차단 및 스트림 프리패스 가드
                 let finalIdCardSrc = "placeholder";
                 let finalBankBookSrc = "placeholder";
 
-                // 1. 신분증 실물 데이터 검증 및 추출 파이프라인
-                if (typeof row.idCardImg === 'string' && row.idCardImg.length > 10) {
-                    finalIdCardSrc = row.idCardImg; // 실제 이미지 주소 및 Base64 스트림 직격 바인딩
-                } else if (typeof row.idCardUrl === 'string' && row.idCardUrl.length > 10) {
+                if (typeof row.idCardImg === 'string' && row.idCardImg.length > 20 && row.idCardImg.indexOf('fakepath') === -1) {
+                    finalIdCardSrc = row.idCardImg;
+                } else if (typeof row.idCardUrl === 'string' && row.idCardUrl.length > 20 && row.idCardUrl.indexOf('fakepath') === -1) {
                     finalIdCardSrc = row.idCardUrl;
                 }
 
-                // 2. 통장 실물 데이터 검증 및 추출 파이프라인
-                if (typeof row.bankBookImg === 'string' && row.bankBookImg.length > 10) {
-                    finalBankBookSrc = row.bankBookImg; // 실제 이미지 주소 및 Base64 스트림 직격 바인딩
-                } else if (typeof row.bankBookUrl === 'string' && row.bankBookUrl.length > 10) {
+                if (typeof row.bankBookImg === 'string' && row.bankBookImg.length > 20 && row.bankBookImg.indexOf('fakepath') === -1) {
+                    finalBankBookSrc = row.bankBookImg;
+                } else if (typeof row.bankBookUrl === 'string' && row.bankBookUrl.length > 20 && row.bankBookUrl.indexOf('fakepath') === -1) {
                     finalBankBookSrc = row.bankBookUrl;
                 }
 
                 let documentLinksHTML = "";
                 if (hasIdCard || hasBankBook) {
                     documentLinksHTML = `<div style="display: flex; gap: 6px; justify-content: center; align-items: center;">`;
-
                     if (hasIdCard) {
-                        // 🎯 정밀 정제 및 격리가 완료된 finalIdCardSrc 인자를 모달 팝업 함수로 확실하게 인가
                         documentLinksHTML += `<button type="button" class="btn-inline list" onclick="openDocModal('${finalIdCardSrc}', '${cleanName} - 신분증')" style="padding: 4px 9px; font-size: 11px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; border-radius: 4px; font-weight: 700; cursor:pointer;"><i class="fa-solid fa-id-card"></i> 신분증</button>`;
                     }
-
                     if (hasBankBook) {
-                        // 🎯 정밀 정제 및 격리가 완료된 finalBankBookSrc 인자를 모달 팝업 함수로 확실하게 인가
                         documentLinksHTML += `<button type="button" class="btn-inline list" onclick="openDocModal('${finalBankBookSrc}', '${cleanName} - 통장사본')" style="padding: 4px 9px; font-size: 11px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; border-radius: 4px; font-weight: 700; cursor:pointer;"><i class="fa-solid fa-wallet"></i> 통장</button>`;
                     }
-
                     documentLinksHTML += `</div>`;
                 } else {
                     documentLinksHTML = `<span style="color: var(--text-muted); font-size: 12px; display: block; text-align: center;">미제출</span>`;
@@ -1880,7 +1865,17 @@
                 if (row.isDutyAgreed === undefined) row.isDutyAgreed = "동의";
                 if (row.isCallAgreed === undefined) row.isCallAgreed = "동의";
 
-                // [A 분기] 인라인 편집 활성화 모드
+                // 🎯 [상태 배지 고대비 색상 매칭 허브 구역]
+                let currentStatus = row.payStatus || '대기';
+                // 혹시 예전 데이터의 구버전 상태값('접수완료', '확인')이 보인다면 신규 규격인 '접수'로 매칭 스위칭 우회
+                if (currentStatus === '확인' || currentStatus === '접수완료') currentStatus = '접수';
+
+                let statusBadgeClass = 'lvl-1'; // 기본 대기 색상 (회색)
+                if (currentStatus === '접수') statusBadgeClass = 'lvl-2';       // 스카이블루 (서류 들어옴)
+                else if (currentStatus === '처리중') statusBadgeClass = 'lvl-1';  // 경고 오렌지 테마가 있다면 매칭 (원안 유지)
+                else if (currentStatus === '처리완료') statusBadgeClass = 'lvl-2'; // 완료 야광 라이트 그린 테마 매칭
+
+                // [A 분기] 인라인 편집 모드 활성화 시
                 if (typeof currentAppEditingIndex !== 'undefined' && currentAppEditingIndex === index) {
                     tr.className = "editing-row";
                     tr.innerHTML = `
@@ -1891,15 +1886,23 @@
                 <td><input type="text" class="inline-input" id="edit-row-name-${index}" value="${row.name || ''}"></td>
                 <td><input type="text" class="inline-input" id="edit-row-ssn-${index}" value="${row.ssn || ''}"></td>
                 <td><input type="text" class="inline-input" id="edit-row-phone-${index}" value="${formattedPhone}"></td>
-                <td><input type="text" class="inline-input" id="edit-row-payStatus-${index}" value="${row.payStatus || '대기'}"></td>
+                <!-- 🎯 [교정 핵심]: 상태 부분을 4단계 select 선택 상자로 변경해 수정이 가능하도록 인가 -->
+                <td>
+                    <select class="inline-input" id="edit-row-payStatus-${index}" style="padding: 2px; background: #0f172a; color: #fff;">
+                        <option value="대기" ${currentStatus === '대기' ? 'selected' : ''}>대기</option>
+                        <option value="접수" ${currentStatus === '접수' ? 'selected' : ''}>접수</option>
+                        <option value="처리중" ${currentStatus === '처리중' ? 'selected' : ''}>처리중</option>
+                        <option value="처리완료" ${currentStatus === '처리완료' ? 'selected' : ''}>처리완료</option>
+                    </select>
+                </td>
                 <td style="text-align: center;">
-                    <select class="inline-input" id="edit-row-duty-${index}">
+                    <select class="inline-input" id="edit-row-duty-${index}" style="padding: 2px;">
                         <option value="동의" ${row.isDutyAgreed === '동의' ? 'selected' : ''}>동의</option>
                         <option value="미동의" ${row.isDutyAgreed === '미동의' ? 'selected' : ''}>미동의</option>
                     </select>
                 </td>
                 <td style="text-align: center;">
-                    <select class="inline-input" id="edit-row-call-${index}">
+                    <select class="inline-input" id="edit-row-call-${index}" style="padding: 2px;">
                         <option value="동의" ${row.isCallAgreed === '동의' ? 'selected' : ''}>동의</option>
                         <option value="미동의" ${row.isCallAgreed === '미동의' ? 'selected' : ''}>미동의</option>
                     </select>
@@ -1911,7 +1914,7 @@
                 </td>
             `;
                 }
-                // [B 분기] 일반 조회 레이아웃 모드
+                // [B 분기] 일반 데이터 조회 레이아웃 모드 시
                 else {
                     tr.innerHTML = `
                 <td>${row.title || '-'}</td>
@@ -1921,7 +1924,8 @@
                 <td class="text-bold" style="color: #ffffff;">${cleanName}</td>
                 <td>${row.ssn || '-'}</td>
                 <td>${formattedPhone}</td>
-                <td><span class="lvl-badge lvl-1">${row.payStatus || '대기'}</span></td>
+                <!-- 🎯 정립된 4단계 규격 상태 배지 마킹 영역 -->
+                <td><span class="lvl-badge ${statusBadgeClass}">${currentStatus}</span></td>
                 <td style="text-align: center; ${row.isDutyAgreed === '동의' ? 'color: var(--success-color)' : 'color: var(--danger-color)'}; font-weight: 700;">${row.isDutyAgreed}</td>
                 <td style="text-align: center; ${row.isCallAgreed === '동의' ? 'color: var(--success-color)' : 'color: var(--danger-color)'}; font-weight: 700;">${row.isCallAgreed}</td>
                 <td style="vertical-align: middle;">${documentLinksHTML}</td>
@@ -1967,7 +1971,10 @@
             const updatedName = document.getElementById(`edit-row-name-${index}`).value.trim();
             const updatedSsn = document.getElementById(`edit-row-ssn-${index}`).value.trim();
             const updatedPhone = document.getElementById(`edit-row-phone-${index}`).value.trim();
-            const updatedPayStatus = document.getElementById(`edit-row-payStatus-${index}`).value.trim();
+
+            // 🎯 [교정 수집]: select 창에서 선택된 대기/접수/처리중/처리완료 벨류값 추출
+            const updatedPayStatus = document.getElementById(`edit-row-payStatus-${index}`).value;
+
             const updatedDuty = document.getElementById(`edit-row-duty-${index}`).value;
             const updatedCall = document.getElementById(`edit-row-call-${index}`).value;
 
@@ -1984,7 +1991,10 @@
             adminApplicantDB[index].name = updatedName;
             adminApplicantDB[index].ssn = updatedSsn;
             adminApplicantDB[index].phone = updatedPhone;
+
+            // 🎯 선택된 4단계 프로세스 상태값을 원본 키에 정밀 인가 세이브
             adminApplicantDB[index].payStatus = updatedPayStatus;
+
             adminApplicantDB[index].isDutyAgreed = updatedDuty;
             adminApplicantDB[index].isCallAgreed = updatedCall;
 
@@ -1992,7 +2002,7 @@
             localStorage.setItem('dataStoreApplicant', JSON.stringify(adminApplicantDB));
             currentAppEditingIndex = null;
             refreshApplicantView();
-            alert("대상자 정보가 마스터 파일에 완전 저장되었습니다.");
+            alert("대상자 정보 및 정산 프로세스 상태가 대장에 완전 저장되었습니다.");
         }
 
         /**
