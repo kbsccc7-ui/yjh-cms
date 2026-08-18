@@ -1865,36 +1865,50 @@
                 if (row.isDutyAgreed === undefined) row.isDutyAgreed = "동의";
                 if (row.isCallAgreed === undefined) row.isCallAgreed = "동의";
 
-                // 🎯 [상태 배지 고대비 색상 매칭 허브 구역]
+                // 🎯 [상태 배지 고대비 색상 매칭 허브 구역] - 상단 현황판 위젯과 1:1 색상 동기화
                 let currentStatus = row.payStatus || '대기';
-                // 혹시 예전 데이터의 구버전 상태값('접수완료', '확인')이 보인다면 신규 규격인 '접수'로 매칭 스위칭 우회
                 if (currentStatus === '확인' || currentStatus === '접수완료') currentStatus = '접수';
 
-                let statusBadgeClass = 'lvl-1'; // 기본 대기 색상 (회색)
-                if (currentStatus === '접수') statusBadgeClass = 'lvl-2';       // 스카이블루 (서류 들어옴)
-                else if (currentStatus === '처리중') statusBadgeClass = 'lvl-1';  // 경고 오렌지 테마가 있다면 매칭 (원안 유지)
-                else if (currentStatus === '처리완료') statusBadgeClass = 'lvl-2'; // 완료 야광 라이트 그린 테마 매칭
+                // 상태별 인라인 스타일 정의 (배경, 글자색, 테두리)
+                let statusStyle = "";
+                if (currentStatus === '대기') {
+                    // 💡 대기: 차분한 회색 테마
+                    statusStyle = "background: rgba(148, 163, 184, 0.1); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3);";
+                }
+                else if (currentStatus === '접수') {
+                    // 💡 접수: 상단 [청구서 접수현황]과 동일한 시원한 스카이블루
+                    statusStyle = "background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.4);";
+                }
+                else if (currentStatus === '처리중') {
+                    // 💡 처리중: 상단 [처리중]과 동일한 주의/경고 옐로우 오렌지
+                    statusStyle = "background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4);";
+                }
+                else if (currentStatus === '처리완료') {
+                    // 💡 처리완료: 상단 [지급완료]와 동일한 성공/안정 그린 테마
+                    statusStyle = "background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4);";
+                }
 
                 // [A 분기] 인라인 편집 모드 활성화 시
                 if (typeof currentAppEditingIndex !== 'undefined' && currentAppEditingIndex === index) {
                     tr.className = "editing-row";
                     tr.innerHTML = `
-                <td><input type="text" class="inline-input" id="edit-row-title-${index}" value="${row.title || ''}"></td>
-                <td><input type="text" class="inline-input" id="edit-row-th-${index}" value="${row.th || ''}" style="width:75px;"></td>
-                <td><input type="text" class="inline-input" id="edit-row-count-${index}" value="${row.count || ''}" style="width:50px;"></td>
-                <td><input type="text" class="inline-input" id="edit-row-period-${index}" value="${row.period || ''}" style="width:50px;"></td>
-                <td><input type="text" class="inline-input" id="edit-row-name-${index}" value="${row.name || ''}"></td>
-                <td><input type="text" class="inline-input" id="edit-row-ssn-${index}" value="${row.ssn || ''}"></td>
-                <td><input type="text" class="inline-input" id="edit-row-phone-${index}" value="${formattedPhone}"></td>
-                <!-- 🎯 [교정 핵심]: 상태 부분을 4단계 select 선택 상자로 변경해 수정이 가능하도록 인가 -->
-                <td>
-                    <select class="inline-input" id="edit-row-payStatus-${index}" style="padding: 2px; background: #0f172a; color: #fff;">
-                        <option value="대기" ${currentStatus === '대기' ? 'selected' : ''}>대기</option>
-                        <option value="접수" ${currentStatus === '접수' ? 'selected' : ''}>접수</option>
-                        <option value="처리중" ${currentStatus === '처리중' ? 'selected' : ''}>처리중</option>
-                        <option value="처리완료" ${currentStatus === '처리완료' ? 'selected' : ''}>처리완료</option>
-                    </select>
-                </td>
+        <td><input type="text" class="inline-input" id="edit-row-title-${index}" value="${row.title || ''}"></td>
+        <td><input type="text" class="inline-input" id="edit-row-th-${index}" value="${row.th || ''}" style="width:75px;"></td>
+        <td><input type="text" class="inline-input" id="edit-row-count-${index}" value="${row.count || ''}" style="width:50px;"></td>
+        <td><input type="text" class="inline-input" id="edit-row-period-${index}" value="${row.period || ''}" style="width:50px;"></td>
+        <td><input type="text" class="inline-input" id="edit-row-name-${index}" value="${row.name || ''}"></td>
+        <td><input type="text" class="inline-input" id="edit-row-ssn-${index}" value="${row.ssn || ''}"></td>
+        <td><input type="text" class="inline-input" id="edit-row-phone-${index}" value="${formattedPhone}"></td>
+        
+        <!-- 🎯 [교정 핵심]: 상태 부분을 4단계 select 선택 상자로 변경해 수정이 가능하도록 인가 -->
+        <td>
+            <select class="inline-input" id="edit-row-payStatus-${index}" style="padding: 2px; background: #0f172a; color: #fff; border: 1px solid #334155;">
+                <option value="대기" ${currentStatus === '대기' ? 'selected' : ''}>대기</option>
+                <option value="접수" ${currentStatus === '접수' ? 'selected' : ''}>접수</option>
+                <option value="처리중" ${currentStatus === '처리중' ? 'selected' : ''}>처리중</option>
+                <option value="처리완료" ${currentStatus === '처리완료' ? 'selected' : ''}>처리완료</option>
+            </select>
+        </td>
                 <td style="text-align: center;">
                     <select class="inline-input" id="edit-row-duty-${index}" style="padding: 2px;">
                         <option value="동의" ${row.isDutyAgreed === '동의' ? 'selected' : ''}>동의</option>
@@ -1924,6 +1938,7 @@
                 <td class="text-bold" style="color: #ffffff;">${cleanName}</td>
                 <td>${row.ssn || '-'}</td>
                 <td>${formattedPhone}</td>
+
                 <!-- 🎯 정립된 4단계 규격 상태 배지 마킹 영역 -->
                 <td><span class="lvl-badge ${statusBadgeClass}">${currentStatus}</span></td>
                 <td style="text-align: center; ${row.isDutyAgreed === '동의' ? 'color: var(--success-color)' : 'color: var(--danger-color)'}; font-weight: 700;">${row.isDutyAgreed}</td>
