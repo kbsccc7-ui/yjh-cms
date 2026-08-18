@@ -2160,9 +2160,10 @@
             thSelect.innerHTML = "";
             for (let gi = 1; gi <= 4; gi++) {
                 for (let cha = 1; cha <= 4; cha++) {
-                    const optionText = `${gi}기 ${cha}차`;
+                    const valueText = `${gi}기(${cha}차)`; // 🎯 데이터 스토어와 일치화 ("1기(1차)")
+                    const optionText = `${gi}기 ${cha}차`; // 화면 노출용 텍스트
                     const opt = document.createElement("option");
-                    opt.value = optionText;
+                    opt.value = valueText;
                     opt.textContent = optionText;
                     thSelect.appendChild(opt);
                 }
@@ -2198,14 +2199,13 @@
                 name: elName ? elName.value.trim() : (dataStoreApplicant[idx].name || ""),
                 ssn: elSsn ? getOnlyNumbers(elSsn.value) : (dataStoreApplicant[idx].ssn || ""),
                 phone: elPhone ? getOnlyNumbers(elPhone.value) : (dataStoreApplicant[idx].phone || ""),
-
-                // 기존 데이터 필드 규격 파싱 및 유실 방지
-                result: dataStoreApplicant[idx].result || "접수",
+                result: elPayStatus ? elPayStatus.value : (dataStoreApplicant[idx].result || "접수"),
                 payStatus: elPayStatus ? elPayStatus.value : (dataStoreApplicant[idx].payStatus || "접수"),
-                isAgreed: elAgreed ? elAgreed.value : (dataStoreApplicant[idx].isAgreed || "동의"),
+                isAgreed: dataStoreApplicant[idx].isAgreed || "동의",
                 category: dataStoreApplicant[idx].category || "내분비내과 / 대장 수동 등록",
-                stage: `${elTh ? elTh.value.trim() : dataStoreApplicant[idx].th} 참여(소집)`
+                stage: `${elTh ? elTh.value.trim() : (dataStoreApplicant[idx].th || "1기(1차)")} 참여(소집)`
             };
+
 
             // 3. 로컬스토리지 영구 커밋 및 뷰 테이블 리렌더링
             commitToLocalStorage();
