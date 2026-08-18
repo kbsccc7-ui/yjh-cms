@@ -938,6 +938,7 @@
                             <label>기수 선택</label>
                             <select id="form-rec-th"
                                 style="width: 100%; height: 38px; border-radius: 6px; background: #1e293b; color: #fff; border: 1px solid #334155; padding: 0 10px;">
+                                <option value="0기(0차)" selected>0기 0차</option>
                                 <optgroup label="1기">
                                     <option value="1기(1차)">1기 1차</option>
                                     <option value="1기(2차)">1기 2차</option>
@@ -1803,6 +1804,12 @@
             const groupCounter = {};
 
             adminApplicantDB.forEach((row, index) => {
+
+                //기수 데이터가 빈 값(" ", null 등)일 경우 초기 무조건 '0기 0차'로 보이도록 보정 가드 추가
+                if (!row.th || row.th.trim() === '') {
+                    row.th = '0기 0차';
+                }
+
                 const groupKey = `${row.title}_${row.th}`;
                 if (!groupCounter[groupKey]) groupCounter[groupKey] = 0;
                 groupCounter[groupKey]++;
@@ -1848,19 +1855,26 @@
                     finalBankBookSrc = row.bankBookUrl;
                 }
 
-                let documentLinksHTML = "";
-                if (hasIdCard || hasBankBook) {
-                    documentLinksHTML = `<div style="display: flex; gap: 6px; justify-content: center; align-items: center;">`;
-                    if (hasIdCard) {
-                        documentLinksHTML += `<button type="button" class="btn-inline list" onclick="openDocModal('${finalIdCardSrc}', '${cleanName} - 신분증')" style="padding: 4px 9px; font-size: 11px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; border-radius: 4px; font-weight: 700; cursor:pointer;"><i class="fa-solid fa-id-card"></i> 신분증</button>`;
-                    }
-                    if (hasBankBook) {
-                        documentLinksHTML += `<button type="button" class="btn-inline list" onclick="openDocModal('${finalBankBookSrc}', '${cleanName} - 통장사본')" style="padding: 4px 9px; font-size: 11px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; border-radius: 4px; font-weight: 700; cursor:pointer;"><i class="fa-solid fa-wallet"></i> 통장</button>`;
-                    }
-                    documentLinksHTML += `</div>`;
+                //첨부서류 배지 가변 노출 및 미제출 독립 분기 레이아웃 재강화
+                let documentLinksHTML = `<div style="display: flex; gap: 6px; justify-content: center; align-items: center;">`;
+
+                // A. 신분증 개별 체크
+                if (hasIdCard) {
+                    documentLinksHTML += `<button type="button" class="btn-inline list" onclick="openDocModal('${finalIdCardSrc}', '${cleanName} - 신분증')" style="padding: 4px 9px; font-size: 11px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; border-radius: 4px; font-weight: 700; cursor:pointer;"><i class="fa-solid fa-id-card"></i> 신분증</button>`;
                 } else {
-                    documentLinksHTML = `<span style="color: var(--text-muted); font-size: 12px; display: block; text-align: center;">미제출</span>`;
+                    // 파일이 없으면 기존 CSS 스타일 정의된 회색 비활성 .status-none 배지 결합
+                    documentLinksHTML += `<span class="doc-badge status-none" style="margin: 0; padding: 4px 9px; font-size: 11px;">미제출</span>`;
                 }
+
+                // B. 통장사본 개별 체크
+                if (hasBankBook) {
+                    documentLinksHTML += `<button type="button" class="btn-inline list" onclick="openDocModal('${finalBankBookSrc}', '${cleanName} - 통장사본')" style="padding: 4px 9px; font-size: 11px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; border-radius: 4px; font-weight: 700; cursor:pointer;"><i class="fa-solid fa-wallet"></i> 통장</button>`;
+                } else {
+                    // 파일이 없으면 기존 CSS 스타일 정의된 회색 비활성 .status-none 배지 결합
+                    documentLinksHTML += `<span class="doc-badge status-none" style="margin: 0; padding: 4px 9px; font-size: 11px;">미제출</span>`;
+                }
+
+                documentLinksHTML += `</div>`;
 
                 if (row.isDutyAgreed === undefined) row.isDutyAgreed = "동의";
                 if (row.isCallAgreed === undefined) row.isCallAgreed = "동의";
@@ -1873,64 +1887,46 @@
                 let statusStyle = "";
                 // 🎯 [상태별 스타일 정의] - 상단 위젯 카드와 동일한 디자인 시스템 적용
                 if (currentStatus === '대기') {
-                    // 💡 대기: 차분한 Slate 테마
                     statusStyle = "background: var(--card-color); color: #94a3b8; border: 1px solid #334155;";
                 }
                 else if (currentStatus === '접수') {
-                    // 💡 접수: 상단 [청구서 접수현황] 스카이블루 테마
                     statusStyle = "background: var(--card-color); color: #38bdf8; border: 1px solid #38bdf8;";
                 }
                 else if (currentStatus === '처리중') {
-                    // 💡 처리중: 상단 [처리중] 옐로우 오렌지 테마 (재무 검토 단계)
                     statusStyle = "background: var(--card-color); color: #fbbf24; border: 1px solid #fbbf24;";
                 }
                 else if (currentStatus === '처리완료') {
-                    // 💡 처리완료: 상단 [지급완료] 에메랄드 그린 테마
                     statusStyle = "background: var(--card-color); color: #34d399; border: 1px solid #34d399;";
                 }
 
-                // 🎯 [중요] 기존 코드와의 호환성을 위해 변수 선언 (ReferenceError 방지)
                 let statusBadgeClass = "";
-
 
                 // [A 분기] 인라인 편집 모드 활성화 시
                 if (typeof currentAppEditingIndex !== 'undefined' && currentAppEditingIndex === index) {
                     tr.className = "editing-row";
                     tr.innerHTML = `
-                <td><input type="text" class="inline-input" id="edit-row-title-${index}" value="${row.title || ''}"></td>
-                <td><input type="text" class="inline-input" id="edit-row-th-${index}" value="${row.th || ''}" style="width:75px;"></td>
-                <td><input type="text" class="inline-input" id="edit-row-count-${index}" value="${row.count || ''}" style="width:50px;"></td>
-                <td><input type="text" class="inline-input" id="edit-row-period-${index}" value="${row.period || ''}" style="width:50px;"></td>
-                <td><input type="text" class="inline-input" id="edit-row-name-${index}" value="${row.name || ''}"></td>
-                <td><input type="text" class="inline-input" id="edit-row-ssn-${index}" value="${row.ssn || ''}"></td>
-                <td><input type="text" class="inline-input" id="edit-row-phone-${index}" value="${formattedPhone}"></td>
-        
-               <!-- 🎯 [교정 핵심]: 상태 부분을 4단계 select 선택 상자로 변경해 수정이 가능하도록 인가 -->
-                <td>
-                 <select class="inline-input" id="edit-row-payStatus-${index}" style="padding: 4px; ${statusStyle} font-weight: 700; border-radius: 6px; width: 100%; cursor: pointer; text-align: center;">
-                  <option value="대기" style="background: #1a233a; color: #94a3b8;" ${currentStatus === '대기' ? 'selected' : ''}>대기</option>
-                  <option value="접수" style="background: #1a233a; color: #38bdf8;" ${currentStatus === '접수' ? 'selected' : ''}>접수</option>
-                  <option value="처리중" style="background: #1a233a; color: #fbbf24;" ${currentStatus === '처리중' ? 'selected' : ''}>처리중</option>
-                  <option value="처리완료" style="background: #1a233a; color: #34d399;" ${currentStatus === '처리완료' ? 'selected' : ''}>처리완료</option>
-                 </select>
-                </td>
-                <td style="text-align: center;">
-                    <select class="inline-input" id="edit-row-duty-${index}" style="padding: 2px;">
-                        <option value="동의" ${row.isDutyAgreed === '동의' ? 'selected' : ''}>동의</option>
-                        <option value="미동의" ${row.isDutyAgreed === '미동의' ? 'selected' : ''}>미동의</option>
-                    </select>
-                </td>
-                <td style="text-align: center;">
-                    <select class="inline-input" id="edit-row-call-${index}" style="padding: 2px;">
-                        <option value="동의" ${row.isCallAgreed === '동의' ? 'selected' : ''}>동의</option>
-                        <option value="미동의" ${row.isCallAgreed === '미동의' ? 'selected' : ''}>미동의</option>
-                    </select>
-                </td>
-                <td style="vertical-align: middle;">${documentLinksHTML}</td>
-                <td style="text-align: center; white-space: nowrap;">
-                    <button type="button" class="btn-inline save" onclick="saveApplicantInline(${index})">저장</button>
-                    <button type="button" class="btn-inline list" onclick="cancelApplicantInline()">취소</button>
-                </td>
+                    <td><input type="text" class="inline-input" id="edit-row-title-${index}" value="${row.title || ''}"></td>
+                    <td><input type="text" class="inline-input" id="edit-row-th-${index}" value="${row.th || ''}" style="width:75px;"></td>
+                    <td><input type="text" class="inline-input" id="edit-row-count-${index}" value="${row.count || ''}" style="width:50px;"></td>
+                    <td><input type="text" class="inline-input" id="edit-row-period-${index}" value="${row.period || ''}" style="width:50px;"></td>
+                    <td><input type="text" class="inline-input" id="edit-row-name-${index}" value="${row.name || ''}"></td>
+                    <td><input type="text" class="inline-input" id="edit-row-ssn-${index}" value="${row.ssn || ''}"></td>
+                    <td><input type="text" class="inline-input" id="edit-row-phone-${index}" value="${formattedPhone}"></td>
+
+                    <td>
+                     <select class="inline-input" id="edit-row-payStatus-${index}" style="padding: 4px; ${statusStyle} font-weight: 700; border-radius: 6px; width: 100%; cursor: pointer; text-align: center;">
+                      <option value="대기" style="background: #1a233a; color: #94a3b8;" ${currentStatus === '대기' ? 'selected' : ''}>대기</option>
+                      <option value="접수" style="background: #1a233a; color: #38bdf8;" ${currentStatus === '접수' ? 'selected' : ''}>접수</option>
+                      <option value="처리중" style="background: #1a233a; color: #fbbf24;" ${currentStatus === '처리중' ? 'selected' : ''}>처리중</option>
+                      <option value="처리완료" style="background: #1a233a; color: #34d399;" ${currentStatus === '처리완료' ? 'selected' : ''}>처리완료</option>
+                     </select>
+                    </td>
+                    <td style="text-align: center;">
+                     <select class="inline-input" id="edit-row-duty-${index}" style="padding: 2px;">
+                      <option value="동의" ${row.isDutyAgreed === '동의' ? 'selected' : ''}>동의</option>
+                      <option value="미동의" ${row.isDutyAgreed === '미동의' ? 'selected' : ''}>미동의</option>
+                     </select>
+                    </td>
             `;
                 }
                 // [B 분기] 일반 데이터 조회 레이아웃 모드 시
