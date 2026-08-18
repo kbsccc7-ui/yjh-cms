@@ -938,7 +938,6 @@
                             <label>기수 선택</label>
                             <select id="form-rec-th"
                                 style="width: 100%; height: 38px; border-radius: 6px; background: #1e293b; color: #fff; border: 1px solid #334155; padding: 0 10px;">
-                                <option value="0기(0차)" selected>0기 0차</option>
                                 <optgroup label="1기">
                                     <option value="1기(1차)">1기 1차</option>
                                     <option value="1기(2차)">1기 2차</option>
@@ -1786,12 +1785,14 @@
 
         // =========================================================================
         // [5-A 파트] 대상자 마스터 대장 동적 테이블 렌더러 및 단일 통제 엔진
-
-        // 현재 인라인 수정 모드가 활성화된 행의 index 기록 변수
+        // =========================================================================
+        // ========================================================
+        // 🎯 [인라인 튜닝] 현재 인라인 수정 모드가 활성화된 행의 index 기록 변수
+        // ========================================================
         var currentAppEditingIndex = null;
 
         // ========================================================
-        // 대상자 마스터 테이블 기수 문자열 싱크 및 배지 드로잉 엔진 (당직/소집 분리형)
+        // 🎯 [완전 종결] 대상자 마스터 테이블 기수 문자열 싱크 및 배지 드로잉 엔진 (당직/소집 분리형)
         // ========================================================
         function refreshApplicantView() {
             const tbody = document.getElementById('dom-applicant-table');
@@ -1799,19 +1800,9 @@
             tbody.innerHTML = ''; // 테이블 잔재 청소
 
             let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
-
-            //최신 등록된 데이터가 맨 위로 오도록 배열을 역순 처리합니다.
-            adminApplicantDB.reverse();
-
             const groupCounter = {};
 
             adminApplicantDB.forEach((row, index) => {
-
-                //기수 데이터가 빈 값(" ", null 등)일 경우 초기 무조건 '0기 0차'로 보이도록 보정 가드 추가
-                if (!row.th || row.th.trim() === '') {
-                    row.th = '0기 0차';
-                }
-
                 const groupKey = `${row.title}_${row.th}`;
                 if (!groupCounter[groupKey]) groupCounter[groupKey] = 0;
                 groupCounter[groupKey]++;
@@ -1857,26 +1848,19 @@
                     finalBankBookSrc = row.bankBookUrl;
                 }
 
-                //첨부서류 배지 가변 노출 및 미제출 독립 분기 레이아웃 재강화
-                let documentLinksHTML = `<div style="display: flex; gap: 6px; justify-content: center; align-items: center;">`;
-
-                // A. 신분증 개별 체크
-                if (hasIdCard) {
-                    documentLinksHTML += `<button type="button" class="btn-inline list" onclick="openDocModal('${finalIdCardSrc}', '${cleanName} - 신분증')" style="padding: 4px 9px; font-size: 11px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; border-radius: 4px; font-weight: 700; cursor:pointer;"><i class="fa-solid fa-id-card"></i> 신분증</button>`;
+                let documentLinksHTML = "";
+                if (hasIdCard || hasBankBook) {
+                    documentLinksHTML = `<div style="display: flex; gap: 6px; justify-content: center; align-items: center;">`;
+                    if (hasIdCard) {
+                        documentLinksHTML += `<button type="button" class="btn-inline list" onclick="openDocModal('${finalIdCardSrc}', '${cleanName} - 신분증')" style="padding: 4px 9px; font-size: 11px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; border-radius: 4px; font-weight: 700; cursor:pointer;"><i class="fa-solid fa-id-card"></i> 신분증</button>`;
+                    }
+                    if (hasBankBook) {
+                        documentLinksHTML += `<button type="button" class="btn-inline list" onclick="openDocModal('${finalBankBookSrc}', '${cleanName} - 통장사본')" style="padding: 4px 9px; font-size: 11px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; border-radius: 4px; font-weight: 700; cursor:pointer;"><i class="fa-solid fa-wallet"></i> 통장</button>`;
+                    }
+                    documentLinksHTML += `</div>`;
                 } else {
-                    // 파일이 없으면 기존 CSS 스타일 정의된 회색 비활성 .status-none 배지 결합
-                    documentLinksHTML += `<span class="doc-badge status-none" style="margin: 0; padding: 4px 9px; font-size: 11px;">미제출</span>`;
+                    documentLinksHTML = `<span style="color: var(--text-muted); font-size: 12px; display: block; text-align: center;">미제출</span>`;
                 }
-
-                // B. 통장사본 개별 체크
-                if (hasBankBook) {
-                    documentLinksHTML += `<button type="button" class="btn-inline list" onclick="openDocModal('${finalBankBookSrc}', '${cleanName} - 통장사본')" style="padding: 4px 9px; font-size: 11px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; border-radius: 4px; font-weight: 700; cursor:pointer;"><i class="fa-solid fa-wallet"></i> 통장</button>`;
-                } else {
-                    // 파일이 없으면 기존 CSS 스타일 정의된 회색 비활성 .status-none 배지 결합
-                    documentLinksHTML += `<span class="doc-badge status-none" style="margin: 0; padding: 4px 9px; font-size: 11px;">미제출</span>`;
-                }
-
-                documentLinksHTML += `</div>`;
 
                 if (row.isDutyAgreed === undefined) row.isDutyAgreed = "동의";
                 if (row.isCallAgreed === undefined) row.isCallAgreed = "동의";
@@ -1889,47 +1873,65 @@
                 let statusStyle = "";
                 // 🎯 [상태별 스타일 정의] - 상단 위젯 카드와 동일한 디자인 시스템 적용
                 if (currentStatus === '대기') {
+                    // 💡 대기: 차분한 Slate 테마
                     statusStyle = "background: var(--card-color); color: #94a3b8; border: 1px solid #334155;";
                 }
                 else if (currentStatus === '접수') {
+                    // 💡 접수: 상단 [청구서 접수현황] 스카이블루 테마
                     statusStyle = "background: var(--card-color); color: #38bdf8; border: 1px solid #38bdf8;";
                 }
                 else if (currentStatus === '처리중') {
+                    // 💡 처리중: 상단 [처리중] 옐로우 오렌지 테마 (재무 검토 단계)
                     statusStyle = "background: var(--card-color); color: #fbbf24; border: 1px solid #fbbf24;";
                 }
                 else if (currentStatus === '처리완료') {
+                    // 💡 처리완료: 상단 [지급완료] 에메랄드 그린 테마
                     statusStyle = "background: var(--card-color); color: #34d399; border: 1px solid #34d399;";
                 }
 
+                // 🎯 [중요] 기존 코드와의 호환성을 위해 변수 선언 (ReferenceError 방지)
                 let statusBadgeClass = "";
+
 
                 // [A 분기] 인라인 편집 모드 활성화 시
                 if (typeof currentAppEditingIndex !== 'undefined' && currentAppEditingIndex === index) {
                     tr.className = "editing-row";
                     tr.innerHTML = `
-                    <td><input type="text" class="inline-input" id="edit-row-title-${index}" value="${row.title || ''}"></td>
-                    <td><input type="text" class="inline-input" id="edit-row-th-${index}" value="${row.th || ''}" style="width:75px;"></td>
-                    <td><input type="text" class="inline-input" id="edit-row-count-${index}" value="${row.count || ''}" style="width:50px;"></td>
-                    <td><input type="text" class="inline-input" id="edit-row-period-${index}" value="${row.period || ''}" style="width:50px;"></td>
-                    <td><input type="text" class="inline-input" id="edit-row-name-${index}" value="${row.name || ''}"></td>
-                    <td><input type="text" class="inline-input" id="edit-row-ssn-${index}" value="${row.ssn || ''}"></td>
-                    <td><input type="text" class="inline-input" id="edit-row-phone-${index}" value="${formattedPhone}"></td>
-
-                    <td>
-                     <select class="inline-input" id="edit-row-payStatus-${index}" style="padding: 4px; ${statusStyle} font-weight: 700; border-radius: 6px; width: 100%; cursor: pointer; text-align: center;">
-                      <option value="대기" style="background: #1a233a; color: #94a3b8;" ${currentStatus === '대기' ? 'selected' : ''}>대기</option>
-                      <option value="접수" style="background: #1a233a; color: #38bdf8;" ${currentStatus === '접수' ? 'selected' : ''}>접수</option>
-                      <option value="처리중" style="background: #1a233a; color: #fbbf24;" ${currentStatus === '처리중' ? 'selected' : ''}>처리중</option>
-                      <option value="처리완료" style="background: #1a233a; color: #34d399;" ${currentStatus === '처리완료' ? 'selected' : ''}>처리완료</option>
-                     </select>
-                    </td>
-                    <td style="text-align: center;">
-                     <select class="inline-input" id="edit-row-duty-${index}" style="padding: 2px;">
-                      <option value="동의" ${row.isDutyAgreed === '동의' ? 'selected' : ''}>동의</option>
-                      <option value="미동의" ${row.isDutyAgreed === '미동의' ? 'selected' : ''}>미동의</option>
-                     </select>
-                    </td>
-        `;
+                <td><input type="text" class="inline-input" id="edit-row-title-${index}" value="${row.title || ''}"></td>
+                <td><input type="text" class="inline-input" id="edit-row-th-${index}" value="${row.th || ''}" style="width:75px;"></td>
+                <td><input type="text" class="inline-input" id="edit-row-count-${index}" value="${row.count || ''}" style="width:50px;"></td>
+                <td><input type="text" class="inline-input" id="edit-row-period-${index}" value="${row.period || ''}" style="width:50px;"></td>
+                <td><input type="text" class="inline-input" id="edit-row-name-${index}" value="${row.name || ''}"></td>
+                <td><input type="text" class="inline-input" id="edit-row-ssn-${index}" value="${row.ssn || ''}"></td>
+                <td><input type="text" class="inline-input" id="edit-row-phone-${index}" value="${formattedPhone}"></td>
+        
+               <!-- 🎯 [교정 핵심]: 상태 부분을 4단계 select 선택 상자로 변경해 수정이 가능하도록 인가 -->
+                <td>
+                 <select class="inline-input" id="edit-row-payStatus-${index}" style="padding: 4px; ${statusStyle} font-weight: 700; border-radius: 6px; width: 100%; cursor: pointer; text-align: center;">
+                  <option value="대기" style="background: #1a233a; color: #94a3b8;" ${currentStatus === '대기' ? 'selected' : ''}>대기</option>
+                  <option value="접수" style="background: #1a233a; color: #38bdf8;" ${currentStatus === '접수' ? 'selected' : ''}>접수</option>
+                  <option value="처리중" style="background: #1a233a; color: #fbbf24;" ${currentStatus === '처리중' ? 'selected' : ''}>처리중</option>
+                  <option value="처리완료" style="background: #1a233a; color: #34d399;" ${currentStatus === '처리완료' ? 'selected' : ''}>처리완료</option>
+                 </select>
+                </td>
+                <td style="text-align: center;">
+                    <select class="inline-input" id="edit-row-duty-${index}" style="padding: 2px;">
+                        <option value="동의" ${row.isDutyAgreed === '동의' ? 'selected' : ''}>동의</option>
+                        <option value="미동의" ${row.isDutyAgreed === '미동의' ? 'selected' : ''}>미동의</option>
+                    </select>
+                </td>
+                <td style="text-align: center;">
+                    <select class="inline-input" id="edit-row-call-${index}" style="padding: 2px;">
+                        <option value="동의" ${row.isCallAgreed === '동의' ? 'selected' : ''}>동의</option>
+                        <option value="미동의" ${row.isCallAgreed === '미동의' ? 'selected' : ''}>미동의</option>
+                    </select>
+                </td>
+                <td style="vertical-align: middle;">${documentLinksHTML}</td>
+                <td style="text-align: center; white-space: nowrap;">
+                    <button type="button" class="btn-inline save" onclick="saveApplicantInline(${index})">저장</button>
+                    <button type="button" class="btn-inline list" onclick="cancelApplicantInline()">취소</button>
+                </td>
+            `;
                 }
                 // [B 분기] 일반 데이터 조회 레이아웃 모드 시
                 else {
@@ -2056,55 +2058,33 @@
                 return alert("알림: 시스템 화면 요소를 로드하지 못했습니다.");
             }
 
-            let t = elTitle.value.trim(), th = elTh.value.trim(), c = elCount.value.trim();
-            let p = elPeriod.value.trim(), n = elName.value.trim(), s = elSsn.value.trim(), ph = elPhone.value.trim();
+            const t = elTitle.value.trim(), th = elTh.value.trim(), c = elCount.value.trim();
+            const p = elPeriod.value.trim(), n = elName.value.trim(), s = elSsn.value.trim(), ph = elPhone.value.trim();
 
             if (!t || !th || !c || !p || !n || !s || !ph) {
                 return alert('알림: 빈 필드를 허용할 수 없습니다. 모든 칸을 채워주세요.');
-            }
-
-            // 🎯 [교정 1]: 기수 데이터 추출 및 '0기 0차' 정밀 규격화 보정 가드
-            if (th === '0기(0차)' || th.includes('0기') || th === '') {
-                th = '0기 0차';
-            }
-
-            // 💡 [가드 추가]: 혹시 모를 전역 배열 미선언 에러 방지 및 로컬스토리지 싱크 강제 일치
-            if (typeof dataStoreApplicant === 'undefined' || !Array.isArray(dataStoreApplicant)) {
-                dataStoreApplicant = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
             }
 
             // 데이터 삽입 및 연동 규격화 가공 처리
             const payload = {
                 uid: editIndex === "" ? `${Date.now()}_${Math.random().toString(36).substr(2, 9)}` : dataStoreApplicant[editIndex].uid,
                 title: t,
-                th: th, // 🎯 보정된 "0기 0차" 또는 "X기(X차)" 텍스트 보존
+                th: th, // 셀렉트박스의 "X기 X차" 텍스트 보존
                 count: getOnlyNumbers(c),
                 period: getOnlyNumbers(p),
                 name: n,
                 ssn: getOnlyNumbers(s),
                 phone: getOnlyNumbers(ph),
                 result: editIndex === "" ? "접수" : dataStoreApplicant[editIndex].result,
-
-                // 🎯 [초기값 오류 박멸]: 신규 등록할 땐 무조건 '대기' 상태로 박제하여 위젯과 싱크 동기화
-                payStatus: editIndex === "" ? "대기" : dataStoreApplicant[editIndex].payStatus,
+                payStatus: editIndex === "" ? "접수" : dataStoreApplicant[editIndex].payStatus,
                 isAgreed: editIndex === "" ? "동의" : dataStoreApplicant[editIndex].isAgreed,
-
-                // 🎯 당직 및 소집동의 초기 상태 가드
-                isDutyAgreed: editIndex === "" ? "동의" : (dataStoreApplicant[editIndex].isDutyAgreed || "동의"),
-                isCallAgreed: editIndex === "" ? "동의" : (dataStoreApplicant[editIndex].isCallAgreed || "동의"),
-
-                // 🎯 [교정 2]: 첨부서류 속성 누락 방지 및 클린 초기화 (공백문자로 깨짐 배지 유발 방지)
-                idCardImg: editIndex === "" ? "" : (dataStoreApplicant[editIndex].idCardImg || ""),
-                bankBookImg: editIndex === "" ? "" : (dataStoreApplicant[editIndex].bankBookImg || ""),
-
                 category: editIndex === "" ? "내분비내과 / 대장 수동 등록" : dataStoreApplicant[editIndex].category,
                 stage: `${th} 참여(소집)`
             };
 
             if (editIndex === "") {
-                // [신규 등록 모드] 
-                // 🎯 최신글 상단 정렬 구조를 위해 push 대신 배열의 맨 앞에 요소를 추가하는 unshift 적용
-                dataStoreApplicant.unshift(payload);
+                // [신규 등록 모드]
+                dataStoreApplicant.push(payload);
                 alert(`📢 신규 대상자 [${n}]님이 대장에 성공적으로 등록 보존되었습니다.`);
             } else {
                 // [수정 완료 모드]
@@ -2112,16 +2092,10 @@
                 alert(`📋 정보 갱신 완료: [${n}] 피험자의 마스터 레코드가 업데이트되었습니다.`);
             }
 
-            // 💡 [치명적 버그 우회 가드]: 기존 commit 함수가 데이터를 오염시키지 못하도록 강제 즉시 스토리지 직저장
-            localStorage.setItem('dataStoreApplicant', JSON.stringify(dataStoreApplicant));
-            if (typeof commitToLocalStorage === 'function') {
-                try { commitToLocalStorage(); } catch (e) { console.log("외부 커밋 함수 바이패스"); }
-            }
-
-            resetForm(); // 💡 폼 초기화 및 버튼 전환
+            commitToLocalStorage();
+            resetForm(); // 💡 폼 초기화 및 버팅 전환
             refreshApplicantView();
         }
-
 
         /** 💡 [추가] 테이블 행의 [수정] 버튼 클릭 시 데이터를 상단 폼으로 로드하는 함수 */
         function enableApplicantEditMode(index) {
@@ -2158,28 +2132,19 @@
             document.querySelector(".register-box").scrollIntoView({ behavior: 'smooth' });
         }
 
-        /** 입력 폼 공란 초기화 및 등록 모드 원상 복귀 함수 */
+        /** 💡 [추가] 입력 폼 공란 초기화 및 등록 모드 원상 복귀 함수 */
         function resetForm() {
             const formTitle = document.querySelector(".register-box h3");
             if (formTitle) formTitle.innerText = "[신규 대상자 등록]";
 
             document.getElementById("editIndex").value = "";
             document.getElementById("form-app-title").value = "";
-
-            // 셀렉트박스의 첫 번째 옵션인 '0기 0차'로 깔끔하게 리셋됩니다.
             document.getElementById("form-app-th").selectedIndex = 0;
-
             document.getElementById("form-app-count").value = "";
             document.getElementById("form-app-period").value = "";
             document.getElementById("form-app-name").value = "";
             document.getElementById("form-app-ssn").value = "";
             document.getElementById("form-app-phone").value = "";
-
-            // 혹시 수동 등록 폼 영역에 당직/소집동의 선택 상자가 개별 ID로 존재한다면 함께 '동의'(첫 번째 옵션)로 리셋
-            const formDuty = document.getElementById("form-app-duty");
-            const formCall = document.getElementById("form-app-call");
-            if (formDuty) formDuty.selectedIndex = 0;
-            if (formCall) formCall.selectedIndex = 0;
 
             const submitBtn = document.querySelector(".register-box .action-btn");
             if (submitBtn) submitBtn.innerText = "대상자 등록";
@@ -2188,7 +2153,7 @@
             if (cancelBtn) cancelBtn.style.display = "none";
         }
 
-        /** 기수 셀렉트박스 옵션(1기 1차 ~ 4기 4차) 동적 생성 함수 */
+        /** 💡 [추가] 기수 셀렉트박스 옵션(1기 1차 ~ 4기 4차) 동적 생성 함수 */
         function initThSelectOptions() {
             const thSelect = document.getElementById("form-app-th");
             if (!thSelect) return;
@@ -2665,7 +2630,7 @@
         // 🔐 [보안 인증] 지워진 시스템 로그인 및 세션 관리 체인 긴급 복구 모듈
         // ==========================================================================
 
-        /** 1.  로그인 처리 함수 - 관리자 사번 및 비밀번호 매칭 인증 */
+        /** 1. [복구] 로그인 처리 함수 - 관리자 사번 및 비밀번호 매칭 인증 */
         function executeSystemLogin() {
             const id = document.getElementById('uid').value.trim();
             const pw = document.getElementById('upw').value.trim();
@@ -2696,7 +2661,7 @@
             }
         }
 
-        /** 2. 안전 로그아웃 처리 함수 - 세션 파기 */
+        /** 2. [복구] 안전 로그아웃 처리 함수 - 세션 파기 */
         function executeSystemLogout() {
             if (confirm('세션을 파기하고 안전 로그아웃 하시겠습니까?')) {
                 sessionStorage.clear();
@@ -2708,23 +2673,15 @@
         }
 
         // 3. 비밀번호 입력 칸에서 엔터키 입력 시 로그인 연동 리스너 추가
-        document.addEventListener("DOMContentLoaded", function () {
-            const upwInput = document.getElementById('upw');
-            if (upwInput) {
-                upwInput.addEventListener('keydown', function (event) {
-                    if (event.key === 'Enter') {
-                        event.preventDefault(); // 엔터키 특유의 브라우저 폼 새로고침 현상 방지
-
-                        // 로그인 시스템 접속 함수 강제 호출
-                        if (typeof executeSystemLogin === 'function') {
-                            executeSystemLogin();
-                        } else {
-                            console.error("시스템 오류: executeSystemLogin 함수가 정의되지 않았습니다.");
-                        }
-                    }
-                });
-            }
-        });
+        const upwInput = document.getElementById('upw');
+        if (upwInput) {
+            upwInput.addEventListener('keydown', function (event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    executeSystemLogin();
+                }
+            });
+        }
 
         function executeSystemLogin() {
             var idInput = document.getElementById('uid');
@@ -3385,137 +3342,6 @@
                 }
             }
         });
-
-        // 편집 대상 인덱스를 보관할 전역 변수 (만약 상단에 없다면 선언)
-        let currentAppEditingIndex = undefined;
-
-        /** 최신순 정렬(reverse) 상태에서 실제 원본 데이터 인덱스를 매칭해주는 브릿지 함수 */
-        function startApplicantInlineEdit(visibleIndex) {
-            // 로컬스토리지에서 원본 데이터베이스 배열 로드
-            let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
-
-            // 면에 보이는 순서(visibleIndex)를 원본 데이터셋 배열의 실제 뒤쪽 인덱스로 역계산 매칭
-            const realIndex = adminApplicantDB.length - 1 - visibleIndex;
-
-            // 계산된 진짜 원본 인덱스를 편집 타겟으로 지정
-            currentAppEditingIndex = realIndex;
-
-            // 화면을 새로고침하여 수정 칸(<input>, <select>)이 표시되도록 처리
-            refreshApplicantView();
-        }
-
-        /** 인라인 편집 모드를 취소하고 다시 일반 목록으로 되돌리는 함수 */
-        function cancelApplicantInlineEdit() {
-            currentAppEditingIndex = undefined; // 편집 타겟 초기화
-            refreshApplicantView(); // 화면 리프레시
-        }
-
-        /** 🎯 [필수 추가]: 인라인 편집 상태에서 [저장] 버튼을 누를 때 실행되는 신규 매스터 함수 */
-        function saveApplicantInlineRecord(visibleIndex) {
-            // 1. 로컬스토리지에서 최신 원본 데이터셋 배열을 로드합니다.
-            let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
-
-            // 💡 [치명적 버그 방지]: 화면상의 표시 순서(visibleIndex)를 원본 데이터셋의 실제 뒤쪽 인덱스로 역산 매칭합니다.
-            const realIndex = adminApplicantDB.length - 1 - visibleIndex;
-
-            // 대상 레코드 존재 유무 가드
-            if (!adminApplicantDB[realIndex]) {
-                return alert("오류: 수정하려는 대상자의 원본 레코드를 찾을 수 없습니다.");
-            }
-
-            // 2. 인라인 테이블 행에 생성된 각각의 input/select 요소 ID를 기준으로 변경값들을 낚아챕니다.
-            const elTitle = document.getElementById(`edit-row-title-${visibleIndex}`);
-            const elTh = document.getElementById(`edit-row-th-${visibleIndex}`);
-            const elCount = document.getElementById(`edit-row-count-${visibleIndex}`);
-            const elPeriod = document.getElementById(`edit-row-period-${visibleIndex}`);
-            const elName = document.getElementById(`edit-row-name-${visibleIndex}`);
-            const elSsn = document.getElementById(`edit-row-ssn-${visibleIndex}`);
-            const elPhone = document.getElementById(`edit-row-phone-${visibleIndex}`);
-
-            // 이전 단계에서 추가한 정산상태, 당직동의, 소집동의 셀렉트박스 엘리먼트 낚아채기
-            const elPayStatus = document.getElementById(`edit-row-payStatus-${visibleIndex}`);
-            const elDuty = document.getElementById(`edit-row-duty-${visibleIndex}`);
-            const elCall = document.getElementById(`edit-row-call-${visibleIndex}`);
-
-            // 화면 요소 안전 검증 가드
-            if (!elTitle || !elTh || !elCount || !elPeriod || !elName || !elSsn || !elPhone || !elPayStatus || !elDuty || !elCall) {
-                return alert("알림: 수정된 입력 값을 읽어오는 데 실패했습니다.");
-            }
-
-            // 🎯 기수 데이터 추출 및 '0기 0차' 규격화 일치 가드
-            let thValue = elTh.value.trim();
-            if (thValue === '0기(0차)' || thValue.includes('0기') || thValue === '') {
-                thValue = '0기 0차';
-            }
-
-            // 3. 원본 데이터베이스 배열의 해당 칸을 사용자가 변경한 값으로 정밀 갱신(오버라이드)합니다.
-            adminApplicantDB[realIndex].title = elTitle.value.trim();
-            adminApplicantDB[realIndex].th = thValue;
-            adminApplicantDB[realIndex].count = getOnlyNumbers(elCount.value.trim());
-            adminApplicantDB[realIndex].period = getOnlyNumbers(elPeriod.value.trim());
-            adminApplicantDB[realIndex].name = elName.value.trim();
-            adminApplicantDB[realIndex].ssn = getOnlyNumbers(elSsn.value.trim());
-            adminApplicantDB[realIndex].phone = getOnlyNumbers(elPhone.value.trim());
-
-            // 선택 상자에서 수정한 새로운 상태 및 동의값 데이터 주입
-            adminApplicantDB[realIndex].payStatus = elPayStatus.value;
-            adminApplicantDB[realIndex].isDutyAgreed = elDuty.value;
-            adminApplicantDB[realIndex].isCallAgreed = elCall.value;
-            adminApplicantDB[realIndex].stage = `${thValue} 참여(소집)`;
-
-            // 4. 프로젝트의 전역 메모리 변수(dataStoreApplicant) 동기화 처리
-            if (typeof dataStoreApplicant !== 'undefined') {
-                dataStoreApplicant = adminApplicantDB;
-            }
-
-            // 5. 로컬스토리지 최종 영구 저장 및 편집모드 해제 후 화면 새로고침
-            localStorage.setItem('dataStoreApplicant', JSON.stringify(adminApplicantDB));
-
-            // 전역 편집 인덱스 변수 초기화 (수정 완료)
-            currentAppEditingIndex = undefined;
-
-            // 테이블 다시 그리기
-            refreshApplicantView();
-            alert(`📋 [${adminApplicantDB[realIndex].name}] 피험자의 정보 수정 저장이 완료되었습니다.`);
-        }
-
-        /** 🎯 [필수 추가]: 최신순 정렬 상태를 반영하여 대상을 안전하게 삭제하는 신규 매스터 함수 */
-        function deleteApplicantRecord(visibleIndex) {
-            // 1. 로컬스토리지에서 최신 원본 데이터셋 배열을 로드합니다.
-            let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
-
-            // 💡 [치명적 버그 방지]: 최신순 정렬(reverse) 상태이므로 화면상의 인덱스를 원본 실제 인덱스로 역산 매칭합니다.
-            const realIndex = adminApplicantDB.length - 1 - visibleIndex;
-
-            // 대상 레코드 존재 유무 검증 가드
-            if (!adminApplicantDB[realIndex]) {
-                return alert("오류: 삭제하려는 대상자의 원본 레코드를 찾을 수 없습니다.");
-            }
-
-            // 2. 관리자 실수 방지를 위한 최종 삭제 확인 피드백 창 출력
-            const targetName = adminApplicantDB[realIndex].name || "선택한 대상자";
-            if (!confirm(`⚠️ 정말로 [${targetName}] 피험자의 마스터 레코드를 대장에서 영구 삭제하시겠습니까?`)) {
-                return; // 사용자가 취소를 누르면 함수 즉시 종료
-            }
-
-            // 3. 원본 배열에서 해당 인덱스의 데이터 1건 완전히 제거
-            adminApplicantDB.splice(realIndex, 1);
-
-            // 4. 프로젝트 전역 메모리 변수(dataStoreApplicant)가 존재한다면 데이터 동기화
-            if (typeof dataStoreApplicant !== 'undefined') {
-                dataStoreApplicant = adminApplicantDB;
-            }
-
-            // 5. 로컬스토리지 최종 영구 저장 커밋 및 화면 리프레시 호출
-            localStorage.setItem('dataStoreApplicant', JSON.stringify(adminApplicantDB));
-
-            // 혹시 삭제 대상이 현재 인라인 편집 중인 행이었다면 편집 모드 해제
-            currentAppEditingIndex = undefined;
-
-            // 테이블 목록 다시 그리기
-            refreshApplicantView();
-            alert(`🗑️ [${targetName}] 피험자의 레코드가 정상적으로 파기 청소되었습니다.`);
-        }
 
     </script>
 
