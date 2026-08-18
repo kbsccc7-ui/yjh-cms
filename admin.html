@@ -1828,31 +1828,37 @@
                     formattedPhone = row.phone;
                 }
 
-                // 콘솔 연동 로그 맞춤형 서류 전천후 검증 구역 ("유" 패킷 완벽 대응)
+                // 서류 존재 여부 판단 통합 가드
                 const hasIdCard = row.idCardImg === "유" || row.idCard === true || row.idCard === "true" ||
-                    (typeof row.idCardImg === 'string' && row.idCardImg.length > 3 && row.idCardImg !== "true") ||
-                    (typeof row.idCardUrl === 'string' && row.idCardUrl.length > 3 && row.idCardUrl !== "true");
+                    (typeof row.idCardImg === 'string' && row.idCardImg.length > 3) ||
+                    (typeof row.idCardUrl === 'string' && row.idCardUrl.length > 3);
 
                 const hasBankBook = row.bankBookImg === "유" || row.bankbook === true || row.bankbook === "true" ||
-                    (typeof row.bankBookImg === 'string' && row.bankBookImg.length > 3 && row.bankBookImg !== "true") ||
-                    (typeof row.bankBookUrl === 'string' && row.bankBookUrl.length > 3 && row.bankBookUrl !== "true");
+                    (typeof row.bankBookImg === 'string' && row.bankBookImg.length > 3) ||
+                    (typeof row.bankBookUrl === 'string' && row.bankBookUrl.length > 3);
 
-                // 🎯 [404 에러 추적 차단 가드]: 
-                // 데이터가 문자열 "true" 혹은 "유" 등 무효한 텍스트일 때 모달창 인자로 주소를 그대로 넘기면 
-                // 404 에러(엑박)가 발생하므로, 주소가 진짜 이미지 주소(Base64 또는 http)일 때만 넘기도록 안전 필터를 주입합니다.
+                // 🎯 [버그 추적 및 원천 차단 구역]
+                // Base64 바이너리 스트림("data:image")이 들어있으면 조건 불문하고 변수에 직격 할당합니다.
+                // 데이터가 없거나 무효한 텍스트("유", "true" 등)일 때만 기획안용 플레이스홀더 샘플을 배정합니다.
                 let finalIdCardSrc = "placeholder";
                 let finalBankBookSrc = "placeholder";
 
-                if (typeof row.idCardImg === 'string' && row.idCardImg.length > 10 && row.idCardImg.indexOf('fakepath') === -1) {
+                // 1. 신분증 데이터 추출 검증 가드 (data: 주소 최우선 통과)
+                if (typeof row.idCardImg === 'string' && row.idCardImg.indexOf('data:image') === 0) {
                     finalIdCardSrc = row.idCardImg;
-                } else if (typeof row.idCardUrl === 'string' && row.idCardUrl.length > 10 && row.idCardUrl.indexOf('fakepath') === -1) {
+                } else if (typeof row.idCardUrl === 'string' && row.idCardUrl.indexOf('data:image') === 0) {
                     finalIdCardSrc = row.idCardUrl;
+                } else if (typeof row.idCardImg === 'string' && row.idCardImg.length > 10 && row.idCardImg.indexOf('fakepath') === -1) {
+                    finalIdCardSrc = row.idCardImg;
                 }
 
-                if (typeof row.bankBookImg === 'string' && row.bankBookImg.length > 10 && row.bankBookImg.indexOf('fakepath') === -1) {
+                // 2. 통장 데이터 추출 검증 가드 (data: 주소 최우선 통과)
+                if (typeof row.bankBookImg === 'string' && row.bankBookImg.indexOf('data:image') === 0) {
                     finalBankBookSrc = row.bankBookImg;
-                } else if (typeof row.bankBookUrl === 'string' && row.bankBookUrl.length > 10 && row.bankBookUrl.indexOf('fakepath') === -1) {
+                } else if (typeof row.bankBookUrl === 'string' && row.bankBookUrl.indexOf('data:image') === 0) {
                     finalBankBookSrc = row.bankBookUrl;
+                } else if (typeof row.bankBookImg === 'string' && row.bankBookImg.length > 10 && row.bankBookImg.indexOf('fakepath') === -1) {
+                    finalBankBookSrc = row.bankBookImg;
                 }
 
                 let documentLinksHTML = "";
@@ -1860,10 +1866,12 @@
                     documentLinksHTML = `<div style="display: flex; gap: 6px; justify-content: center; align-items: center;">`;
 
                     if (hasIdCard) {
+                        // 정밀 검증이 완료된 고유의 finalIdCardSrc 인자를 전달
                         documentLinksHTML += `<button type="button" class="btn-inline list" onclick="openDocModal('${finalIdCardSrc}', '${cleanName} - 신분증')" style="padding: 4px 9px; font-size: 11px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; border-radius: 4px; font-weight: 700; cursor:pointer;"><i class="fa-solid fa-id-card"></i> 신분증</button>`;
                     }
 
                     if (hasBankBook) {
+                        // 정밀 검증이 완료된 고유의 finalBankBookSrc 인자를 전달
                         documentLinksHTML += `<button type="button" class="btn-inline list" onclick="openDocModal('${finalBankBookSrc}', '${cleanName} - 통장사본')" style="padding: 4px 9px; font-size: 11px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; border-radius: 4px; font-weight: 700; cursor:pointer;"><i class="fa-solid fa-wallet"></i> 통장</button>`;
                     }
 
@@ -1875,7 +1883,7 @@
                 if (row.isDutyAgreed === undefined) row.isDutyAgreed = "동의";
                 if (row.isCallAgreed === undefined) row.isCallAgreed = "동의";
 
-                // [A 분기] 인라인 편집 활성화 모드
+                // [A 분기] 인라인 편집 모드
                 if (typeof currentAppEditingIndex !== 'undefined' && currentAppEditingIndex === index) {
                     tr.className = "editing-row";
                     tr.innerHTML = `
