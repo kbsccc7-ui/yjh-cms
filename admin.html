@@ -413,66 +413,65 @@
             /* 마우스 호버 시 손가락 모양 표시 */
         }
 
-
-        /* ==========================================================
- [완벽 보정] 목록 인라인 수정 모드 소집일자 흰색 캘린더 강제 인쇄
- ========================================================== */
-
-        /* 1. 자바스크립트가 생성하는 소집일자 인풋 박스 레이아웃 정밀 재단 */
+        /* 1. 테이블 수정 행 내의 소집일자 날짜 입력 상자 레이아웃 정밀 재단 */
         #dom-recruitment-table input[type="date"].inline-input {
             position: relative !important;
-            display: inline-block !important;
+            display: inline-flex !important;
+            align-items: center !important;
             width: 130px !important;
-            /* 기획해주신 130px 규격을 철저히 준수 */
+            /* 기획 구조의 130px 규격을 철저히 방어 */
             height: 32px !important;
-            padding-left: 6px !important;
-            padding-right: 30px !important;
-            /* 우측 안쪽에 달력 버튼이 박힐 물리적 안전 공간 보장 */
+            padding-left: 4px !important;
+            padding-right: 28px !important;
+            /* ⭐️ 우측 안쪽에 흰색 달력 아이콘이 박힐 공간을 강제로 28px 예약 */
             color: #fbbf24 !important;
             /* 텍스트 글자색은 세련된 노란색 유지 */
             font-weight: 700 !important;
             background-color: #0b0f19 !important;
             box-sizing: border-box !important;
-            overflow: hidden !important;
+            border: 2px solid var(--warning-color) !important;
+            /* 수정 모드 하이라이트 유지 */
         }
 
-        /* 2. 공간을 가로막던 검은색 순정 아이콘 셰이프를 완전한 흰색(#ffffff) 마스크 이미지로 강제 전환 */
+        /* 2. 공간 부족으로 깨지거나 숨겨지는 순정 검은색 버튼을 투명하게 만들어 전체 박스 클릭 영역으로 확장 */
         #dom-recruitment-table input[type="date"].inline-input::-webkit-calendar-picker-indicator {
             position: absolute !important;
-            right: 4px !important;
-            /* 130px 박스 우측 경계면 안쪽 4px 지점에 정밀 정렬 */
-            top: 50% !important;
-            transform: translateY(-50%) !important;
-            /* 세로 정중앙 정렬 보정 */
-
-            /* 🎨 순정 검은색 레이아웃을 지우고 고해상도 백색 벡터 마스크 팩 다이렉트 바인딩 */
-            -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://w3.org' viewBox='0 0 24 24'%3E%3Cpath d='M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2zm-7 5H7v2h5v-2zm4 0h-3v2h3v-2zm-4 4H7v2h5v-2zm4 0h-3v2h3v-2z'/%3E%3C/svg%3E") !important;
-            mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://w3.org' viewBox='0 0 24 24'%3E%3Cpath d='M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 18H5V10h14v10zm0-12H5V6h14v2zm-7 5H7v2h5v-2zm4 0h-3v2h3v-2zm-4 4H7v2h5v-2zm4 0h-3v2h3v-2z'/%3E%3C/svg%3E") !important;
-            -webkit-mask-size: contain !important;
-            mask-size: contain !important;
-
-            background-color: #ffffff !important;
-            /* 👈 검은색을 물리적으로 지우고 온전한 흰색 코팅 적용 */
-            background-image: none !important;
-            filter: none !important;
-            /* 왜곡을 주던 반전 효과 차단 */
-
-            /* 마우스 인터랙션 레이아웃 잠금 완벽 해제 */
-            display: inline-block !important;
-            visibility: visible !important;
-            opacity: 1 !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            /* 💡 박스 전체를 클릭 영역으로 늘려 마우스 오버 및 클릭 무조건 허용 */
+            height: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            opacity: 0 !important;
+            /* 기존 무반응 검은색 아이콘은 완전 투명화 처리 */
+            background: transparent !important;
             cursor: pointer !important;
+            z-index: 2 !important;
+            /* 텍스트나 강제 삽입 이미지보다 상단에 배치하여 터치 오류 원천 차단 */
             pointer-events: auto !important;
-            width: 14px !important;
-            height: 14px !important;
-            z-index: 5 !important;
         }
 
-        /* 3. 파이어폭스 등 기타 브라우저 및 가상 요소 찌꺼기 레이아웃 완전 소거 */
-        #dom-recruitment-table input[type="date"].inline-input::after,
-        #dom-recruitment-table input[type="date"].inline-input::before {
-            display: none !important;
-            content: none !important;
+        /* 3. ⭐️ [핵심] 상단 신규 등록 폼의 소집일자와 100% 똑같은 선명한 고해상도 백색 달력 그래픽 강제 인쇄 */
+        #dom-recruitment-table input[type="date"].inline-input::after {
+            content: "" !important;
+            position: absolute !important;
+            right: 6px !important;
+            /* 130px 규격 박스 우측 경계선 안쪽 6px 지점에 정밀 안착 */
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+            /* 세로 기준 완벽한 정중앙 배치 */
+            width: 14px !important;
+            height: 14px !important;
+
+            /* 🎨 상단 등록창과 동일한 정식 화이트(#ffffff) 캘린더 벡터 아이콘 주입 */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://w3.org' viewBox='0 0 24 24' fill='%23ffffff'%3E%3Cpath d='M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2zm-7 5H7v2h5v-2zm4 0h-3v2h3v-2zm-4 4H7v2h5v-2zm4 0h-3v2h3v-2z'/%3E%3C/svg%3E") !important;
+            background-size: contain !important;
+            background-repeat: no-repeat !important;
+            background-position: center !important;
+            z-index: 1 !important;
+            /* 투명한 마우스 클릭 레이어 바로 뒤에 노출시켜 시각적 가독성 확보 */
+            display: block !important;
         }
 
         /* ==========================================================
