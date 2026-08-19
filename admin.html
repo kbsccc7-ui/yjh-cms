@@ -1717,7 +1717,6 @@
                 const nextSsn = document.getElementById(`inline-app-ssn-${index}`).value.trim();
                 const nextPhone = document.getElementById(`inline-app-phone-${index}`).value.trim();
 
-                // 동적으로 전환된 동의서 컴포넌트 정보 수집
                 const nextDuty = document.getElementById(`inline-app-duty-${index}`).value;
                 const nextCall = document.getElementById(`inline-app-call-${index}`).value;
 
@@ -1752,24 +1751,26 @@
 
                 alert("🎉 해당 대상자의 임상 시험 정보 및 동의 상태가 안전하게 영구 저장되었습니다.");
 
-                // 💡 [핵심 복구 매커니즘]: 편집 모드 상태를 해제하고, 테이블 목록을 새로 그려 초기 모드로 강제 컴백시킵니다.
+                /* ==========================================================
+                   ⚠️ [초강력 복구 엔진 바인딩] 화면 안 돌아감 버그 원천 진압 구역
+                   ========================================================== */
+                // 1. 모든 인라인 인덱스 추적용 포인터를 동시에 초기화하여 편집창 가드를 풉니다.
                 window.currentEditingApplicantIndex = null;
-                refreshApplicantView();
-            }
+                if (window.hasOwnProperty('currentEditingUid')) window.currentEditingUid = null;
 
-            /**
-             * 3. 대상자 개별 삭제 핸들러
-             */
-            function deleteApplicantRecord(index) {
-                if (confirm("정말로 해당 대상자의 임상 기록 데이터를 영구 삭제하시겠습니까?")) {
-                    dataStoreApplicant.splice(index, 1);
-                    if (typeof commitToLocalStorage === "function") commitToLocalStorage();
-                    else localStorage.setItem('dataStoreApplicant', JSON.stringify(dataStoreApplicant));
-
-                    if (typeof calculateLiveDashboardStats === "function") calculateLiveDashboardStats();
+                // 2. 대상자 테이블을 태초의 읽기 전용 상태 포맷으로 다시 그립니다.
+                if (typeof refreshApplicantView === "function") {
                     refreshApplicantView();
                 }
+
+                // 3. 브라우저 최상위 뷰포트 상태를 강제로 '대상자 관리 탭'으로 리프레시 스위칭하여 목록 화면으로 컴백시킵니다.
+                if (typeof changeMainViewport === "function") {
+                    changeMainViewport('applicantView');
+                }
             }
+
+
+
 
             /**
                      * 💥 [신규 개설 완수] 좌측 메뉴 3개 클릭 및 새로고침 시 화면/스타일 동시 전환 제어 엔진
