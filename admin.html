@@ -1757,7 +1757,14 @@
             <td><input type="text" id="inline-rec-crc-${index}" class="inline-input" value="${row.crc || '-'}"></td>
             
             <!-- ⭐️ [보정 완료]: 형식이 정규화된 defaultDateVal 변수를 value에 주입하여 달력이 깨지지 않고 무조건 선명하게 보이게 만듭니다 -->
-            <td><input type="date" id="inline-rec-date-${index}" class="inline-input" value="${defaultDateVal}" style="color: #fbbf24; font-weight: 700; height: 32px; cursor: pointer; text-align: center;"></td>
+           <td>
+                <input type="date" 
+                       id="inline-rec-date-${index}" 
+                       class="inline-input" 
+                       value="${defaultDateVal}" 
+                       onclick="this.showPicker ? this.showPicker() : this.focus()"
+                       style="color: #fbbf24; font-weight: 700; height: 32px; cursor: pointer; text-align: center; display: block !important; width: 100% !important; min-width: 120px !important;">
+            </td>
             
             <td><input type="text" id="inline-rec-notice-${index}" class="inline-input" value="${row.notice || ''}"></td>
             <td style="vertical-align: middle;"><button type="button" class="btn-inline list" style="background:#475569; opacity:0.5; cursor:not-allowed;" disabled>보기</button></td>
