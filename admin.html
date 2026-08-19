@@ -845,6 +845,83 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
             filter: brightness(1.2);
         }
+
+        /* ==========================================================
+   [3단계 신규 추가] 개인 이력 마스터 통제 모달 전용 와이드 CSS 스타일
+   ========================================================== */
+        /* 모달 전체 배경 오버레이 (화면 잠금 및 블러 처리) */
+        .history-modal-overlay {
+            display: none;
+            /* 초기에는 숨김 처리 */
+            position: fixed;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            background: rgba(7, 10, 18, 0.8);
+            /* 묵직하고 깊은 어둠 배경 */
+            backdrop-filter: blur(6px);
+            /* 고급스러운 뒷배경 블러 효과 */
+            -webkit-backdrop-filter: blur(6px);
+            z-index: 999999 !important;
+            /* 최고 존엄 인덱스로 대시보드 위로 인상 */
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 모달 실제 콘텐츠 박스 프레임 (와이드 규격) */
+        .history-modal-box {
+            background: var(--card-color);
+            border: 1px solid var(--border-color);
+            padding: 35px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 650px;
+            /* 많은 신상 정보를 넉넉하게 담기 위해 와이드 처리 */
+            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.6);
+            box-sizing: border-box;
+            margin: 0 !important;
+            animation: modalFadeIn 0.25s ease-out;
+            /* 등장 시 부드러운 애니메이션 효과 */
+        }
+
+        /* 모달 타이틀 구역 */
+        .history-modal-box h3 {
+            margin-bottom: 25px;
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--secondary-color);
+            /* 스카이 블루 시그니처 반영 */
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 모달 내부 라벨/데이터 그리드 레이아웃 전용 서식 */
+        .history-grid-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            /* 2열 균등 배치 */
+            gap: 16px;
+            margin-bottom: 25px;
+        }
+
+        /* 모달 팝업 애니메이션 정의 */
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.96);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
     </style>
 
 <body>
@@ -3726,6 +3803,29 @@
             </div>
         </div>
     </div>
+
+    <!-- 💡 HTML 문서 최하단 부근에 삽입하여 가변 돔(DOM) 레이어를 확보합니다 -->
+    <!-- 🔥 [3단계 신규 추가]: 개인 이력조회 및 통제 모달 레이어 프레임 -->
+    <div class="history-modal-overlay" id="applicantHistoryModal">
+        <div class="history-modal-box">
+            <h3>
+                <i class="fa-solid fa-id-card-clip"></i>
+                피험자 마스터 이력 통제 허브
+            </h3>
+
+            <!-- 💡 [4단계 예고]: 자바스크립트에 의해 개인 신상 정보 및 매칭 데이터가 실시간 투사될 슬롯 구역 -->
+            <div id="history-modal-content-slot">
+                <!-- 4단계에서 이 자리에 이쁜 신상 대장과 타임라인 표가 그려집니다 -->
+            </div>
+
+            <!-- 💡 [5단계 예고]: 통과/탈락 수동 제어 버튼 및 닫기 버튼 그룹 구역 -->
+            <div id="history-modal-action-slot"
+                style="margin-top: 25px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+                <!-- 5단계에서 이 자리에 동적 통제 제어 버튼들이 심어집니다 -->
+            </div>
+        </div>
+    </div>
+
 </body>
 
 </html>
