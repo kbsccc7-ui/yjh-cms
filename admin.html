@@ -2202,7 +2202,7 @@
                 if (typeof calculateLiveDashboardStats === "function") {
                     calculateLiveDashboardStats(); // 2. 🎯 대시보드 통계 카운트를 즉시 리프레시 (1/60 -> 2/60 증가 완료!)
                 }
-            }, 300);
+            }, 500);
 
         }
 
@@ -3463,10 +3463,10 @@
 
             const currentSelected = titleSelect.value;
 
-            // 💡 [버그 해결 핵심] 시스템 마스터 데이터 스토어 배열이 존재하는지 안전하게 체크
-            const actualData = (typeof dataStoreApplicant !== "undefined" && Array.isArray(dataStoreApplicant)) ? dataStoreApplicant : [];
+            // 💡 [버그 해결 핵심] refreshApplicantView와 소스 저장소를 'localStorage'로 완벽 일치화
+            const actualData = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
 
-            // 데이터 스토어에서 순수 고유 시험명 목록만 추출
+            // 로컬 스토리지 최신 파일에서 순수 고유 시험명 목록만 정밀 추출
             const uniqueTitles = [...new Set(actualData.map(item => item.title).filter(Boolean))];
 
             titleSelect.innerHTML = '<option value="ALL">— 전체 시험 보기 —</option>';
@@ -3499,7 +3499,7 @@
             thSelect.innerHTML = '<option value="ALL">— 전체 기수 —</option>';
 
             if (selectedTitle !== "ALL") {
-                const actualData = (typeof dataStoreApplicant !== "undefined" && Array.isArray(dataStoreApplicant)) ? dataStoreApplicant : [];
+                const actualData = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
 
                 const filteredThs = actualData
                     .filter(item => item.title === selectedTitle)
@@ -3521,24 +3521,19 @@
         }
 
         /**
-         * 3. [📊 대시보드 최종 정밀 산출] 데이터 스토어 객체 스펙을 기반으로 
-         * 참여현황(참여/N수) 및 참여비 정산 현황 카운트를 실시간 투사합니다.
+         * 3. [📊 대시보드 최종 정밀 산출] 
+         * 로컬 스토리지 마스터 파일 스펙을 기반으로 조건 매칭 후 대시보드 스펙에 실시간 바인딩
          */
         function calculateLiveDashboardStats() {
-            const titleSelect = document.getElementById("dashboard-filter-title");
-            const thSelect = document.getElementById("dashboard-filter-th");
-
-            if (!titleSelect || !thSelect) return;
-
-            const titleFilter = titleSelect.value.trim();
-            const thFilter = thSelect.value.trim();
+            const titleFilter = document.getElementById("dashboard-filter-title").value.trim();
+            const thFilter = document.getElementById("dashboard-filter-th").value.trim();
 
             const totalEl = document.getElementById("stat-total-count");
             const receivedEl = document.getElementById("stat-received-count");
             const processingEl = document.getElementById("stat-processing-count");
             const completeEl = document.getElementById("stat-complete-count");
 
-            // [초기화 잠금 규칙] 선택이 완료되지 않은 경우 무조건 0 리셋 유지
+            // [초기화 잠금 규칙] 선택이 하나라도 완료되지 않은 경우 (전체보기 ALL 포함) 무조건 0 리셋 유지
             if (titleFilter === "ALL" || thFilter === "ALL" || !titleFilter || !thFilter) {
                 if (totalEl) totalEl.textContent = "0 / 0명";
                 if (receivedEl) receivedEl.textContent = "0건";
@@ -3547,9 +3542,10 @@
                 return;
             }
 
-            const actualData = (typeof dataStoreApplicant !== "undefined" && Array.isArray(dataStoreApplicant)) ? dataStoreApplicant : [];
+            // 💡 최신 로컬스토리지 데이터를 가져와서 연산 진행
+            const actualData = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
 
-            // ⭐️ [공백 제거 매칭] 데이터 스토어 내의 보이지 않는 공백이나 줄바꿈 때문에 매칭이 깨지는 현상을 완벽히 방지합니다.
+            // 공백 제거 조건 검증 매칭
             const filteredData = actualData.filter(item => {
                 const itemTitle = item.title ? String(item.title).trim() : "";
                 const itemTh = item.th ? String(item.th).trim() : "";
@@ -3557,19 +3553,24 @@
             });
 
             let currentParticipantCount = filteredData.length; // 분자: 실제 조건에 맞는 총 참여자 명수
-            let targetQuotaCount = 0;                          // 분모: 배정 인원수 (N수)
+            let targetQuotaCount = 0;                          // 분모: 목표 정원수 (N수)
 
-            let receivedCount = 0;
-            let processingCount = 0;
-            let completeCount = 0;
+            let receivedCount = 0;                             // 청구서 접수 현황
+            let processingCount = 0;                           // 재무 검토 (처리중)
+            let completeCount = 0;                             // 정산 종결 (지급완료)
 
             filteredData.forEach(item => {
-                // 인원수 데이터 정제 추출
+                // payload 스펙 변수인 item.count 파싱
                 const countNum = parseInt(String(item.count).replace(/[^0-9]/g, ""), 10) || 0;
                 targetQuotaCount = countNum;
 
+                // refreshApplicantView와 변수 매칭 스펙 통일화 (item.payStatus 분석)
                 const payText = item.payStatus || "대기";
-                const hasDocuments = item.idCard || item.bankbook;
+
+                // 서류 존재 여부 판단 통합 가드 동기화
+                const hasIdCard = (item.idCardImg && item.idCardImg.length > 3) || item.idCard === true || item.idCard === "true";
+                const hasBankBook = (item.bankBookImg && item.bankBookImg.length > 3) || item.bankbook === true || item.bankbook === "true";
+                const hasDocuments = hasIdCard || hasBankBook;
 
                 if (payText.includes("지급완료") || payText.includes("처리완료") || payText.includes("정산종결")) {
                     completeCount++;
@@ -3580,7 +3581,7 @@
                 }
             });
 
-            // 🎯 최종 대시보드 화면 투사 (2 / 60명 강제 동기화 반영)
+            // 🎯 최종 대시보드 화면 투사 (2 / 60명 완벽 동기화 표출)
             if (totalEl) {
                 totalEl.textContent = currentParticipantCount + " / " + targetQuotaCount + "명";
             }
@@ -3599,10 +3600,10 @@
          * 4. 시스템 로드 생명주기 리스너 및 동기화 초기화
          */
         window.addEventListener("DOMContentLoaded", () => {
-            // 최초 구동 시 마스터 배열 데이터를 읽어 필터 레이어 세팅
+            // 최초 구동 시 로컬스토리지 데이터를 읽어 필터 레이어 세팅
             setTimeout(() => {
                 initDashboardFilter();
-            }, 500);
+            }, 600);
         });
 
     </script>
