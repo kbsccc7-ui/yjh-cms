@@ -1948,6 +1948,7 @@
             <td style="color: #34d399; font-weight:700;">${callAgreed}</td>
             <td>${documentLinksHTML}</td>
             <td style="text-align: center; white-space: nowrap;">
+                <button type="button" class="btn-inline save" onclick="openApplicantHistoryModal(${index})" style="background: var(--secondary-color); color: #ffffff; margin-right: 6px;">이력조회</button>
                 <button type="button" class="btn-inline edit" onclick="startEditApplicant(${index})" style="background: #334155; border: 1px solid var(--border-color); color: var(--text-color);">수정</button>
                 <button type="button" class="btn-inline delete" onclick="deleteApplicantRecord(${index})" style="background: rgba(239, 68, 68, 0.15); border: 1px solid var(--danger-color); color: var(--danger-color);">삭제</button>
             </td>
