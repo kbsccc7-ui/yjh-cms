@@ -3439,29 +3439,47 @@
         });
 
 
-        // 1. [🔥 핵심] 현재 하단 테이블 표(#dom-recruitment-table)에 있는 실제 행들을 긁어와 데이터 목록을 만드는 함수
-        function getActualRecruitmentData() {
-            const listTable = document.getElementById("dom-recruitment-table");
+        /**  26-08-19 오전 추가
+  * 1. [데이터 수집] 하단 대상자 목록 테이블에서 실제 HTML 데이터를 실시간으로 수집하는 함수
+  * 대상자 테이블의 각 행(tr) 내 서류 배지 상태 및 정산 상태를 파악하도록 설계되었습니다.
+  */
+        function getActualApplicantData() {
+            // 💡 대상자 테이블 ID 스펙 매칭 (만약 테이블 ID가 다르면 실제 대상자 테이블 ID로 수정해 주세요)
+            // 소스 코드상 기본 대상자 목록이나 관련 tbody 엘리먼트를 추적합니다.
+            const listTable = document.getElementById("dom-applicant-table") || document.querySelector("#applicantView table tbody");
             const dataList = [];
 
-            // 테이블 내 <tbody>가 없거나 비어있으면 빈 배열 반환
             if (!listTable) return dataList;
 
-            // 테이블 내부의 모든 행(tr)을 순회하며 실제 텍스트 데이터 추출
             const rows = listTable.querySelectorAll("tr");
             rows.forEach(row => {
                 const cells = row.querySelectorAll("td");
-                // 행에 정상적인 셀 데이터가 채워져 있는지 확인 (최소 2개 이상의 열이 존재할 때)
-                if (cells.length >= 2) {
-                    // 원본 HTML 구조의 열 순서: [0]시험명, [1]기수, [2]인원수, [3]기간 ...
+
+                // 정상적인 데이터 행인지 검증 (최소 시험명, 기수, 상태 열이 존재할 것)
+                if (cells.length >= 3) {
+                    // 시스템의 td 구조 배열에 맞추어 텍스트 추출 (예시 기준: 시험명, 기수, 상태 등)
+                    // HTML 구조에 맞춰 인덱스([0], [1] 등)를 조정할 수 있습니다.
                     const titleText = cells[0].textContent.trim();
                     const thText = cells[1].textContent.trim();
 
-                    // 데이터가 유효한 경우에만 수집 목록에 추가
+                    // 정산 상태 또는 서류 접수 배지 상태 텍스트 추출
+                    const rowText = row.innerHTML;
+                    let status = "접수"; // 기본값
+
+                    // 행 내부의 클래스명 또는 텍스트 기반으로 상태 분류 연동
+                    if (rowText.includes("status-bank") || rowText.includes("지급완료") || rowText.includes("종결")) {
+                        status = "지급완료";
+                    } else if (rowText.includes("editing-row") || rowText.includes("처리중") || rowText.includes("검토")) {
+                        status = "처리중";
+                    } else if (rowText.includes("status-none") || rowText.includes("미제출")) {
+                        status = "접수"; // 청구서 기본 접수 상태
+                    }
+
                     if (titleText && thText) {
                         dataList.push({
                             title: titleText,
-                            th: thText
+                            th: thText,
+                            status: status
                         });
                     }
                 }
@@ -3470,24 +3488,20 @@
             return dataList;
         }
 
-        // 2. 화면에 있는 실제 데이터를 기반으로 "시험명 셀렉트 박스" 채우기
+        /**
+         * 2. [필터 초기화] 수집된 실제 데이터를 기반으로 "시험명 셀렉트 박스" 채우기
+         */
         function initDashboardFilter() {
             const titleSelect = document.getElementById("dashboard-filter-title");
             if (!titleSelect) return;
 
-            // 현재 선택되어 있던 시험명 값 보존
             const currentSelected = titleSelect.value;
+            const actualData = getActualApplicantData();
 
-            // 💡 하드코딩된 변수가 아닌 실제 화면의 tr 리스트로부터 데이터를 추출해옴
-            const actualData = getActualRecruitmentData();
-
-            // 중복 제거된 순수 실제 시험명 목록 추출
+            // 중복 제거된 고유 시험명 목록 추출
             const uniqueTitles = [...new Set(actualData.map(item => item.title))];
 
-            // 셀렉트 박스 옵션 초기화 (기본 전체 보기 옵션 유지)
             titleSelect.innerHTML = '<option value="ALL">— 전체 시험 보기 —</option>';
-
-            // 실제 추출된 고유 시험명들을 옵션으로 바인딩
             uniqueTitles.forEach(title => {
                 const option = document.createElement("option");
                 option.value = title;
@@ -3495,18 +3509,18 @@
                 titleSelect.appendChild(option);
             });
 
-            // 기존 선택값 유지 보완
             if (uniqueTitles.includes(currentSelected)) {
                 titleSelect.value = currentSelected;
             } else {
                 titleSelect.value = "ALL";
             }
 
-            // 기수 셀렉트 박스 동기화 연쇄 호출
             updateDashboardThOptions();
         }
 
-        // 3. [연쇄 반응] 선택한 시험명에 매칭되는 실제 기수 목록만 필터링
+        /**
+         * 3. [연쇄 필터링] 선택한 시험명에 매칭되는 실제 기수 목록만 필터링 출력
+         */
         function updateDashboardThOptions() {
             const titleSelect = document.getElementById("dashboard-filter-title");
             const thSelect = document.getElementById("dashboard-filter-th");
@@ -3516,13 +3530,11 @@
             thSelect.innerHTML = '<option value="ALL">— 전체 기수 —</option>';
 
             if (selectedTitle !== "ALL") {
-                // 💡 실시간으로 화면 데이터를 다시 조회하여 해당 시험명의 기수만 필터링
-                const actualData = getActualRecruitmentData();
+                const actualData = getActualApplicantData();
                 const filteredThs = actualData
                     .filter(item => item.title === selectedTitle)
                     .map(item => item.th);
 
-                // 중복 제거
                 const uniqueThs = [...new Set(filteredThs)];
 
                 uniqueThs.forEach(th => {
@@ -3533,38 +3545,73 @@
                 });
             }
 
-            // 최종 대시보드 통계 실시간 계산 실행 트리거
-            if (typeof calculateLiveDashboardStats === "function") {
-                calculateLiveDashboardStats();
-            }
+            // ⭐️ 기수 변경 완료 후 최종 실시간 통계 계산식 결합 호출
+            calculateLiveDashboardStats();
         }
 
-        // 4. 신규 공고 등록 완료 시 상단 셀렉트 박스를 동기화하기 위한 래퍼(Wrapper) 처리
-        // 기존 소스 파일 어딘가에 이미 존재할 원래 insertRecruitmentRecord 함수가 실행된 후, 
-        // 필터 초기화 함수(initDashboardFilter)가 연이어 동작할 수 있도록 기존 등록 함수를 가로채어 확장합니다.
-        window.addEventListener("DOMContentLoaded", () => {
-            // 기존에 이미 선언되어 있던 오리지널 등록 함수를 백업해둠
-            const originalInsertFunc = window.insertRecruitmentRecord;
+        /**
+         * 4. [🔥 핵심 기능] 셀렉트 박스 조건에 매칭되는 값을 계산하여 대시보드 현황판에 출력하는 함수
+         */
+        function calculateLiveDashboardStats() {
+            const titleFilter = document.getElementById("dashboard-filter-title").value;
+            const thFilter = document.getElementById("dashboard-filter-th").value;
 
-            // insertRecruitmentRecord 함수 재정의 인터셉트
+            // 화면상의 실제 전체 대상자 데이터 수집 리스트 가져오기
+            const allApplicants = getActualApplicantData();
+
+            // 셀렉트 박스 선택 조건(시험명, 기수)에 맞춰 정밀 필터링 처리
+            const filteredData = allApplicants.filter(item => {
+                const matchTitle = (titleFilter === "ALL" || item.title === titleFilter);
+                const matchTh = (thFilter === "ALL" || item.th === thFilter);
+                return matchTitle && matchTh;
+            });
+
+            // 📊 대시보드 카운팅 변수 초기화
+            let totalCount = filteredData.length;       // 총 대상자 수
+            let receivedCount = 0;                     // 청구서 접수 현황
+            let processingCount = 0;                   // 재무 검토 (처리중)
+            let completeCount = 0;                     // 정산 종결 (지급완료)
+
+            // 필터링된 그룹 내부 데이터들의 상태값 분류 집계
+            filteredData.forEach(item => {
+                if (item.status === "지급완료") {
+                    completeCount++;
+                } else if (item.status === "처리중") {
+                    processingCount++;
+                } else {
+                    receivedCount++; // 기본 접수 상태 카운팅
+                }
+            });
+
+            // 🎯 화면상의 기존 4대 대시보드 DOM 엘리먼트 고유 ID 스펙에 실시간 연동 바인딩
+            document.getElementById("stat-total-count").textContent = totalCount + "명";
+            document.getElementById("stat-received-count").textContent = (receivedCount + processingCount + completeCount) + "건"; // 전체 접수건 누적 반영
+            document.getElementById("stat-processing-count").textContent = processingCount + "건";
+            document.getElementById("stat-complete-count").textContent = completeCount + "건";
+        }
+
+        /**
+         * 5. 시스템 등록 폼 확장 및 초기 로딩 바인딩 처리 리스너
+         */
+        window.addEventListener("DOMContentLoaded", () => {
+            // 신규 추가 후 실시간 리프레시 연동을 위해 기존 함수 인터셉트 구조 적용
+            const originalInsertFunc = window.insertRecruitmentRecord;
             window.insertRecruitmentRecord = function () {
                 if (typeof originalInsertFunc === "function") {
-                    // 원래 존재하던 공고 등록 로직(DB 저장 및 tr 행 생성 등)을 먼저 온전히 실행
                     originalInsertFunc();
                 }
-
-                // ⭐️ 중요: 테이블 행(tr)이 새롭게 추가 및 갱신된 직후, 실시간으로 행을 다시 읽어 셀렉트 박스 동기화 갱신
                 setTimeout(() => {
                     initDashboardFilter();
-                }, 100); // 테이블 엘리먼트가 돔(DOM)에 안착할 시간을 확보하기 위한 미세 딜레이 보정
+                }, 150);
             };
 
-            // 최초 시스템 로딩 및 초기 화면 데이터 바인딩 실행
-            // (만약 테이블 데이터를 서버에서 비동기로 뒤늦게 받아온다면, 데이터 렌더링이 끝나는 시점에 이 함수를 재호출해야 정상 작동합니다)
+            // 테이블 데이터 랜더링 시간에 맞춘 딜레이 후 최초 초기화 실행
             setTimeout(() => {
                 initDashboardFilter();
             }, 500);
-        });   
+        });
+
+
     </script>
 
     <!-- 비밀번호 변경 처리용 통합 오버레이 팝업 모달창 창고 -->
