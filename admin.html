@@ -3444,8 +3444,8 @@
   * 1. [데이터 수집] 하단 대상자 목록 테이블에서 실제 HTML 데이터를 실시간으로 수집하는 함수
   * 대상자 테이블의 각 행(tr) 내 서류 배지 상태 및 정산 상태를 파악하도록 설계되었습니다.
   */
-        function getActualApplicantData() {
-            // 💡 대상자 관리 탭의 실제 테이블 tbody를 우선 추적하고, 없을 경우 모집공고 테이블을 백업으로 추적
+        function getActualSystemData() {
+            // 💡 대상자 탭과 모집공고 탭의 테이블 본문을 모두 유연하게 추적
             const listTable = document.getElementById("dom-applicant-table") ||
                 document.getElementById("dom-recruitment-table") ||
                 document.querySelector("#applicantView table tbody") ||
@@ -3458,15 +3458,18 @@
             rows.forEach(row => {
                 const cells = row.querySelectorAll("td");
 
-                // 정상적인 데이터 셀들이 존재하는 경우만 정밀 파싱
-                if (cells.length >= 2) {
-                    // ⭐️ [버그 해결 핵심] cell 전체 텍스트가 아닌, 개별 td 인덱스를 지정하여 데이터를 격리 추출
-                    const titleText = cells[0].textContent.trim(); // 첫 번째 칸: 시험명
-                    const thText = cells[1].textContent.trim();    // 두 번째 칸: 기수
+                // 데이터가 유효하게 차 있는 행만 타격 (시험명, 기수, 인원수 등이 순서대로 매칭)
+                if (cells.length >= 3) {
+                    // HTML 구조 스펙 기준 열 순서 텍스트 격리
+                    const titleText = cells[0].textContent.trim(); // 1열: 시험명
+                    const thText = cells[1].textContent.trim();    // 2열: 기수
 
-                    // 행 내부 소스 코드를 바탕으로 정산 상태 분류 연동
+                    // ⭐️ [N수 버그 해결] 3열(인원수) 칸에 적힌 목표 정원(예: 60) 숫자를 정확히 가져옴
+                    const maxCountText = cells[2].textContent.trim().replace(/[^0-8]/g, "") || "0";
+
+                    // 행 상태 검사를 통한 4단계 정산 프로세스 상태값 정의 인터셉터
                     const rowHtml = row.innerHTML;
-                    let status = "접수"; // 기본 상태 설정
+                    let status = "접수"; // 기본 디폴트 상태
 
                     if (rowHtml.includes("status-bank") || rowHtml.includes("지급완료") || rowHtml.includes("status-id")) {
                         status = "지급완료";
@@ -3474,11 +3477,11 @@
                         status = "처리중";
                     }
 
-                    // 공백 데이터가 아닌 실제 텍스트가 존재할 때만 리스트에 바인딩
                     if (titleText && thText) {
                         dataList.push({
                             title: titleText,
                             th: thText,
+                            maxCount: parseInt(maxCountText, 10),
                             status: status
                         });
                     }
@@ -3489,16 +3492,16 @@
         }
 
         /**
-         * 2. [필터 초기화] 정밀 추출된 실제 표 데이터를 기반으로 "시험명 셀렉트 박스" 옵션 구성
+         * 2. [1단계 필터] 실제 로드된 데이터를 역추적하여 "시험명 셀렉트 박스" 옵션 동적 마운트
          */
         function initDashboardFilter() {
             const titleSelect = document.getElementById("dashboard-filter-title");
             if (!titleSelect) return;
 
             const currentSelected = titleSelect.value;
-            const actualData = getActualApplicantData();
+            const actualData = getActualSystemData();
 
-            // 중복 값을 원천 제거한 순수 시험명 고유 배열 생성
+            // 중복 제거된 유니크한 순수 실제 시험명 배열 생성
             const uniqueTitles = [...new Set(actualData.map(item => item.title))];
 
             titleSelect.innerHTML = '<option value="ALL">— 전체 시험 보기 —</option>';
@@ -3515,11 +3518,12 @@
                 titleSelect.value = "ALL";
             }
 
+            // 2단계 연쇄 기수 셀렉트 박스 트리거 연동
             updateDashboardThOptions();
         }
 
         /**
-         * 3. [연쇄 필터링] 첫 번째 셀렉트 박스 선택 값에 동기화되는 기수 목록 동적 생성
+         * 3. [2단계 연쇄 필터] ⭐️ 선택된 시험명에 실제로 등록된 "해당 기수 목록만" 연쇄 반응 출력
          */
         function updateDashboardThOptions() {
             const titleSelect = document.getElementById("dashboard-filter-title");
@@ -3530,11 +3534,14 @@
             thSelect.innerHTML = '<option value="ALL">— 전체 기수 —</option>';
 
             if (selectedTitle !== "ALL") {
-                const actualData = getActualApplicantData();
+                const actualData = getActualSystemData();
+
+                // 💡 오직 선택한 시험명에 속해 있는 기수 데이터들만 정밀 격리 필터링
                 const filteredThs = actualData
                     .filter(item => item.title === selectedTitle)
                     .map(item => item.th);
 
+                // 중복 없이 정제
                 const uniqueThs = [...new Set(filteredThs)];
 
                 uniqueThs.forEach(th => {
@@ -3545,32 +3552,39 @@
                 });
             }
 
-            // 기수 옵션 재생성 완료 후 실시간 대시보드 통계 계산 가동
+            // 2단계 기수 세팅 완료 즉시 최종 4단계 대시보드 통계 연산 작동
             calculateLiveDashboardStats();
         }
 
         /**
-         * 4. [📊 지표 계산] 필터 조건에 부합하는 카운트 수치를 대시보드 카드 4종에 매칭 출력
+         * 4. [📊 4단계 연산 및 매칭] 셀렉트 조건 조합에 일치하는 데이터 값을 대시보드 카드 4종에 실시간 투사
          */
         function calculateLiveDashboardStats() {
             const titleFilter = document.getElementById("dashboard-filter-title").value;
             const thFilter = document.getElementById("dashboard-filter-th").value;
 
-            const allApplicants = getActualApplicantData();
+            const allRecords = getActualSystemData();
 
-            // 조건문 분기를 통한 정밀 필터 매칭
-            const filteredData = allApplicants.filter(item => {
+            // 두 셀렉트 박스 선택 값의 조합 교집합 필터 처리
+            const filteredData = allRecords.filter(item => {
                 const matchTitle = (titleFilter === "ALL" || item.title === titleFilter);
                 const matchTh = (thFilter === "ALL" || item.th === thFilter);
                 return matchTitle && matchTh;
             });
 
-            let totalCount = filteredData.length;       // 총 대상자 수 집계
-            let receivedCount = 0;                     // 청구서 접수 현황
-            let processingCount = 0;                   // 재무 검토 (처리중)
-            let completeCount = 0;                     // 정산 종결 (지급완료)
+            // 📊 지표 카운팅 변수 설계 정의
+            let currentParticipantCount = filteredData.length; // 현재 조건에 맞는 행의 개수 (참여수)
+            let maxQuotaCount = 0;                             // 배정 인원 (N수) 합산
 
+            let receivedCount = 0;                             // 청구서 접수 현황
+            let processingCount = 0;                           // 재무 검토 (처리중)
+            let completeCount = 0;                             // 정산 종결 (지급완료)
+
+            // 매칭 그룹 순회를 통한 데이터 가산 정산
             filteredData.forEach(item => {
+                // N수 데이터 누적 산출
+                maxQuotaCount += item.maxCount;
+
                 if (item.status === "지급완료") {
                     completeCount++;
                 } else if (item.status === "처리중") {
@@ -3580,34 +3594,47 @@
                 }
             });
 
-            // 🎯 [완벽 보존] 대시보드 카드의 innerHTML/textContent 인터페이스 실시간 동기화 출력
+            // 전체 선택(ALL)일 경우에는 합산된 전체 배정인원을 보여주고, 단일 선택 시에는 해당 공고의 N값을 유지합니다.
+            const displayMaxQuota = maxQuotaCount > 0 ? maxQuotaCount : "0";
+
+            // 🎯 [완벽 매칭] 요구하신 참여현황(참여/NT) 문자열 포맷 및 4단계 현황판 컴포넌트 데이터 동기화 바인딩
             const totalEl = document.getElementById("stat-total-count");
             const receivedEl = document.getElementById("stat-received-count");
             const processingEl = document.getElementById("stat-processing-count");
             const completeEl = document.getElementById("stat-complete-count");
 
-            if (totalEl) totalEl.textContent = totalCount + "명";
-            if (receivedEl) receivedEl.textContent = (receivedCount + processingCount + completeCount) + "건";
-            if (processingEl) processingEl.textContent = processingCount + "건";
-            if (completeEl) completeEl.textContent = completeCount + "건";
+            // 💡 '참여수 / N수' 형식으로 대시보드 카드에 강제 렌더링 (예: 1/60명)
+            if (totalEl) {
+                totalEl.textContent = currentParticipantCount + " / " + displayMaxQuota + "명";
+            }
+            if (receivedEl) {
+                receivedEl.textContent = (receivedCount + processingCount + completeCount) + "건";
+            }
+            if (processingEl) {
+                processingEl.textContent = processingCount + "건";
+            }
+            if (completeEl) {
+                completeEl.textContent = completeCount + "건";
+            }
         }
 
         /**
-         * 5. 생명주기 이벤트 핸들러 및 비동기 랜더링 타이밍 보정 리스너
+         * 5. 생명주기 제어 인터셉터 컨트롤러 레이어
          */
         window.addEventListener("DOMContentLoaded", () => {
-            // 모집공고 관리 탭에서 추가 로직 발생 시 연동 실시간 트리거 확장
+            // 공고 신규 수동 등록 버튼 작동 시 동기화 인터페이스 연결
             const originalInsertFunc = window.insertRecruitmentRecord;
             window.insertRecruitmentRecord = function () {
                 if (typeof originalInsertFunc === "function") {
                     originalInsertFunc();
                 }
+                // 행이 DOM에 안전하게 도달한 후 리프레시 갱신
                 setTimeout(() => {
                     initDashboardFilter();
                 }, 200);
             };
 
-            // 테이블 표에 데이터가 완벽히 로드 및 바인딩되는 여유 시간을 고려한 초기 구동 딜레이 설정
+            // 초기 테이블 렌더링 속도 보정을 고려한 딜레이 구동 트리거
             setTimeout(() => {
                 initDashboardFilter();
             }, 600);
