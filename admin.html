@@ -2089,7 +2089,7 @@
                 ssn: getOnlyNumbers(s),
                 phone: getOnlyNumbers(ph),
 
-                // ⭐️ [버그 원천 분쇄]: result와 payStatus 두 항목 모두 신규(editIndex가 비어있음)일 때는 무조건 "대기"로 강제 못박아 세이브합니다.
+                // ⭐️ [버그 원천 분쇄 1]: 신규 등록 시 무조건 "대기" 상태로 격리 인가
                 result: editIndex === "" ? "대기" : (dataStoreApplicant[editIndex].result || "대기"),
                 payStatus: editIndex === "" ? "대기" : (dataStoreApplicant[editIndex].payStatus || "대기"),
 
@@ -2107,6 +2107,10 @@
 
             if (editIndex === "") {
                 // [신규 등록 모드]
+                // ⭐️ [버그 원천 분쇄 2]: 어떤 서브 함수가 오염을 일으켜도 무조건 "대기"가 들어가도록 저장 직전 한 번 더 강제 락
+                payload.result = "대기";
+                payload.payStatus = "대기";
+
                 dataStoreApplicant.push(payload);
                 alert(`📢 신규 대상자 [${n}]님이 대장에 성공적으로 등록 보존되었습니다.`);
             } else {
@@ -2115,16 +2119,23 @@
                 alert(`📋 정보 갱신 완료: [${n}] 피험자의 마스터 레코드가 업데이트되었습니다.`);
             }
 
-            commitToLocalStorage();
+            // ⭐️ [버그 원천 분쇄 3]: commitToLocalStorage() 내부의 자동 "접수" 변환 오작동을 무력화하기 위해,
+            // 정제된 마스터 배열을 로컬 스토리지 하드웨어 파일에 최종 다이렉트 강제 주입(세이브)합니다.
+            localStorage.setItem('dataStoreApplicant', JSON.stringify(dataStoreApplicant));
+
+            // 원래 정의된 로컬스토리지 백업 함수 호출 (안전장치 유지)
+            if (typeof commitToLocalStorage === "function") {
+                commitToLocalStorage();
+            }
+
             resetForm(); // 💡 폼 초기화 및 버튼 전환
             refreshApplicantView();
 
-            // 3. ⭐️ 물리 파일 세이브 안착 확인 후 통계 엔진 최종 폭발 가동!
+            // 4. ⭐️ 물리 파일 세이브 안착 확인 후 통계 엔진 리프레시 가동!
             setTimeout(() => {
                 if (typeof initDashboardFilter === "function") initDashboardFilter();
                 if (typeof calculateLiveDashboardStats === "function") calculateLiveDashboardStats();
             }, 400);
-
         }
 
         /** 💡 [추가] 테이블 행의 [수정] 버튼 클릭 시 데이터를 상단 폼으로 로드하는 함수 */
