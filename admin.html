@@ -405,13 +405,49 @@
         }
 
 
-        /* 소집일자 날짜 선택기(캘린더) 아이콘 색상 흰색 교정 */
+        /* 신규모집공고 둥록 :: 소집일자 날짜 선택기(캘린더) 아이콘 색상 흰색 교정 */
         #form-rec-date::-webkit-calendar-picker-indicator {
             filter: invert(1);
             /* 검은색 아이콘을 반전시켜 완전한 흰색(#ffffff)으로 변경 */
             cursor: pointer;
             /* 마우스 호버 시 손가락 모양 표시 */
         }
+
+
+        /* =========26/08/19 18:50 ============================
+ [교정 완료] 목록 내 인라인 수정 모드 소집일자 캘린더 아이콘 커스텀
+ ========================================================== */
+
+        /* 1. 글자와 캘린더 버튼이 서로 겹치거나 밀려나 깨지는 버그 원천 차단 */
+        #dom-recruitment-table input[type="date"].inline-input {
+            position: relative;
+            padding-right: 28px !important;
+            /* 오른쪽 내부 여백을 주어 아이콘 안착 공간 확보 */
+            color: #fbbf24 !important;
+            /* 텍스트 글자색은 노란색으로 세련되게 복구 */
+        }
+
+        /* 2. 숨겨진 캘린더 단추에 흰색 마스크 강제 주입 */
+        #dom-recruitment-table input[type="date"].inline-input::-webkit-calendar-picker-indicator {
+            /* 원래의 아이콘 셰이프를 투명 마스크 맵으로 전환 */
+            -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://w3.org' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z'/%3E%3C/svg%3E");
+            mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://w3.org' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z'/%3E%3C/svg%3E");
+            -webkit-mask-size: contain;
+            mask-size: contain;
+
+            /* 🎨 [완전한 흰색 부여]: 글자색과 독립적으로 아이콘만 완전한 화이트로 고정 출력 */
+            background-color: #ffffff !important;
+
+            display: inline-block !important;
+            opacity: 1 !important;
+            filter: none !important;
+            /* 기존 불완전한 invert 필터 연산 제거 */
+            cursor: pointer !important;
+            pointer-events: auto !important;
+            width: 14px;
+            height: 14px;
+        }
+
 
         /* ==========================================================
    6. [데이터 명단 테이블 표 및 가변 배지 가독성 최적화]
@@ -480,40 +516,6 @@
         .editing-row {
             background-color: rgba(251, 191, 36, 0.04) !important;
             border-left: 4px solid var(--warning-color);
-        }
-
-        /* =========26/08/19 18:50 ============================
- [교정 완료] 목록 내 인라인 수정 모드 소집일자 캘린더 아이콘 커스텀
- ========================================================== */
-
-        /* 1. 글자와 캘린더 버튼이 서로 겹치거나 밀려나 깨지는 버그 원천 차단 */
-        #dom-recruitment-table input[type="date"].inline-input {
-            position: relative;
-            padding-right: 28px !important;
-            /* 오른쪽 내부 여백을 주어 아이콘 안착 공간 확보 */
-            color: #fbbf24 !important;
-            /* 텍스트 글자색은 노란색으로 세련되게 복구 */
-        }
-
-        /* 2. 숨겨진 캘린더 단추에 흰색 마스크 강제 주입 */
-        #dom-recruitment-table input[type="date"].inline-input::-webkit-calendar-picker-indicator {
-            /* 원래의 아이콘 셰이프를 투명 마스크 맵으로 전환 */
-            -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://w3.org' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z'/%3E%3C/svg%3E");
-            mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://w3.org' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z'/%3E%3C/svg%3E");
-            -webkit-mask-size: contain;
-            mask-size: contain;
-
-            /* 🎨 [완전한 흰색 부여]: 글자색과 독립적으로 아이콘만 완전한 화이트로 고정 출력 */
-            background-color: #ffffff !important;
-
-            display: inline-block !important;
-            opacity: 1 !important;
-            filter: none !important;
-            /* 기존 불완전한 invert 필터 연산 제거 */
-            cursor: pointer !important;
-            pointer-events: auto !important;
-            width: 14px;
-            height: 14px;
         }
 
 
