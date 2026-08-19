@@ -1709,7 +1709,7 @@
              * 2. [수정 완료 처리] 인라인 상태에서 입력한 최종 서식을 마스터 대장에 적재하는 저장소 핸들러
              */
             function saveInlineApplicantRecord(index) {
-                // 인라인 인풋 필드값 추출
+                // 인라인 인풋 필드로부터 수정값 정밀 추출
                 const nextTitle = document.getElementById(`inline-app-title-${index}`).value.trim();
                 const nextTh = document.getElementById(`inline-app-th-${index}`).value;
                 const nextCount = document.getElementById(`inline-app-count-${index}`).value.trim();
@@ -1718,7 +1718,7 @@
                 const nextSsn = document.getElementById(`inline-app-ssn-${index}`).value.trim();
                 const nextPhone = document.getElementById(`inline-app-phone-${index}`).value.trim();
 
-                // 동의서 컴포넌트 수집
+                // 동적으로 전환된 동의서 컴포넌트 정보 수집
                 const nextDuty = document.getElementById(`inline-app-duty-${index}`).value;
                 const nextCall = document.getElementById(`inline-app-call-${index}`).value;
 
@@ -1751,32 +1751,32 @@
                     calculateLiveDashboardStats();
                 }
 
-                alert("🎉 해당 줄(Line)의 대상자 임상 정보 및 서류 심사 데이터가 성공적으로 저장되었습니다.");
-
                 /* ==========================================================
-                   ⚠️ [3중 전역 가드 해제] 알림창 이후 목록 미복귀 버그 완벽 진압 구역
+                   ⚠️ [최종 비동기 복구 엔진 가드] 브라우저 동결 현상 원천 타파 구역
                    ========================================================== */
-                // 💡 원본 소스(41페이지)의 순정 편집 타겟 변수들을 일괄 강제 파괴(null)하여 잠금막을 해제합니다.
-                currentEditingUid = null;               /* 👈 대상자 관리 편집 상태 전역 해제 */
-                recEditingUid = null;                  /* 👈 모집공고 관리 편집 상태 전역 해제 */
-                window.currentEditingApplicantIndex = null; /* 👈 확장 상태 해제 */
-
-                // 브라우저 저장소의 편집 버퍼까지 완전히 영구 소거합니다.
+                // 1. 모든 인라인 수정 타겟 변수를 즉시 무력화하여 브라우저 잠금을 먼저 해제합니다.
+                currentEditingUid = null;
+                recEditingUid = null;
+                window.currentEditingApplicantIndex = null;
                 localStorage.removeItem('adminActiveEditingIndex');
 
-                // 대상자 마스터 테이블 화면을 일반 조회용 읽기 전용 포맷으로 강제 재렌더링합니다.
+                // 2. 브라우저 렌더링 회로가 알림창 이전에 안전하게 목록을 새로 그리도록 강제 유도합니다.
                 if (typeof refreshApplicantView === "function") {
                     refreshApplicantView();
                 } else if (typeof renderApplicantTable === "function") {
                     renderApplicantTable();
                 }
 
-                // 대시보드 내비게이션 상태를 강제로 동기화 스위칭하여 대상자 탭 화면을 완전히 리프레시합니다.
-                if (typeof changeMainViewport === "function") {
-                    changeMainViewport('applicantView');
-                }
-            }
+                // 3. 브라우저가 화면을 그리는 마이크로 초(0.01초)의 틈을 준 뒤 비동기로 알림창을 띄우고 뷰포트를 최종 스위칭합니다.
+                setTimeout(function () {
+                    alert("🎉 해당 줄(Line)의 대상자 임상 정보 및 서류 심사 데이터가 성공적으로 저장되었습니다.");
 
+                    // 알림창 확인 버튼을 누르는 순간 뷰포트를 강제로 초기화 리프레시합니다.
+                    if (typeof changeMainViewport === "function") {
+                        changeMainViewport('applicantView');
+                    }
+                }, 10);
+            }
 
 
 
