@@ -413,11 +413,41 @@
             /* 마우스 호버 시 손가락 모양 표시 */
         }
 
-        #dom-recruitment-table input[type="date"].inline-input::-webkit-calendar-picker-indicator {
-            filter: invert(1) !important;
-            /* 상단 신규 등록 폼의 소집일자 아이콘과 형태 대칭 일치 */
-            cursor: pointer !important;
+
+        /* =========26/08/19 18:50 ============================
+ [교정 완료] 목록 내 인라인 수정 모드 소집일자 캘린더 아이콘 커스텀
+ ========================================================== */
+
+        /* 1. 글자와 캘린더 버튼이 서로 겹치거나 밀려나 깨지는 버그 원천 차단 */
+        #dom-recruitment-table input[type="date"].inline-input {
+            position: relative;
+            padding-right: 28px !important;
+            /* 오른쪽 내부 여백을 주어 아이콘 안착 공간 확보 */
+            color: #fbbf24 !important;
+            /* 텍스트 글자색은 노란색으로 세련되게 복구 */
         }
+
+        /* 2. 숨겨진 캘린더 단추에 흰색 마스크 강제 주입 */
+        #dom-recruitment-table input[type="date"].inline-input::-webkit-calendar-picker-indicator {
+            /* 원래의 아이콘 셰이프를 투명 마스크 맵으로 전환 */
+            -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://w3.org' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z'/%3E%3C/svg%3E");
+            mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://w3.org' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z'/%3E%3C/svg%3E");
+            -webkit-mask-size: contain;
+            mask-size: contain;
+
+            /* 🎨 [완전한 흰색 부여]: 글자색과 독립적으로 아이콘만 완전한 화이트로 고정 출력 */
+            background-color: #ffffff !important;
+
+            display: inline-block !important;
+            opacity: 1 !important;
+            filter: none !important;
+            /* 기존 불완전한 invert 필터 연산 제거 */
+            cursor: pointer !important;
+            pointer-events: auto !important;
+            width: 14px;
+            height: 14px;
+        }
+
 
         /* ==========================================================
    6. [데이터 명단 테이블 표 및 가변 배지 가독성 최적화]
@@ -938,28 +968,6 @@
                 transform: scale(1);
             }
         }
-
-
-        /* ==========================================================
- [목록 수정 전용] 개별 캘린더 아이콘 흰색 반전 필터 소스
- ========================================================== */
-        #dom-recruitment-table input[type="date"].inline-input::-webkit-calendar-picker-indicator {
-            filter: invert(1) !important;
-            /* 상단 등록창과 동일한 캘린더 형태로 흰색 반전 */
-            cursor: pointer !important;
-            display: inline-block !important;
-            opacity: 1 !important;
-            pointer-events: auto !important;
-        }
-
-        /* 💡 기존 코드 밑에 이어서 추가해 주세요 */
-        #dom-recruitment-table input[type="date"].inline-input {
-            width: 160px !important;
-            /* 무조건 160px 공간 확보 */
-            padding-right: 10px !important;
-            /* 우측 여백 조율 */
-            box-sizing: border-box !important;
-        }
     </style>
 
 <body>
@@ -1428,7 +1436,7 @@
         // =========================================================================
 
         /**
-         * CMS 피험자 마스터 대장(매칭 풀) 가상 DB 가동 상태 체크 
+         * CMS 피험자 마스터 대장(매칭 풀) 가상 DB 가동 상태 체크 [index: 0.1.26, 0.1.27]
          * 중복 가동되던 생성 루틴을 통합 단일화하였습니다.
          */
         function initializeCMSDatabase() {
@@ -1446,8 +1454,8 @@
                         category: "내분비내과 / 2 기 모집",
                         stage: "🎁 2 기 1 차 일정 완료 (분할 허용)",
                         result: "처리중",
-                        isDutyAgreed: "미동의", // 💡 기존 isAgreed 분리 및 초기값 설정
-                        isCallAgreed: "미동의", // 💡 기존 isAgreed 분리 및 초기값 설정
+                        isDutyAgreed: "동의", // 💡 기존 isAgreed 분리 및 초기값 설정
+                        isCallAgreed: "동의", // 💡 기존 isAgreed 분리 및 초기값 설정
                         idCard: true,   // 🌟 홍길동 신분증 제출 완료
                         bankbook: true  // 🌟 홍길동 통장사본 제출 완료
                     },
@@ -1457,14 +1465,14 @@
                         ssn: "980101",
                         phone: "01090956763",
                         title: "신일제약 사쿠+발사",
-                        th: "3기(1차)",       // 💡 누락된 기수 추가
+                        th: "4기(1차)",       // 💡 누락된 기수 추가
                         count: "46",    // 💡 누락된 인원수 추가
                         period: "96",  // 💡 누락된 기간 추가
                         category: "비뇨의학과 / 4 기 모집",
                         stage: "🎁 과제 심사 완료 (종합 정산 가능)",
                         result: "접수",
-                        isDutyAgreed: "미동의", // 💡 기존 isAgreed 분리 및 초기값 설정
-                        isCallAgreed: "미동의", // 💡 기존 isAgreed 분리 및 초기값 설정
+                        isDutyAgreed: "동의", // 💡 기존 isAgreed 분리 및 초기값 설정
+                        isCallAgreed: "동의", // 💡 기존 isAgreed 분리 및 초기값 설정
                         idCard: true,   // 🌟 홍길동 신분증 제출 완료
                         bankbook: true  // 🌟 홍길동 통장사본 제출 완료
                     },
@@ -1474,14 +1482,14 @@
                         ssn: "050607",
                         phone: "01023469876",
                         title: "경동제약 Mirabegron 식후 임상시험",
-                        th: "4기(1차)",       // 💡 누락된 기수 추가
+                        th: "4기(2차)",       // 💡 누락된 기수 추가
                         count: "46",    // 💡 누락된 인원수 추가
                         period: "96",  // 💡 누락된 기간 추가
                         category: "비뇨의학과 / 4 기 모집",
                         stage: "🎁 과제 심사 완료 (종합 정산 가능)",
                         result: "접수",
-                        isDutyAgreed: "미동의", // 💡 기존 isAgreed 분리 및 초기값 설정
-                        isCallAgreed: "미동의", // 💡 기존 isAgreed 분리 및 초기값 설정
+                        isDutyAgreed: "동의", // 💡 기존 isAgreed 분리 및 초기값 설정
+                        isCallAgreed: "동의", // 💡 기존 isAgreed 분리 및 초기값 설정
                         idCard: true,   // 🌟 홍길동 신분증 제출 완료
                         bankbook: true  // 🌟 홍길동 통장사본 제출 완료
                     }
@@ -1518,7 +1526,7 @@
                     {
                         uid: 102,
                         title: "신일제약-사쿠+발사",
-                        th: "3기(1차)",
+                        th: "4기(1차)",
                         count: "46",
                         period: "96",
                         crc: "최미현",
@@ -1529,7 +1537,7 @@
                     {
                         uid: 103,
                         title: "경동제약 식후 임상시험",
-                        th: "4기(1차)",
+                        th: "4기(2차)",
                         count: "46",
                         period: "96",
                         crc: "강은애",
@@ -1591,194 +1599,6 @@
                 if (document.getElementById('loginScreen')) document.getElementById('loginScreen').style.display = 'flex';
                 if (document.getElementById('mainDashboard')) document.getElementById('mainDashboard').style.display = 'none';
             }
-
-
-
-            // 전역 대상자 편집 상태 포인터 초기화
-            window.currentEditingApplicantIndex = null;
-
-            /**
-             * 1. 대상자 마스터 리스트를 화면에 동적으로 그려주는 출력 함수
-             */
-            function refreshApplicantView() {
-                const tbody = document.getElementById('dom-applicant-table');
-                if (!tbody) return;
-                tbody.innerHTML = ''; // 기존 리스트 초기화
-
-                // 데이터스토리지 전산 싱크 확인 가드
-                if (!window.dataStoreApplicant || dataStoreApplicant.length === 0) {
-                    window.dataStoreApplicant = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
-                }
-
-                dataStoreApplicant.forEach((row, index) => {
-                    const tr = document.createElement('tr');
-                    tr.style.display = "table-row";
-
-                    // [수정] 버튼을 눌러 인라인 편집 모드가 활성화된 행일 때
-                    if (window.currentEditingApplicantIndex === index) {
-                        tr.className = "editing-row";
-                        tr.style.pointerEvents = "auto";
-                        tr.style.cursor = "default";
-
-                        tr.innerHTML = `
-                <td><input type="text" id="inline-app-title-${index}" class="inline-input" value="${row.title || ''}" style="font-weight:700;"></td>
-                <td>
-                    <select id="inline-app-th-${index}" class="inline-input" style="height:32px; padding:2px 6px;">
-                        <option value="1기(1차)" ${row.th === '1기(1차)' ? 'selected' : ''}>1기 1차</option>
-                        <option value="1기(2차)" ${row.th === '1기(2차)' ? 'selected' : ''}>1기 2차</option>
-                        <option value="2기(1차)" ${row.th === '2기(1차)' ? 'selected' : ''}>2기 1차</option>
-                        <option value="2기(2차)" ${row.th === '2기(2차)' ? 'selected' : ''}>2기 2차</option>
-                        <option value="3기(1차)" ${row.th === '3기(1차)' ? 'selected' : ''}>3기 1차</option>
-                        <option value="3기(2차)" ${row.th === '3기(2차)' ? 'selected' : ''}>3기 2차</option>
-                        <option value="4기(1차)" ${row.th === '4기(1차)' ? 'selected' : ''}>4기 1차</option>
-                        <option value="4기(2차)" ${row.th === '4기(2차)' ? 'selected' : ''}>4기 2차</option>
-                    </select>
-                </td>
-                <td><input type="text" id="inline-app-count-${index}" class="inline-input" value="${row.count || '0'}"></td>
-                <td><input type="text" id="inline-app-period-${index}" class="inline-input" value="${row.period || '0'}"></td>
-                <td><input type="text" id="inline-app-name-${index}" class="inline-input" value="${row.name || ''}" style="font-weight:700;"></td>
-                <td><input type="text" id="inline-app-ssn-${index}" class="inline-input" value="${row.ssn || ''}" maxlength="6"></td>
-                <td><input type="text" id="inline-app-phone-${index}" class="inline-input" value="${row.phone || ''}"></td>
-                <td><span style="color: #4ade80; font-weight:700;">지정정산</span></td>
-                <td>
-                    <select id="inline-app-duty-${index}" class="inline-input" style="height:32px; padding:2px 6px;">
-                        <option value="동의" ${row.isDutyAgreed === '동의' ? 'selected' : ''}>동의</option>
-                        <option value="미동의" ${row.isDutyAgreed === '미동의' ? 'selected' : ''}>미동의</option>
-                    </select>
-                </td>
-                <td>
-                    <select id="inline-app-call-${index}" class="inline-input" style="height:32px; padding:2px 6px;">
-                        <option value="동의" ${row.isCallAgreed === '동의' ? 'selected' : ''}>동의</option>
-                        <option value="미동의" ${row.isCallAgreed === '미동의' ? 'selected' : ''}>미동의</option>
-                    </select>
-                </td>
-                <td style="text-align:center; vertical-align:middle;">
-                    <span class="doc-badge ${row.idCard ? 'status-id' : 'status-none'}">신분증</span>
-                    <span class="doc-badge ${row.bankbook ? 'status-bank' : 'status-none'}">통장</span>
-                </td>
-                <td style="vertical-align: middle;">
-                    <div class="action-btn-wrapper" style="display: flex !important; justify-content: center !important; gap: 4px !important;">
-                        <button type="button" class="btn-inline save" onclick="saveInlineApplicantRecord(${index})" style="background: var(--success-color, #4ade80); color: #070a12; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer;">저장</button>
-                        <button type="button" class="btn-inline edit" onclick="cancelInlineApplicantEdit()" style="background: #475569; color:#fff; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer;">취소</button>
-                    </div>
-                </td>
-            `;
-                    } else {
-                        // 일반 데이터 조회 읽기전용 모드일 때
-                        const dutyClass = row.isDutyAgreed === "동의" ? "text-bold" : "";
-                        const callClass = row.isCallAgreed === "동의" ? "text-bold" : "";
-
-                        tr.innerHTML = `
-                <td style="font-weight: 700; color: #ffffff !important; vertical-align: middle;">${row.title || '-'}</td>
-                <td style="vertical-align: middle; text-align:center;">${row.th || '-'}</td>
-                <td style="vertical-align: middle; text-align:center;">${row.count || '0'}명</td>
-                <td style="vertical-align: middle; text-align:center;">${row.period || '0'}시간</td>
-                <td style="vertical-align: middle; font-weight: 700; text-align:center;">${row.name || '-'}</td>
-                <td style="vertical-align: middle; text-align:center; color: #94a3b8;">${row.ssn || '-'}</td>
-                <td style="vertical-align: middle; text-align:center; color: #38bdf8;">${row.phone || '-'}</td>
-                <td style="vertical-align: middle; text-align:right; color: #fbbf24; font-weight:700;">계산대기</td>
-                <td style="vertical-align: middle; text-align:center;" class="${dutyClass}">${row.isDutyAgreed || '미동의'}</td>
-                <td style="vertical-align: middle; text-align:center;" class="${callClass}">${row.isCallAgreed || '미동의'}</td>
-                <td style="vertical-align: middle; text-align:center;">
-                    <span class="doc-badge ${row.idCard ? 'status-id' : 'status-none'}">신분증</span>
-                    <span class="doc-badge ${row.bankbook ? 'status-bank' : 'status-none'}">통장</span>
-                </td>
-                <td style="vertical-align: middle;">
-                    <div class="action-btn-wrapper" style="display: flex !important; justify-content: center !important; gap: 4px !important; white-space: nowrap !important;">
-                        <button type="button" class="btn-inline edit" onclick="enableInlineApplicantEdit(${index})" style="background: #334155; color: #ffffff; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer;">수정</button>
-                        <button type="button" class="btn-inline delete" onclick="deleteApplicantRecord(${index})" style="background: rgba(239, 68, 68, 0.15); border: 1px solid #f87171; color: #f87171; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer;">삭제</button>
-                    </div>
-                </td>
-            `;
-                    }
-                    tbody.appendChild(tr);
-                });
-            }
-
-            function enableInlineApplicantEdit(index) {
-                window.currentEditingApplicantIndex = index;
-                refreshApplicantView();
-            }
-
-            function cancelInlineApplicantEdit() {
-                window.currentEditingApplicantIndex = null;
-                refreshApplicantView();
-            }
-
-            /**
-             * 2. [수정 완료 처리] 인라인 상태에서 입력한 최종 서식을 마스터 대장에 적재하는 저장소 핸들러
-             */
-            function saveInlineApplicantRecord(index) {
-                // 인라인 인풋 필드로부터 수정값 정밀 추출
-                const nextTitle = document.getElementById(`inline-app-title-${index}`).value.trim();
-                const nextTh = document.getElementById(`inline-app-th-${index}`).value;
-                const nextCount = document.getElementById(`inline-app-count-${index}`).value.trim();
-                const nextPeriod = document.getElementById(`inline-app-period-${index}`).value.trim();
-                const nextName = document.getElementById(`inline-app-name-${index}`).value.trim();
-                const nextSsn = document.getElementById(`inline-app-ssn-${index}`).value.trim();
-                const nextPhone = document.getElementById(`inline-app-phone-${index}`).value.trim();
-
-                // 동적으로 전환된 동의서 컴포넌트 정보 수집
-                const nextDuty = document.getElementById(`inline-app-duty-${index}`).value;
-                const nextCall = document.getElementById(`inline-app-call-${index}`).value;
-
-                // 예외 안전성 유효성 검사 (빈칸 방어)
-                if (!nextTitle || !nextName || !nextSsn || !nextPhone) {
-                    alert("알림: 참여 시험명, 대상자 성명, 생년월일, 연락처는 필수 데이터이므로 빈칸으로 둘 수 없습니다.");
-                    return;
-                }
-
-                // 마스터 배열 메모리 즉시 동기화 주입
-                dataStoreApplicant[index].title = nextTitle;
-                dataStoreApplicant[index].th = nextTh;
-                dataStoreApplicant[index].count = typeof getOnlyNumbers === "function" ? getOnlyNumbers(nextCount) : nextCount.replace(/[^0-9]/g, '');
-                dataStoreApplicant[index].period = typeof getOnlyNumbers === "function" ? getOnlyNumbers(nextPeriod) : nextPeriod.replace(/[^0-9]/g, '');
-                dataStoreApplicant[index].name = nextName;
-                dataStoreApplicant[index].ssn = nextSsn;
-                dataStoreApplicant[index].phone = nextPhone;
-                dataStoreApplicant[index].isDutyAgreed = nextDuty;
-                dataStoreApplicant[index].isCallAgreed = nextCall;
-
-                // 로컬스토리지 전역 트랜잭션 커밋
-                if (typeof commitToLocalStorage === "function") {
-                    commitToLocalStorage();
-                } else {
-                    localStorage.setItem('dataStoreApplicant', JSON.stringify(dataStoreApplicant));
-                }
-
-                // 통계 Dashboard 새로고침 연동 체인 호출
-                if (typeof calculateLiveDashboardStats === "function") {
-                    calculateLiveDashboardStats();
-                }
-
-                /* ==========================================================
-                   ⚠️ [최종 비동기 복구 엔진 가드] 브라우저 동결 현상 원천 타파 구역
-                   ========================================================== */
-                // 1. 모든 인라인 수정 타겟 변수를 즉시 무력화하여 브라우저 잠금을 먼저 해제합니다.
-                currentEditingUid = null;
-                recEditingUid = null;
-                window.currentEditingApplicantIndex = null;
-                localStorage.removeItem('adminActiveEditingIndex');
-
-                // 2. 브라우저 렌더링 회로가 알림창 이전에 안전하게 목록을 새로 그리도록 강제 유도합니다.
-                if (typeof refreshApplicantView === "function") {
-                    refreshApplicantView();
-                } else if (typeof renderApplicantTable === "function") {
-                    renderApplicantTable();
-                }
-
-                // 3. 브라우저가 화면을 그리는 마이크로 초(0.01초)의 틈을 준 뒤 비동기로 알림창을 띄우고 뷰포트를 최종 스위칭합니다.
-                setTimeout(function () {
-                    alert("🎉 해당 줄(Line)의 대상자 임상 정보 및 서류 심사 데이터가 성공적으로 저장되었습니다.");
-
-                    // 알림창 확인 버튼을 누르는 순간 뷰포트를 강제로 초기화 리프레시합니다.
-                    if (typeof changeMainViewport === "function") {
-                        changeMainViewport('applicantView');
-                    }
-                }, 10);
-            }
-
-
 
             /**
                      * 💥 [신규 개설 완수] 좌측 메뉴 3개 클릭 및 새로고침 시 화면/스타일 동시 전환 제어 엔진
@@ -1927,8 +1747,8 @@
             if (dataStoreRecruitment.length === 0) {
                 dataStoreRecruitment = [
                     { title: "애드파마 로잘탄+로수+에제", th: "2기(1차)", count: "60", period: "72", crc: "석정은", notice: "공복 유지 필수 및 소집 10분 전 대기", examSchedule: "2026-09-01", paySchedule: "2024-09-10" },
-                    { title: "신일제약-사쿠+발사", th: "3기(1차)", count: "46", period: "96", crc: "최미현", notice: "지정식 이외 취식 금지 및 격리 규정 준수", examSchedule: "2026-09-15", paySchedule: "2026-09-30" },
-                    { title: "경동제약 식후 임상시험", th: "4기(1차)", count: "46", period: "96", crc: "강은애", notice: "지정식 이외 취식 금지 및 격리 규정 준수", examSchedule: "2026-10-15", paySchedule: "2026-10-30" }
+                    { title: "신일제약-사쿠+발사", th: "4기(1차)", count: "46", period: "96", crc: "최미현", notice: "지정식 이외 취식 금지 및 격리 규정 준수", examSchedule: "2026-09-15", paySchedule: "2026-09-30" },
+                    { title: "경동제약 식후 임상시험", th: "4기(2차)", count: "46", period: "96", crc: "강은애", notice: "지정식 이외 취식 금지 및 격리 규정 준수", examSchedule: "2026-10-15", paySchedule: "2026-10-30" }
                 ];
                 localStorage.setItem('dataStoreRecruitment', JSON.stringify(dataStoreRecruitment));
             }
@@ -1986,13 +1806,13 @@
             <td><input type="text" id="inline-rec-crc-${index}" class="inline-input" value="${row.crc || '-'}" style="pointer-events: auto !important;"></td>
             
             <!-- ⭐️ 소집일자 달력 상자 마우스 클릭 잠금 원천 해제 -->
-<td style="vertical-align: middle;">
-    <input type="date" 
-           id="inline-rec-date-${index}" 
-           class="inline-input" 
-           value="${defaultDateVal}" 
-           style="font-weight: 700; height: 32px; text-align: center; width: 160px !important; display: inline-block !important; cursor: pointer;">
-</td>
+            <td>
+             <input type="date" 
+                    id="inline-rec-date-${index}" 
+                    class="inline-input" 
+                    value="${defaultDateVal}" 
+                    style="font-weight: 700; height: 32px; text-align: center; display: inline-block; width: 130px; pointer-events: auto !important; cursor: pointer;">
+            </td>
             
             <td><input type="text" id="inline-rec-notice-${index}" class="inline-input" value="${row.notice || ''}" style="pointer-events: auto !important;"></td>
             <td style="vertical-align: middle;"><button type="button" class="btn-inline list" style="background:#475569; opacity:0.5; cursor:not-allowed; pointer-events: none;" disabled>보기</button></td>
@@ -2068,10 +1888,8 @@
             dataStoreRecruitment[index].count = typeof getOnlyNumbers === "function" ? getOnlyNumbers(nextCount) : nextCount.replace(/[^0-9]/g, '');
             dataStoreRecruitment[index].period = typeof getOnlyNumbers === "function" ? getOnlyNumbers(nextPeriod) : nextPeriod.replace(/[^0-9]/g, '');
             dataStoreRecruitment[index].crc = nextCrc;
-
-            // 💡 [데이터 정합성 보정 핵심]: 조회 엔진 및 DB 프리셋 스펙에 맞춰 두 가지 필드에 동시 적재하여 데이터 유실 원천 차단
+            // 🔥 [신규 추가]: 수정된 소집일자 필드 마스터 대장에 적재
             dataStoreRecruitment[index].recDate = nextDate;
-            dataStoreRecruitment[index].examSchedule = nextDate; // 👈 이 코드를 추가하여 목록 출력 뷰포트와 완벽 동기화
 
             dataStoreRecruitment[index].notice = nextNotice;
             dataStoreRecruitment[index].paySchedule = nextPay;
@@ -2102,103 +1920,6 @@
             refreshRecruitmentView();
         }
         //// 8-18 추가 위...
-
-
-        /**
-  * 5. [대상자 관리 전용] 인라인 상태에서 타이핑한 최종 서식 데이터를 대장에 업데이트하는 저장소 핸들러
-  * (saveInlineRecruitmentRecord의 예외 처리 및 커밋 아키텍처를 완벽하게 대칭 복사하여 빌드됨)
-  */
-        function saveInlineApplicantRecord(index) {
-            try {
-                console.log(`[대상자 저장 가동] 인덱스 ${index}번 데이터 수집 시작...`);
-
-                // 1. 인라인 입력 필드로부터 수정값 안전하게 채득
-                const nextTitle = document.getElementById(`inline-app-title-${index}`).value.trim();
-                const nextTh = document.getElementById(`inline-app-th-${index}`).value;
-                const nextCount = document.getElementById(`inline-app-count-${index}`).value.trim();
-                const nextPeriod = document.getElementById(`inline-app-period-${index}`).value.trim();
-                const nextName = document.getElementById(`inline-app-name-${index}`).value.trim();
-                const nextSsn = document.getElementById(`inline-app-ssn-${index}`).value.trim();
-                const nextPhone = document.getElementById(`inline-app-phone-${index}`).value.trim();
-
-                // 동적으로 전환된 동의서 컴포넌트 정보 안전 수집
-                const nextDuty = document.getElementById(`inline-app-duty-${index}`) ? document.getElementById(`inline-app-duty-${index}`).value : "미동의";
-                const nextCall = document.getElementById(`inline-app-call-${index}`) ? document.getElementById(`inline-app-call-${index}`).value : "미동의";
-
-                // 필수 데이터 유효성 예외 검사 (빈칸 방어)
-                if (!nextTitle || !nextName || !nextSsn || !nextPhone) {
-                    alert("알림: 참여 시험명, 대상자 성명, 생년월일, 연락처는 필수 데이터이므로 빈칸으로 둘 수 없습니다.");
-                    return;
-                }
-
-                // 2. 마스터 배열 메모리 즉시 동기화 주입 (getOnlyNumbers가 없을 경우를 대비한 가드 처리)
-                dataStoreApplicant[index].title = nextTitle;
-                dataStoreApplicant[index].th = nextTh;
-                dataStoreApplicant[index].count = (typeof getOnlyNumbers === "function") ? getOnlyNumbers(nextCount) : nextCount.replace(/[^0-9]/g, '');
-                dataStoreApplicant[index].period = (typeof getOnlyNumbers === "function") ? getOnlyNumbers(nextPeriod) : nextPeriod.replace(/[^0-9]/g, '');
-                dataStoreApplicant[index].name = nextName;
-                dataStoreApplicant[index].ssn = nextSsn;
-                dataStoreApplicant[index].phone = nextPhone;
-                dataStoreApplicant[index].isDutyAgreed = nextDuty;
-                dataStoreApplicant[index].isCallAgreed = nextCall;
-
-                // 3. 로컬스토리지 영구 커밋 연동
-                if (typeof commitToLocalStorage === "function") {
-                    commitToLocalStorage();
-                } else {
-                    localStorage.setItem('dataStoreApplicant', JSON.stringify(dataStoreApplicant));
-                }
-
-                // 4. 통계 Dashboard 새로고침 연동 체인 호출 (에러 방 가드 처리)
-                if (typeof calculateLiveDashboardStats === "function") {
-                    calculateLiveDashboardStats();
-                }
-
-                alert("🎉 해당 줄(Line)의 대상자 임상 정보 및 서류 심사 데이터가 성공적으로 저장되었습니다.");
-
-            } catch (error) {
-                // 코드 실행 중 예상치 못한 에러가 나더라도 브라우저 콘솔에만 찍고 멈추지 않게 방어
-                console.error("저장 처리 중 비치명적 에러 발생:", error);
-            } finally {
-                /* ==========================================================
-                   ⚠️ [최종 폭파 가드] 무슨 일이 있어도 무조건 원래 목록 상태로 강제 복귀
-                   ========================================================== */
-                // 1. 시스템 변수명 불일치를 원천 차단하기 위해 유력한 편집 인덱스 포인터를 일괄 초기화(null)합니다.
-                window.currentEditingApplicantIndex = null;
-                window.currentEditingRecruitmentIndex = null; // 모집공고 포인터 동시 해제
-                window.currentEditingUid = null;              // 원본 대상자 추적 포인터 해제
-
-                if (window.hasOwnProperty('recEditingUid')) window.recEditingUid = null;
-                if (window.hasOwnProperty('memberEditingSabun')) window.memberEditingSabun = null;
-
-                // 2. 브라우저 저장소의 편집 세션 찌꺼기까지 확실하게 소거합니다.
-                localStorage.removeItem('adminActiveEditingIndex');
-
-                // 3. 대상자 마스터 테이블 화면을 일반 조회용 읽기 전용 포맷으로 강제 재렌더링합니다.
-                if (typeof refreshApplicantView === "function") {
-                    refreshApplicantView();
-                } else if (typeof renderApplicantTable === "function") {
-                    renderApplicantTable();
-                }
-
-                // 4. 대시보드 내비게이션 상태를 강제로 동기화 스위칭하여 대상자 탭 화면을 완전히 리프레시합니다.
-                if (typeof changeMainViewport === "function") {
-                    changeMainViewport('applicantView');
-                }
-            }
-        }
-
-        /**
-         * 6. [대상자 관리 전용] 수정 작업을 원치 않을 때 입력 상태를 원상 복구시키는 취소 엔진
-         */
-        function cancelInlineApplicantEdit() {
-            window.currentEditingApplicantIndex = null;
-            if (typeof refreshApplicantView === "function") {
-                refreshApplicantView();
-            } else if (typeof renderApplicantTable === "function") {
-                renderApplicantTable();
-            }
-        }
 
 
         function insertRecruitmentRecord() {
@@ -3725,7 +3446,7 @@
                 },
                 {
                     title: "신일제약-사쿠+발사",
-                    th: "3기(1차)",
+                    th: "4기(1차)",
                     count: "46",
                     period: "96",
                     crc: "최미현",
@@ -3735,7 +3456,7 @@
                 },
                 {
                     title: "경동제약 식후 임상시험",
-                    th: "4기(1차)",
+                    th: "4기(2차)",
                     count: "46",
                     period: "96",
                     crc: "강은애",
@@ -3758,7 +3479,7 @@
                     ssn: "950505",
                     phone: "01012345678",
                     payStatus: "대기",
-                    isAgreed: "미동의",
+                    isAgreed: "동의",
                     idCardImg: "무",
                     bankBookImg: "무",
                     stage: "2 기 [1 차 차수분] 분할 사례비"
@@ -3786,7 +3507,7 @@
                     ssn: "050607",
                     phone: "01023469876",
                     payStatus: "대기",
-                    isAgreed: "미동의",
+                    isAgreed: "동의",
                     idCardImg: "무",
                     bankBookImg: "무",
                     stage: "4 기 [1 차 차수분] 분할 사례비"
