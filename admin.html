@@ -1184,18 +1184,20 @@
                     <table>
                         <thead>
                             <tr>
-                                <th style="width: 14%;">시험명</th>
-                                <th style="width: 8%;">기수</th>
-                                <th style="width: 6%;">인원수</th>
-                                <th style="width: 6%;">기간</th>
-                                <th style="width: 9%;">이름</th>
-                                <th style="width: 10%;">생년월일</th>
-                                <th style="width: 11%;">전화번호</th>
-                                <th style="width: 7%;">참여비</th>
-                                <th style="width: 9%; text-align: center;">당직동의</th>
-                                <th style="width: 9%; text-align: center;">소집동의</th>
-                                <th style="width: 11%; text-align: center;">첨부서류</th>
-                                <th style="width: 10%; text-align: center;">작업</th>
+                                <th style="text-align: left; padding-left: 15px; font-weight: 700; color: #ffffff;">시험명
+                                </th>
+                                <th style="text-align: center; width: 90px; min-width: 90px;">기수</th>
+                                <th style="text-align: center; width: 75px; min-width: 75px;">인원수</th>
+                                <th style="text-align: center; width: 65px; min-width: 65px;">기간</th>
+                                <th style="text-align: center; width: 80px; min-width: 80px;">이름</th>
+                                <th style="text-align: center; width: 85px; min-width: 85px;">생년월일</th>
+                                <th style="text-align: center; width: 125px; min-width: 125px;">전화번호</th>
+                                <th style="text-align: center; width: 85px; min-width: 85px;">참여비</th>
+                                <th style="text-align: center; width: 75px; min-width: 75px;">당직동의</th>
+                                <th style="text-align: center; width: 75px; min-width: 75px;">소집동의</th>
+                                <th style="text-align: center; width: 140px; min-width: 140px;">첨부서류</th>
+                                <th style="text-align: center; width: 180px; min-width: 180px; padding-right: 15px;">작업
+                                </th>
                             </tr>
                         </thead>
                         <tbody id="dom-applicant-table">
@@ -1932,18 +1934,18 @@
                 // 🎯 [요구사항 반영 2]: 시험명 무제한 확장 가변형 12열 그리드 세팅 (밀림/단어잘림 완벽 해결)
                 // 각 칸마다 최적화된 너비를 배정하고 텍스트 정렬을 맞춰 스캔 가독성을 극대화했습니다.
                 tr.innerHTML = `
-            <td style="text-align: left; padding-left: 15px; font-weight: 700; color: #f8fafc; white-space: normal; word-break: keep-all;">${row.title || '-'}</td>
-            <td style="text-align: center; width: 90px;"><span class="lvl-badge ${thBadgeClass}" style="padding: 4px 8px; font-size:12px;">${row.th || '-'}</span></td>
-            <td style="text-align: center; width: 75px; font-weight: 700; color: #ffffff;">${groupMatchCount}/${totalQuota}</td>
-            <td style="text-align: center; width: 65px; color: #94a3b8;">${row.period || '-'}h</td>
-            <td style="text-align: center; width: 80px; font-weight: 700; color: #ffffff;">${cleanName}</td>
-            <td style="text-align: center; width: 85px; color: #cbd5e1; letter-spacing: 0.5px;">${row.ssn || '-'}</td>
-            <td style="text-align: center; width: 125px; color: #cbd5e1; font-size: 13px;">${formattedPhone}</td>
-            <td style="text-align: center; width: 85px;"><span class="lvl-badge" style="${statusStyle} padding: 4px 10px; border-radius: 5px; font-size: 12px; font-weight:700;">${currentStatus}</span></td>
-            <td style="text-align: center; width: 75px; color: #34d399; font-weight:700; font-size: 13px;">${dutyAgreed}</td>
-            <td style="text-align: center; width: 75px; color: #34d399; font-weight:700; font-size: 13px;">${callAgreed}</td>
-            <td style="text-align: center; width: 140px;">${documentLinksHTML}</td>
-            <td style="text-align: center; width: 180px; white-space: nowrap; padding-right: 15px;">
+            <td style="text-align: left; padding-left: 15px; font-weight: 700; color: #f8fafc; white-space: normal; word-break: keep-all; vertical-align: middle;">${row.title || '-'}</td>
+            <td style="text-align: center; width: 90px; min-width: 90px; vertical-align: middle;"><span class="lvl-badge ${thBadgeClass}" style="padding: 4px 8px; font-size:12px;">${row.th || '-'}</span></td>
+            <td style="text-align: center; width: 75px; min-width: 75px; font-weight: 700; color: #ffffff; vertical-align: middle;">${groupMatchCount}/${totalQuota}</td>
+            <td style="text-align: center; width: 65px; color: #94a3b8; vertical-align: middle;">${row.period || '-'}h</td>
+            <td style="text-align: center; width: 80px; font-weight: 700; color: #ffffff; vertical-align: middle;">${cleanName}</td>
+            <td style="text-align: center; width: 85px; color: #cbd5e1; letter-spacing: 0.5px; vertical-align: middle;">${row.ssn || '-'}</td>
+            <td style="text-align: center; width: 125px; color: #cbd5e1; font-size: 13px; vertical-align: middle;">${formattedPhone}</td>
+            <td style="text-align: center; width: 85px; vertical-align: middle;"><span class="lvl-badge" style="${statusStyle} padding: 4px 10px; border-radius: 5px; font-size: 12px; font-weight:700;">${currentStatus}</span></td>
+            <td style="text-align: center; width: 75px; color: #34d399; font-weight:700; font-size: 13px; vertical-align: middle;">${dutyAgreed}</td>
+            <td style="text-align: center; width: 75px; color: #34d399; font-weight:700; font-size: 13px; vertical-align: middle;">${callAgreed}</td>
+            <td style="text-align: center; width: 140px; vertical-align: middle;">${documentLinksHTML}</td>
+            <td style="text-align: center; width: 180px; min-width: 180px; white-space: nowrap; padding-right: 15px; vertical-align: middle;">
                 <button type="button" class="btn-inline save" onclick="openApplicantHistoryModal(${index})" style="background: var(--secondary-color); color: #ffffff; padding: 4px 10px; font-size: 12px; font-weight: 700; border-radius: 5px; margin-right: 3px; cursor: pointer; transition: opacity 0.2s;">이력조회</button>
                 <button type="button" class="btn-inline edit" onclick="startEditApplicant(${index})" style="background: #334155; border: 1px solid var(--border-color); color: var(--text-color); padding: 4px 10px; font-size: 12px; font-weight: 700; border-radius: 5px; margin-right: 3px; cursor: pointer;">수정</button>
                 <button type="button" class="btn-inline delete" onclick="deleteApplicantRecord(${index})" style="background: rgba(239, 68, 68, 0.15); border: 1px solid var(--danger-color); color: var(--danger-color); padding: 4px 10px; font-size: 12px; font-weight: 700; border-radius: 5px; cursor: pointer;">삭제</button>
