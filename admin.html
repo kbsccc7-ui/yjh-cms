@@ -1916,6 +1916,79 @@
         //// 8-18 추가 위...
 
 
+        /**
+  * 5. [대상자 관리 전용] 인라인 상태에서 타이핑한 최종 서식 데이터를 대장에 업데이트하는 저장소 핸들러
+  * (saveInlineRecruitmentRecord의 예외 처리 및 커밋 아키텍처를 완벽하게 대칭 복사하여 빌드됨)
+  */
+        function saveInlineApplicantRecord(index) {
+            // 각 열(Column) 스펙에 매칭되는 인라인 인풋 필드로부터 수정값 정밀 추출
+            const nextTitle = document.getElementById(`inline-app-title-${index}`).value.trim();
+            const nextTh = document.getElementById(`inline-app-th-${index}`).value;
+            const nextCount = document.getElementById(`inline-app-count-${index}`).value.trim();
+            const nextPeriod = document.getElementById(`inline-app-period-${index}`).value.trim();
+            const nextName = document.getElementById(`inline-app-name-${index}`).value.trim();
+            const nextSsn = document.getElementById(`inline-app-ssn-${index}`).value.trim();
+            const nextPhone = document.getElementById(`inline-app-phone-${index}`).value.trim();
+
+            // 💡 [동적 수집 가드]: 만약 화면에 동의 여부 선택 select 박스가 떠있다면 해당 값을 가져오고, 없으면 기존 대장 값 보존
+            const nextDutyAgreed = document.getElementById(`inline-app-duty-${index}`) ? document.getElementById(`inline-app-duty-${index}`).value : dataStoreApplicant[index].isDutyAgreed;
+            const nextCallAgreed = document.getElementById(`inline-app-call-${index}`) ? document.getElementById(`inline-app-call-${index}`).value : dataStoreApplicant[index].isCallAgreed;
+
+            // 대상자 필수 항목 데이터 유효성 검사 (공백 누락 방어)
+            if (!nextTitle || !nextName || !nextSsn || !nextPhone) {
+                alert("알림: 참여 시험명, 성명, 생년월일, 연락처 데이터는 필수 항목이므로 빈칸으로 둘 수 없습니다.");
+                return;
+            }
+
+            // 대상자 마스터 데이터(dataStoreApplicant) 정밀 교정 주입
+            dataStoreApplicant[index].title = nextTitle;
+            dataStoreApplicant[index].th = nextTh;
+            dataStoreApplicant[index].count = typeof getOnlyNumbers === "function" ? getOnlyNumbers(nextCount) : nextCount.replace(/[^0-9]/g, '');
+            dataStoreApplicant[index].period = typeof getOnlyNumbers === "function" ? getOnlyNumbers(nextPeriod) : nextPeriod.replace(/[^0-9]/g, '');
+            dataStoreApplicant[index].name = nextName;
+            dataStoreApplicant[index].ssn = nextSsn;
+            dataStoreApplicant[index].phone = nextPhone;
+
+            // 분리 처리된 규제 동의서 정보 적재
+            dataStoreApplicant[index].isDutyAgreed = nextDutyAgreed;
+            dataStoreApplicant[index].isCallAgreed = nextCallAgreed;
+
+            // 로컬스토리지 영구 커밋 연동 (모집공고의 공통 트랜잭션 함수 계승)
+            if (typeof commitToLocalStorage === "function") {
+                commitToLocalStorage();
+            } else {
+                localStorage.setItem('dataStoreApplicant', JSON.stringify(dataStoreApplicant));
+            }
+
+            // 실시간 재무 정산 프로세스 통계 대시보드 현황판 동 동기화
+            if (typeof calculateLiveDashboardStats === "function") {
+                calculateLiveDashboardStats();
+            }
+
+            alert("🎉 해당 줄(Line)의 대상자 임상 정보 및 서류 심사 데이터가 성공적으로 저장되었습니다.");
+            window.currentEditingApplicantIndex = null; // 수정 상태 해제
+
+            // 대상자 관리 테이블 뷰포트 원상 복귀 (엔진 명칭 추적 자동 폴백)
+            if (typeof refreshApplicantView === "function") {
+                refreshApplicantView();
+            } else if (typeof renderApplicantTable === "function") {
+                renderApplicantTable();
+            }
+        }
+
+        /**
+         * 6. [대상자 관리 전용] 수정 작업을 원치 않을 때 입력 상태를 원상 복구시키는 취소 엔진
+         */
+        function cancelInlineApplicantEdit() {
+            window.currentEditingApplicantIndex = null;
+            if (typeof refreshApplicantView === "function") {
+                refreshApplicantView();
+            } else if (typeof renderApplicantTable === "function") {
+                renderApplicantTable();
+            }
+        }
+
+
         function insertRecruitmentRecord() {
             // 1. 각 인풋 필드 및 셀렉트박스 값 추출
             const t = document.getElementById('form-rec-title').value.trim();
