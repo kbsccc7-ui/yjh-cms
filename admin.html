@@ -1751,8 +1751,10 @@
                 }
 
                 alert("🎉 해당 대상자의 임상 시험 정보 및 동의 상태가 안전하게 영구 저장되었습니다.");
-                window.currentEditingApplicantIndex = null; // 수정 모드 잠금 해제
-                refreshApplicantView(); // 조회 화면 갱신 복구
+
+                // 💡 [핵심 복구 매커니즘]: 편집 모드 상태를 해제하고, 테이블 목록을 새로 그려 초기 모드로 강제 컴백시킵니다.
+                window.currentEditingApplicantIndex = null;
+                refreshApplicantView();
             }
 
             /**
