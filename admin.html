@@ -3372,16 +3372,56 @@
         });
 
 
-        /**  26-08-19 오전 추가
+        /**  26-08-19 10:50 추가
   * 1. [데이터 수집] 하단 대상자 목록 테이블에서 실제 HTML 데이터를 실시간으로 수집하는 함수
   * 대상자 테이블의 각 행(tr) 내 서류 배지 상태 및 정산 상태를 파악하도록 설계되었습니다.
   */
+        function deleteApplicantRecord(index) {
+            if (!confirm("⚠️ 정말로 해당 대상자 데이터를 영구 삭제하시겠습니까?\n삭제 후에는 복구할 수 없습니다.")) {
+                return;
+            }
+
+            let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
+
+            if (index >= 0 && index < adminApplicantDB.length) {
+                const deletedName = adminApplicantDB[index].name || "미정";
+
+                // 배열에서 선택한 행 도려내기
+                adminApplicantDB.splice(index, 1);
+
+                // 최신 데이터 물리 세이브
+                localStorage.setItem('dataStoreApplicant', JSON.stringify(adminApplicantDB));
+
+                if (typeof dataStoreApplicant !== "undefined") {
+                    dataStoreApplicant = adminApplicantDB;
+                }
+
+                alert(`🗑️ [${deletedName}] 피험자의 마스터 레코드가 대장에서 안전하게 영구 삭제되었습니다.`);
+
+                // 하단 테이블 다시 그리기
+                if (typeof refreshApplicantView === "function") {
+                    refreshApplicantView();
+                }
+
+                // 상단 대시보드 강제 갱신 차감 연동
+                setTimeout(() => {
+                    initDashboardFilter();
+                    calculateLiveDashboardStats();
+                }, 150);
+
+            } else {
+                alert("알림: 삭제하려는 대상자의 인덱스 번호가 올바르지 않습니다.");
+            }
+        }
+
+        /**
+         * 2. [1단계 필터 초기화]
+         */
         function initDashboardFilter() {
             const titleSelect = document.getElementById("dashboard-filter-title");
             const thSelect = document.getElementById("dashboard-filter-th");
             if (!titleSelect) return;
 
-            // 관리자가 등록 버튼을 누르기 직전에 선택했던 두 값을 변수에 임시 저장
             const savedTitle = titleSelect.value;
             const savedTh = thSelect ? thSelect.value : "ALL";
 
@@ -3396,20 +3436,17 @@
                 titleSelect.appendChild(option);
             });
 
-            // 1번 시험명 선택 값 복원
             if (uniqueTitles.includes(savedTitle)) {
                 titleSelect.value = savedTitle;
             } else {
                 titleSelect.value = "ALL";
             }
 
-            // 2단계 기수 셀렉트 박스 동기화 함수에 기존 기수 값을 인자로 전달하여 유도
             updateDashboardThOptions(savedTh);
         }
 
         /**
-         * 2. [2단계 기수 연쇄 필터] 
-         * 선택한 시험명에 속해 있는 순수 기수 목록을 채우고, 이전 기수 선택을 강제로 유지시킵니다.
+         * 3. [2단계 기수 연쇄 필터]
          */
         function updateDashboardThOptions(preservedTh = "ALL") {
             const titleSelect = document.getElementById("dashboard-filter-title");
@@ -3439,20 +3476,17 @@
                 });
             }
 
-            // 재생성된 기수 옵션 목록 중에 이전 선택값이 존재하면 강제 선택 고정
             if (uniqueThs.includes(preservedTh)) {
                 thSelect.value = preservedTh;
             } else {
                 thSelect.value = "ALL";
             }
 
-            // 기수 고정 완료 후 즉시 최종 대시보드 정산 연산 가동
             calculateLiveDashboardStats();
         }
 
         /**
-         * 3. [📊 대시보드 최종 정밀 산출] 
-         * 다른 텍스트 필드와 섞이지 않도록 item.count 단독 변수에서만 마지막 숫자를 완전히 격리 추출합니다.
+         * 4. [📊 대시보드 최종 정밀 산출]
          */
         function calculateLiveDashboardStats() {
             const titleFilter = document.getElementById("dashboard-filter-title").value.trim();
@@ -3463,7 +3497,6 @@
             const processingEl = document.getElementById("stat-processing-count");
             const completeEl = document.getElementById("stat-complete-count");
 
-            // [초기화 잠금 규칙] 선택이 하나라도 완료되지 않은 경우 (전체보기 ALL 포함) 무조건 0 리셋 유지
             if (titleFilter === "ALL" || thFilter === "ALL" || !titleFilter || !thFilter) {
                 if (totalEl) totalEl.textContent = "0 / 0명";
                 if (receivedEl) receivedEl.textContent = "0건";
@@ -3474,116 +3507,52 @@
 
             const actualData = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
 
-            // 공백 제거 조건 검증 매칭
             const filteredData = actualData.filter(item => {
                 const itemTitle = item.title ? String(item.title).trim() : "";
                 const itemTh = item.th ? String(item.th).trim() : "";
                 return itemTitle === titleFilter && itemTh === thFilter;
             });
 
-            let currentParticipantCount = filteredData.length; // 분자: 실제 조건에 맞는 총 참여자 명수
-            let targetQuotaCount = 0;                          // 분모: 목표 정원수 (N수)
+            let currentParticipantCount = filteredData.length;
+            let targetQuotaCount = 0;
 
             let receivedCount = 0;
             let processingCount = 0;
             let completeCount = 0;
 
             filteredData.forEach(item => {
-                // ⭐️ [버그 원천 분쇄] 기수(th) 칸의 숫자와 절대 섞이지 않도록 
-                // 오직 순수한 item.count 단독 문자열/숫자 필드 내부에서만 숫자를 독립 추출하여 대입합니다.
-                const pureCountStr = item.count ? String(item.count).trim() : "0";
-                const countMatch = pureCountStr.match(/\d+/g);
-                const countNum = countMatch ? parseInt(countMatch[countMatch.length - 1], 10) : 0;
-                targetQuotaCount = countNum;
+                const countMatch = item.count ? String(item.count).trim().match(/\d+/) : null;
+                targetQuotaCount = countMatch ? parseInt(countMatch, 10) : 0;
 
-                const payText = item.payStatus || "대기";
+                const payText = item.payStatus ? String(item.payStatus).trim() : "대기";
 
-                // 서류 존재 여부 판단 통합 가드 동기화
-                const hasIdCard = (item.idCardImg && item.idCardImg.length > 3) || item.idCard === true || item.idCard === "true";
-                const hasBankBook = (item.bankBookImg && item.bankBookImg.length > 3) || item.bankbook === true || item.bankbook === "true";
+                const hasIdCard = (item.idCardImg && item.idCardImg.length > 20) || item.idCard === true || item.idCard === "true";
+                const hasBankBook = (item.bankBookImg && item.bankBookImg.length > 20) || item.bankbook === true || item.bankbook === "true";
                 const hasDocuments = hasIdCard || hasBankBook;
 
-                if (payText.includes("지급완료") || payText.includes("처리완료") || payText.includes("정산종결")) {
+                if (payText === "지급완료" || payText === "처리완료" || payText === "정산종결") {
                     completeCount++;
-                } else if (payText.includes("처리중") || payText.includes("재무검토")) {
+                } else if (payText === "처리중" || payText === "재무검토") {
                     processingCount++;
-                } else if (payText.includes("접수") || hasDocuments) {
+                } else if (payText === "접수" || (payText !== "대기" && hasDocuments)) {
                     receivedCount++;
                 }
             });
 
-            // 🎯 최종 대시보드 화면 투사 (2 / 46명 자릿수 오류 완벽 보정 해결!)
-            if (totalEl) {
-                totalEl.textContent = currentParticipantCount + " / " + targetQuotaCount + "명";
-            }
-            if (receivedEl) {
-                receivedEl.textContent = receivedCount + "건";
-            }
-            if (processingEl) {
-                processingEl.textContent = processingCount + "건";
-            }
-            if (completeEl) {
-                completeEl.textContent = completeCount + "건";
-            }
+            if (totalEl) totalEl.textContent = currentParticipantCount + " / " + targetQuotaCount + "명";
+            if (receivedEl) receivedEl.textContent = receivedCount + "건";
+            if (processingEl) processingEl.textContent = processingCount + "건";
+            if (completeEl) completeEl.textContent = completeCount + "건";
         }
 
         /**
-         * 4. 시스템 로드 생명주기 리스너 및 동기화 초기화
+         * 5. 생명주기 초기 구동 리스너
          */
         window.addEventListener("DOMContentLoaded", () => {
-            // 최초 구동 시 로컬스토리지 데이터를 읽어 필터 레이어 세팅
             setTimeout(() => {
                 initDashboardFilter();
             }, 600);
         });
-
-
-        /** 26-08-19 11:00 추가
-         * 🔥 [에러 해결 핵심] 대상자 목록에서 [삭제] 버튼 클릭 시 호출되는 마스터 함수입니다.
-         * 로컬 스토리지 데이터를 삭제하고, 목록 테이블과 상단 대시보드를 실시간 동기화합니다.
-         */
-        function deleteApplicantRecord(index) {
-            // 1. 실수로 잘못 누르는 것을 방지하기 위한 안전 확인창 띄우기
-            if (!confirm("⚠️ 정말로 해당 대상자 데이터를 영구 삭제하시겠습니까?\n삭제 후에는 복구할 수 없습니다.")) {
-                return; // '취소'를 누르면 삭제를 중단하고 함수를 빠져나갑니다.
-            }
-
-            // 2. 로컬 스토리지 최신 마스터 데이터 스토어 배열 로드
-            let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
-
-            // 3. 안전장치: 지우려는 위치(인덱스)가 실제 데이터 범위 내에 존재하는지 검증
-            if (index >= 0 && index < adminApplicantDB.length) {
-                // 해당 칸의 성명을 미리 기억 (알림 문구용)
-                const deletedName = adminApplicantDB[index].name || "미정";
-
-                // ⭐️ [핵심] 배열에서 해당 인덱스의 데이터 1개를 완전히 도려냅니다 (삭제).
-                adminApplicantDB.splice(index, 1);
-
-                // 4. 삭제가 반영된 최신 배열을 로컬 스토리지에 물리 파일로 갱신 세이브
-                localStorage.setItem('dataStoreApplicant', JSON.stringify(adminApplicantDB));
-
-                // 5. 만약 전역 변수(dataStoreApplicant)를 함께 쓰는 시스템이라면 동시 동기화 보정
-                if (typeof dataStoreApplicant !== "undefined") {
-                    dataStoreApplicant = adminApplicantDB;
-                }
-
-                alert(`🗑️ [${deletedName}] 피험자의 마스터 레코드가 대장에서 안전하게 영구 삭제되었습니다.`);
-
-                // 6. ⭐️ [실시간 리프레시] 하단 테이블 목록을 최신화하여 다시 그립니다.
-                if (typeof refreshApplicantView === "function") {
-                    refreshApplicantView();
-                }
-
-                // 7. ⭐️ [실시간 대시보드 동기화] 행이 지워졌으므로 상단 참여현황 수치를 즉시 줄여줍니다 (2/60 -> 1/60)
-                setTimeout(() => {
-                    if (typeof initDashboardFilter === "function") initDashboardFilter();
-                    if (typeof calculateLiveDashboardStats === "function") calculateLiveDashboardStats();
-                }, 150);
-
-            } else {
-                alert("알림: 삭제하려는 대상자의 인덱스 번호가 올바르지 않습니다.");
-            }
-        }
 
     </script>
 
