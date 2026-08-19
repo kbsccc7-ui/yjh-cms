@@ -3525,16 +3525,21 @@
          * 참여현황(참여/N수) 및 참여비 정산 현황 카운트를 실시간 투사합니다.
          */
         function calculateLiveDashboardStats() {
-            const titleFilter = document.getElementById("dashboard-filter-title").value;
-            const thFilter = document.getElementById("dashboard-filter-th").value;
+            const titleSelect = document.getElementById("dashboard-filter-title");
+            const thSelect = document.getElementById("dashboard-filter-th");
+
+            if (!titleSelect || !thSelect) return;
+
+            const titleFilter = titleSelect.value.trim();
+            const thFilter = thSelect.value.trim();
 
             const totalEl = document.getElementById("stat-total-count");
             const receivedEl = document.getElementById("stat-received-count");
             const processingEl = document.getElementById("stat-processing-count");
             const completeEl = document.getElementById("stat-complete-count");
 
-            // 💡 [초기화 잠금 규칙] 선택이 하나라도 완료되지 않은 경우 (전체보기 ALL 포함) 무조건 0 리셋 유지
-            if (titleFilter === "ALL" || thFilter === "ALL") {
+            // [초기화 잠금 규칙] 선택이 완료되지 않은 경우 무조건 0 리셋 유지
+            if (titleFilter === "ALL" || thFilter === "ALL" || !titleFilter || !thFilter) {
                 if (totalEl) totalEl.textContent = "0 / 0명";
                 if (receivedEl) receivedEl.textContent = "0건";
                 if (processingEl) processingEl.textContent = "0건";
@@ -3544,26 +3549,27 @@
 
             const actualData = (typeof dataStoreApplicant !== "undefined" && Array.isArray(dataStoreApplicant)) ? dataStoreApplicant : [];
 
-            // 조건에 부합하는 대상자 교집합 데이터 엄격 여과
+            // ⭐️ [공백 제거 매칭] 데이터 스토어 내의 보이지 않는 공백이나 줄바꿈 때문에 매칭이 깨지는 현상을 완벽히 방지합니다.
             const filteredData = actualData.filter(item => {
-                return item.title === titleFilter && item.th === thFilter;
+                const itemTitle = item.title ? String(item.title).trim() : "";
+                const itemTh = item.th ? String(item.th).trim() : "";
+                return itemTitle === titleFilter && itemTh === thFilter;
             });
 
-            let currentParticipantCount = filteredData.length; // 분자: 실제 참여자 수
-            let targetQuotaCount = 0;                          // 분모: 목표 정원수 (N수)
+            let currentParticipantCount = filteredData.length; // 분자: 실제 조건에 맞는 총 참여자 명수
+            let targetQuotaCount = 0;                          // 분모: 배정 인원수 (N수)
 
-            let receivedCount = 0;                             // 청구서 접수 현황
-            let processingCount = 0;                           // 재무 검토 (처리중)
-            let completeCount = 0;                             // 정산 종결 (지급완료)
+            let receivedCount = 0;
+            let processingCount = 0;
+            let completeCount = 0;
 
             filteredData.forEach(item => {
-                // ⭐️ payload 객체 스펙에 지정된 정원수 변수(count) 값을 격리 파싱하여 N수로 가져옴
+                // 인원수 데이터 정제 추출
                 const countNum = parseInt(String(item.count).replace(/[^0-9]/g, ""), 10) || 0;
                 targetQuotaCount = countNum;
 
-                // 💡 payload의 참여비 필드인 'payStatus'와 첨부 서류 데이터 상태를 완벽 매칭 집계
                 const payText = item.payStatus || "대기";
-                const hasDocuments = item.idCard || item.bankbook; // 신분증이나 통장 사본 등록 여부
+                const hasDocuments = item.idCard || item.bankbook;
 
                 if (payText.includes("지급완료") || payText.includes("처리완료") || payText.includes("정산종결")) {
                     completeCount++;
@@ -3572,10 +3578,9 @@
                 } else if (payText.includes("접수") || hasDocuments) {
                     receivedCount++;
                 }
-                // 대기인 데이터는 상단 수치 건수에는 포함되지 않고 참여현황 분자에만 카운트됨
             });
 
-            // 🎯 화면 최종 렌더링 투사
+            // 🎯 최종 대시보드 화면 투사 (2 / 60명 강제 동기화 반영)
             if (totalEl) {
                 totalEl.textContent = currentParticipantCount + " / " + targetQuotaCount + "명";
             }
