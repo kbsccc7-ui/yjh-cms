@@ -1728,7 +1728,7 @@
                     // 대상자 관리 디자인 시스템(.editing-row, .inline-input) 규격을 적용하여 인풋 상자 노출
                     tr.className = "editing-row";
                     tr.innerHTML = `
-            <td><input type="text" id="inline-rec-title-${index}" class="inline-input" value="${row.title}" style="font-weight:700;"></td>
+            <td><input type="text" id="inline-rec-title-${index}" class="inline-input" value="${row.title || ''}" style="font-weight:700;"></td>
             <td>
                 <select id="inline-rec-th-${index}" class="inline-input" style="height:32px; padding:2px 6px;">
                     <option value="1기(1차)" ${row.th === '1기(1차)' ? 'selected' : ''}>1기 1차</option>
@@ -1741,12 +1741,13 @@
                     <option value="4기(2차)" ${row.th === '4기(2차)' ? 'selected' : ''}>4기 2차</option>
                 </select>
             </td>
-            <td><input type="text" id="inline-rec-count-${index}" class="inline-input" value="${row.count}"></td>
-            <td><input type="text" id="inline-rec-period-${index}" class="inline-input" value="${row.period}"></td>
+            <td><input type="text" id="inline-rec-count-${index}" class="inline-input" value="${row.count || '0'}"></td>
+            <td><input type="text" id="inline-rec-period-${index}" class="inline-input" value="${row.period || '0'}"></td>
             <td><input type="text" id="inline-rec-crc-${index}" class="inline-input" value="${row.crc || '-'}"></td>
             
-            <!-- 🔥 [인라인 수정 모드 신규 추가]: 수정 상태일 때 소집일자를 달력으로 바로 변경할 수 있도록 인풋 탑재 -->
-            <td><input type="date" id="inline-rec-date-${index}" class="inline-input" value="${row.recDate || ''}" style="color: #fbbf24; font-weight: 700;"></td>
+            <!-- 🔥 [인라인 수정 모드 적용 완료]: 담당 CRC 다음 칸에 상단 양식과 동일한 캘린더 달력형 인풋박스 강제 투사 -->
+            <!-- 기존에 저장되어 있던 날짜 값(row.recDate)을 기본값으로 바인딩하여 출력합니다 -->
+            <td><input type="date" id="inline-rec-date-${index}" class="inline-input" value="${row.recDate || ''}" style="color: #fbbf24; font-weight: 700; height: 32px; cursor: pointer; text-align: center;"></td>
             
             <td><input type="text" id="inline-rec-notice-${index}" class="inline-input" value="${row.notice || ''}"></td>
             <td style="vertical-align: middle;"><button type="button" class="btn-inline list" style="background:#475569; opacity:0.5; cursor:not-allowed;" disabled>보기</button></td>
@@ -1759,7 +1760,7 @@
             </td>
         `;
                 } else {
-                    // 일반 읽기 전용 모드 상태 렌더링
+                    // 일반 읽기 전용 모드 상태 렌더링 (기존에 완벽히 맞추어 둔 12열 크기 스펙 코드 유지)
                     tr.innerHTML = `
             <td style="font-weight: 700; color: #ffffff !important; vertical-align: middle;">${row.title}</td>
             <td style="vertical-align: middle;"><span class="lvl-badge ${thBadgeClass}">${row.th}</span></td>
@@ -1767,7 +1768,7 @@
             <td style="vertical-align: middle; color: #eeeeee;">${row.period}시간</td>
             <td style="vertical-align: middle; color: #38bdf8; font-weight: 600;">${row.crc || '-'}</td>            
             
-            <!-- 🔥 [일반 읽기 모드 신규 추가]: 담당 CRC 다음 칸에 시각적 캘린더 아이콘과 소집일자 문자열 출력 -->
+            <!-- 일반 읽기 전용일 때는 캘린더 아이콘 서식 유지 노출 -->
             <td style="vertical-align: middle; color: #fbbf24; font-weight: 700; white-space: nowrap;"><i class="fa-regular fa-calendar-check"></i> ${row.recDate || '미정'}</td>
             
             <td class="exam-notice-cell" style="max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #f87171; vertical-align: middle;" title="${row.notice || '-'}">${row.notice || '없음'}</td>
