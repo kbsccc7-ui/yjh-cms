@@ -3510,7 +3510,7 @@
             const processingEl = document.getElementById("stat-processing-count");
             const completeEl = document.getElementById("stat-complete-count");
 
-            // 초기화 잠금 규칙
+            // 초기화 잠금 규칙 (ALL 선택 시 무조건 0건 정지)
             if (titleFilter === "ALL" || thFilter === "ALL" || !titleFilter || !thFilter) {
                 if (totalEl) totalEl.textContent = "0 / 0명";
                 if (receivedEl) receivedEl.textContent = "0건";
@@ -3521,6 +3521,7 @@
 
             const actualData = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
 
+            // 선택된 조건의 대상자 데이터 여과
             const filteredData = actualData.filter(item => {
                 const itemTitle = item.title ? String(item.title).trim() : "";
                 const itemTh = item.th ? String(item.th).trim() : "";
@@ -3530,33 +3531,35 @@
             let currentParticipantCount = filteredData.length;
             let targetQuotaCount = 0;
 
-            let receivedCount = 0;
-            let processingCount = 0;
-            let completeCount = 0;
+            let receivedCount = 0;                             // 청구서 접수 현황
+            let processingCount = 0;                           // 재무 검토 (처리중)
+            let completeCount = 0;                             // 정산 종결 (지급완료)
 
             filteredData.forEach(item => {
                 const countMatch = item.count ? String(item.count).trim().match(/\d+/) : null;
                 targetQuotaCount = countMatch ? parseInt(countMatch, 10) : 0;
 
-                // 💡 [이중 가드 보정]: result 필드와 payStatus 필드의 텍스트 공백을 완벽히 지워 결합 추적합니다.
-                const resultText = item.result ? String(item.result).trim() : "대기";
+                // 💡 상태값 문자열의 앞뒤 여백을 완벽하게 제거하여 동기화 정형화
                 const payText = item.payStatus ? String(item.payStatus).trim() : "대기";
+                const resultText = item.result ? String(item.result).trim() : "대기";
 
                 const hasIdCard = (item.idCardImg && item.idCardImg.length > 20) || item.idCard === true || item.idCard === "true";
                 const hasBankBook = (item.bankBookImg && item.bankBookImg.length > 20) || item.bankbook === true || item.bankbook === "true";
                 const hasDocuments = hasIdCard || hasBankBook;
 
-                // ⭐️ [엄격한 집계 분기]: 두 필드가 모두 '대기' 상태이면서 파일이 없으면 상단 통계 카드 수치에서 칼같이 배제합니다.
-                if (payText === "지급완료" || resultText === "지급완료" || payText === "처리완료" || resultText === "처리완료") {
+                // ⭐️ [엄격한 문자열 완전 일치 테스트 연산]: 단어가 일치하거나 포함 관계가 명확할 때만 분류 집계합니다.
+                // 상태가 '대기'로 저장된 신규 등록 건은 그 어떤 조건문도 통과하지 못하므로 대시보드가 완벽하게 0건을 지킵니다.
+                if (payText === "지급완료" || resultText === "지급완료" || payText === "처리완료" || resultText === "처리완료" || payText === "정산종결" || resultText === "정산종결") {
                     completeCount++;
                 } else if (payText === "처리중" || resultText === "처리중" || payText === "재무검토" || resultText === "재무검토") {
+                    // 느슨한 includes 방식을 지우고 정확히 단어가 일치할 때만 가산하도록 상향 보정!
                     processingCount++;
                 } else if (payText === "접수" || resultText === "접수" || (payText !== "대기" && hasDocuments)) {
                     receivedCount++;
                 }
             });
 
-            // 🎯 화면 대시보드 카드 최종 투사 출력
+            // 🎯 화면 최종 렌더링 동기화 출력
             if (totalEl) totalEl.textContent = currentParticipantCount + " / " + targetQuotaCount + "명";
             if (receivedEl) {
                 receivedEl.textContent = receivedCount + "건";
