@@ -3459,10 +3459,11 @@
 
                 // 데이터 열이 정상적으로 존재하는 행만 수집
                 if (cells.length >= 3) {
+                    // HTML 구조 스펙 기준 열 순서 텍스트 격리
                     const titleText = cells[0].textContent.trim(); // 1열: 시험명
                     const thText = cells[1].textContent.trim();    // 2열: 기수
 
-                    // 3열(인원수)에 적힌 배정 목표 인원 숫자 추출 (숫자만 남김)
+                    // 3열(인원수)에 적힌 해당 기수의 '배정 목표 인원' 숫자 추출 (숫자만 추출)
                     const maxCountText = cells[2].textContent.trim().replace(/[^0-9]/g, "") || "0";
 
                     // 행 내부 소스 코드를 바탕으로 정산 상태 분류
@@ -3521,7 +3522,7 @@
         }
 
         /**
-         * 3. [2단계 연쇄 필터] ⭐️ 1번 시험명을 누르면 그에 맞는 실제 기수만 채워 넣음
+         * 3. [2단계 연쇄 필터] 1번 시험명을 누르면 그에 맞는 실제 기수만 채워 넣음
          */
         function updateDashboardThOptions() {
             const titleSelect = document.getElementById("dashboard-filter-title");
@@ -3564,17 +3565,16 @@
             const processingEl = document.getElementById("stat-processing-count");
             const completeEl = document.getElementById("stat-complete-count");
 
-            // 💡 [핵심 조건 통제] 초기 상태이거나 아직 셀렉트 박스 선택이 모두 완료되지 않은 경우 (ALL 상태 포함)
+            // 💡 [초기화 제어] 선택이 완료되지 않은 경우 (전체보기 ALL 상태 포함) 무조건 0 리셋 후 종료
             if (titleFilter === "ALL" || thFilter === "ALL") {
-                // 모든 통계 화면 수치를 즉시 0명, 0건으로 리셋하고 작동을 멈춥니다.
                 if (totalEl) totalEl.textContent = "0 / 0명";
                 if (receivedEl) receivedEl.textContent = "0건";
                 if (processingEl) processingEl.textContent = "0건";
                 if (completeEl) completeEl.textContent = "0건";
-                return; // 아래의 실제 연산 로직을 실행하지 않고 튕겨냅니다.
+                return;
             }
 
-            // 🎯 관리자가 시험명과 기수를 둘 다 정확히 고른 경우에만 아래 연산 수행
+            // 🎯 관리자가 시험명과 기수를 둘 다 정확히 고른 경우에만 연산 수행
             const allRecords = getActualSystemData();
 
             // 선택된 두 조건(시험명 + 기수)의 교집합만 엄격하게 여과
@@ -3582,16 +3582,16 @@
                 return item.title === titleFilter && item.th === thFilter;
             });
 
-            let currentParticipantCount = filteredData.length; // 조건에 맞는 실제 참여 대상자 행 개수
-            let maxQuotaCount = 0;                             // 배정 인원 (N수)
+            let currentParticipantCount = filteredData.length; // 조건에 맞는 실제 참여 대상자 행 개수 (참여수)
+            let targetQuotaCount = 0;                          // ⭐️ 선택한 딱 '그 시험+그 기수'의 배정 인원수 (N수)
 
             let receivedCount = 0;                             // 청구서 접수 현황
             let processingCount = 0;                           // 재무 검토 (처리중)
             let completeCount = 0;                             // 정산 종결 (지급완료)
 
             filteredData.forEach(item => {
-                // N수 데이터 가산 (동일 공고 행의 목표 정원값 반영)
-                maxQuotaCount = item.maxCount;
+                // ⭐️ [수정 핵심] 누적 합산하지 않고, 필터링된 해당 기수 데이터의 인원수 설정을 그대로 가져옴
+                targetQuotaCount = item.maxCount;
 
                 if (item.status === "지급완료") {
                     completeCount++;
@@ -3604,7 +3604,7 @@
 
             // 🎯 [매칭 출력] 참여현황(참여/N수) 포맷팅 및 4단계 현황판 업데이트
             if (totalEl) {
-                totalEl.textContent = currentParticipantCount + " / " + maxQuotaCount + "명";
+                totalEl.textContent = currentParticipantCount + " / " + targetQuotaCount + "명";
             }
             if (receivedEl) {
                 receivedEl.textContent = (receivedCount + processingCount + completeCount) + "건";
