@@ -3752,8 +3752,41 @@
 
             // E. 하단 닫기 단추 임시 배치 (5단계 버튼 장착 전 프레임 검증용)
             actionSlot.innerHTML = `
-        <div style="text-align: right;">
-            <button type="button" onclick="closeApplicantHistoryModal()" style="background: #475569; color: white; border: none; padding: 10px 22px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size:13px;">닫기</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; flex-wrap: nowrap;">
+            <!-- 좌측: 상태 변경 통제 버튼 그룹 -->
+            <div style="display: flex; gap: 8px;">
+                <!-- 1. 참여 확인 (접수 상태 전환) -->
+                <button type="button" onclick="updateApplicantStatusViaModal(${index}, '접수')" 
+                    style="background: rgba(14, 165, 233, 0.15); border: 1px solid #0ea5e9; color: #38bdf8; padding: 10px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size:12.5px; transition: all 0.2s;">
+                    <i class="fa-solid fa-user-check"></i> 참여확인(접수)
+                </button>
+                
+                <!-- 2. 재무 검토 (처리중 상태 전환) -->
+                <button type="button" onclick="updateApplicantStatusViaModal(${index}, '처리중')" 
+                    style="background: rgba(245, 158, 11, 0.15); border: 1px solid #fbbf24; color: #fbbf24; padding: 10px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size:12.5px; transition: all 0.2s;">
+                    <i class="fa-solid fa-calculator"></i> 재무검토
+                </button>
+                
+                <!-- 3. 지급 완료 (처리완료/지급완료 상태 전환) -->
+                <button type="button" onclick="updateApplicantStatusViaModal(${index}, '지급완료')" 
+                    style="background: rgba(52, 211, 153, 0.15); border: 1px solid #34d399; color: #34d399; padding: 10px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size:12.5px; transition: all 0.2s;">
+                    <i class="fa-solid fa-money-check-dollar"></i> 지급완료
+                </button>
+                
+                <!-- 4. 미참석 / 탈락 처리 (초기 대기 상태로 역전환 및 대시보드 리셋) -->
+                <button type="button" onclick="updateApplicantStatusViaModal(${index}, '대기')" 
+                    style="background: rgba(239, 68, 68, 0.1) ; border: 1px solid var(--danger-color); color: var(--danger-color); padding: 10px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size:12.5px; transition: all 0.2s;">
+                    <i class="fa-solid fa-user-slash"></i> 미참석/탈락(대기)
+                </button>
+            </div>
+            
+            <!-- 우측: 모달 닫기 단추 -->
+            <div>
+                <button type="button" onclick="closeApplicantHistoryModal()" 
+                    style="background: #475569; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size:13px; height: 38px;">
+                    닫기
+                </button>
+            </div>
         </div>
     `;
 
