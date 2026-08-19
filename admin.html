@@ -1709,6 +1709,7 @@
              * 2. [수정 완료 처리] 인라인 상태에서 입력한 최종 서식을 마스터 대장에 적재하는 저장소 핸들러
              */
             function saveInlineApplicantRecord(index) {
+                // 인라인 인풋 필드값 추출
                 const nextTitle = document.getElementById(`inline-app-title-${index}`).value.trim();
                 const nextTh = document.getElementById(`inline-app-th-${index}`).value;
                 const nextCount = document.getElementById(`inline-app-count-${index}`).value.trim();
@@ -1717,10 +1718,11 @@
                 const nextSsn = document.getElementById(`inline-app-ssn-${index}`).value.trim();
                 const nextPhone = document.getElementById(`inline-app-phone-${index}`).value.trim();
 
+                // 동의서 컴포넌트 수집
                 const nextDuty = document.getElementById(`inline-app-duty-${index}`).value;
                 const nextCall = document.getElementById(`inline-app-call-${index}`).value;
 
-                // 예외 안전성 유효성 검사
+                // 예외 안전성 유효성 검사 (빈칸 방어)
                 if (!nextTitle || !nextName || !nextSsn || !nextPhone) {
                     alert("알림: 참여 시험명, 대상자 성명, 생년월일, 연락처는 필수 데이터이므로 빈칸으로 둘 수 없습니다.");
                     return;
@@ -1749,29 +1751,27 @@
                     calculateLiveDashboardStats();
                 }
 
-                alert("🎉 해당 대상자의 임상 시험 정보 및 동의 상태가 안전하게 영구 저장되었습니다.");
+                alert("🎉 해당 줄(Line)의 대상자 임상 정보 및 서류 심사 데이터가 성공적으로 저장되었습니다.");
 
                 /* ==========================================================
-           ⚠️ [3중 전역 가드 해제] 알림창 이후 목록 미복귀 버그 원천 진압
-           ========================================================== */
-                // 1. 시스템 내부 변수명 불일치 결함을 방어하기 위해 후보 변수들을 통틀어 완전 초기화(null)합니다.
-                window.currentEditingApplicantIndex = null;
-                window.currentEditingUid = null;
+                   ⚠️ [3중 전역 가드 해제] 알림창 이후 목록 미복귀 버그 완벽 진압 구역
+                   ========================================================== */
+                // 💡 원본 소스(41페이지)의 순정 편집 타겟 변수들을 일괄 강제 파괴(null)하여 잠금막을 해제합니다.
+                currentEditingUid = null;               /* 👈 대상자 관리 편집 상태 전역 해제 */
+                recEditingUid = null;                  /* 👈 모집공고 관리 편집 상태 전역 해제 */
+                window.currentEditingApplicantIndex = null; /* 👈 확장 상태 해제 */
 
-                if (window.hasOwnProperty('recEditingUid')) window.recEditingUid = null;
-                if (window.hasOwnProperty('memberEditingSabun')) window.memberEditingSabun = null;
-
-                // 2. 브라우저 저장소에 남아있을 수 있는 편집 인덱스 찌꺼기 버퍼까지 완전히 영구 소거합니다.
+                // 브라우저 저장소의 편집 버퍼까지 완전히 영구 소거합니다.
                 localStorage.removeItem('adminActiveEditingIndex');
 
-                // 3. 대상자 마스터 테이블 화면을 태초의 깨끗한 일반 조회 모드로 강제 리렌더링합니다.
+                // 대상자 마스터 테이블 화면을 일반 조회용 읽기 전용 포맷으로 강제 재렌더링합니다.
                 if (typeof refreshApplicantView === "function") {
                     refreshApplicantView();
                 } else if (typeof renderApplicantTable === "function") {
                     renderApplicantTable();
                 }
 
-                // 4. 대시보드 내비게이션 엔진을 강제로 자극하여 대상자 뷰포트 레이아웃을 전체 리프레시 스위칭합니다.
+                // 대시보드 내비게이션 상태를 강제로 동기화 스위칭하여 대상자 탭 화면을 완전히 리프레시합니다.
                 if (typeof changeMainViewport === "function") {
                     changeMainViewport('applicantView');
                 }
