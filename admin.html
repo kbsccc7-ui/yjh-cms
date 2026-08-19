@@ -1592,6 +1592,183 @@
                 if (document.getElementById('mainDashboard')) document.getElementById('mainDashboard').style.display = 'none';
             }
 
+
+
+            // 전역 대상자 편집 상태 포인터 초기화
+            window.currentEditingApplicantIndex = null;
+
+            /**
+             * 1. 대상자 마스터 리스트를 화면에 동적으로 그려주는 출력 함수
+             */
+            function refreshApplicantView() {
+                const tbody = document.getElementById('dom-applicant-table');
+                if (!tbody) return;
+                tbody.innerHTML = ''; // 기존 리스트 초기화
+
+                // 데이터스토리지 전산 싱크 확인 가드
+                if (!window.dataStoreApplicant || dataStoreApplicant.length === 0) {
+                    window.dataStoreApplicant = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
+                }
+
+                dataStoreApplicant.forEach((row, index) => {
+                    const tr = document.createElement('tr');
+                    tr.style.display = "table-row";
+
+                    // [수정] 버튼을 눌러 인라인 편집 모드가 활성화된 행일 때
+                    if (window.currentEditingApplicantIndex === index) {
+                        tr.className = "editing-row";
+                        tr.style.pointerEvents = "auto";
+                        tr.style.cursor = "default";
+
+                        tr.innerHTML = `
+                <td><input type="text" id="inline-app-title-${index}" class="inline-input" value="${row.title || ''}" style="font-weight:700;"></td>
+                <td>
+                    <select id="inline-app-th-${index}" class="inline-input" style="height:32px; padding:2px 6px;">
+                        <option value="1기(1차)" ${row.th === '1기(1차)' ? 'selected' : ''}>1기 1차</option>
+                        <option value="1기(2차)" ${row.th === '1기(2차)' ? 'selected' : ''}>1기 2차</option>
+                        <option value="2기(1차)" ${row.th === '2기(1차)' ? 'selected' : ''}>2기 1차</option>
+                        <option value="2기(2차)" ${row.th === '2기(2차)' ? 'selected' : ''}>2기 2차</option>
+                        <option value="3기(1차)" ${row.th === '3기(1차)' ? 'selected' : ''}>3기 1차</option>
+                        <option value="3기(2차)" ${row.th === '3기(2차)' ? 'selected' : ''}>3기 2차</option>
+                        <option value="4기(1차)" ${row.th === '4기(1차)' ? 'selected' : ''}>4기 1차</option>
+                        <option value="4기(2차)" ${row.th === '4기(2차)' ? 'selected' : ''}>4기 2차</option>
+                    </select>
+                </td>
+                <td><input type="text" id="inline-app-count-${index}" class="inline-input" value="${row.count || '0'}"></td>
+                <td><input type="text" id="inline-app-period-${index}" class="inline-input" value="${row.period || '0'}"></td>
+                <td><input type="text" id="inline-app-name-${index}" class="inline-input" value="${row.name || ''}" style="font-weight:700;"></td>
+                <td><input type="text" id="inline-app-ssn-${index}" class="inline-input" value="${row.ssn || ''}" maxlength="6"></td>
+                <td><input type="text" id="inline-app-phone-${index}" class="inline-input" value="${row.phone || ''}"></td>
+                <td><span style="color: #4ade80; font-weight:700;">지정정산</span></td>
+                <td>
+                    <select id="inline-app-duty-${index}" class="inline-input" style="height:32px; padding:2px 6px;">
+                        <option value="동의" ${row.isDutyAgreed === '동의' ? 'selected' : ''}>동의</option>
+                        <option value="미동의" ${row.isDutyAgreed === '미동의' ? 'selected' : ''}>미동의</option>
+                    </select>
+                </td>
+                <td>
+                    <select id="inline-app-call-${index}" class="inline-input" style="height:32px; padding:2px 6px;">
+                        <option value="동의" ${row.isCallAgreed === '동의' ? 'selected' : ''}>동의</option>
+                        <option value="미동의" ${row.isCallAgreed === '미동의' ? 'selected' : ''}>미동의</option>
+                    </select>
+                </td>
+                <td style="text-align:center; vertical-align:middle;">
+                    <span class="doc-badge ${row.idCard ? 'status-id' : 'status-none'}">신분증</span>
+                    <span class="doc-badge ${row.bankbook ? 'status-bank' : 'status-none'}">통장</span>
+                </td>
+                <td style="vertical-align: middle;">
+                    <div class="action-btn-wrapper" style="display: flex !important; justify-content: center !important; gap: 4px !important;">
+                        <button type="button" class="btn-inline save" onclick="saveInlineApplicantRecord(${index})" style="background: var(--success-color, #4ade80); color: #070a12; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer;">저장</button>
+                        <button type="button" class="btn-inline edit" onclick="cancelInlineApplicantEdit()" style="background: #475569; color:#fff; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer;">취소</button>
+                    </div>
+                </td>
+            `;
+                    } else {
+                        // 일반 데이터 조회 읽기전용 모드일 때
+                        const dutyClass = row.isDutyAgreed === "동의" ? "text-bold" : "";
+                        const callClass = row.isCallAgreed === "동의" ? "text-bold" : "";
+
+                        tr.innerHTML = `
+                <td style="font-weight: 700; color: #ffffff !important; vertical-align: middle;">${row.title || '-'}</td>
+                <td style="vertical-align: middle; text-align:center;">${row.th || '-'}</td>
+                <td style="vertical-align: middle; text-align:center;">${row.count || '0'}명</td>
+                <td style="vertical-align: middle; text-align:center;">${row.period || '0'}시간</td>
+                <td style="vertical-align: middle; font-weight: 700; text-align:center;">${row.name || '-'}</td>
+                <td style="vertical-align: middle; text-align:center; color: #94a3b8;">${row.ssn || '-'}</td>
+                <td style="vertical-align: middle; text-align:center; color: #38bdf8;">${row.phone || '-'}</td>
+                <td style="vertical-align: middle; text-align:right; color: #fbbf24; font-weight:700;">계산대기</td>
+                <td style="vertical-align: middle; text-align:center;" class="${dutyClass}">${row.isDutyAgreed || '미동의'}</td>
+                <td style="vertical-align: middle; text-align:center;" class="${callClass}">${row.isCallAgreed || '미동의'}</td>
+                <td style="vertical-align: middle; text-align:center;">
+                    <span class="doc-badge ${row.idCard ? 'status-id' : 'status-none'}">신분증</span>
+                    <span class="doc-badge ${row.bankbook ? 'status-bank' : 'status-none'}">통장</span>
+                </td>
+                <td style="vertical-align: middle;">
+                    <div class="action-btn-wrapper" style="display: flex !important; justify-content: center !important; gap: 4px !important; white-space: nowrap !important;">
+                        <button type="button" class="btn-inline edit" onclick="enableInlineApplicantEdit(${index})" style="background: #334155; color: #ffffff; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer;">수정</button>
+                        <button type="button" class="btn-inline delete" onclick="deleteApplicantRecord(${index})" style="background: rgba(239, 68, 68, 0.15); border: 1px solid #f87171; color: #f87171; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer;">삭제</button>
+                    </div>
+                </td>
+            `;
+                    }
+                    tbody.appendChild(tr);
+                });
+            }
+
+            function enableInlineApplicantEdit(index) {
+                window.currentEditingApplicantIndex = index;
+                refreshApplicantView();
+            }
+
+            function cancelInlineApplicantEdit() {
+                window.currentEditingApplicantIndex = null;
+                refreshApplicantView();
+            }
+
+            /**
+             * 2. [수정 완료 처리] 인라인 상태에서 입력한 최종 서식을 마스터 대장에 적재하는 저장소 핸들러
+             */
+            function saveInlineApplicantRecord(index) {
+                const nextTitle = document.getElementById(`inline-app-title-${index}`).value.trim();
+                const nextTh = document.getElementById(`inline-app-th-${index}`).value;
+                const nextCount = document.getElementById(`inline-app-count-${index}`).value.trim();
+                const nextPeriod = document.getElementById(`inline-app-period-${index}`).value.trim();
+                const nextName = document.getElementById(`inline-app-name-${index}`).value.trim();
+                const nextSsn = document.getElementById(`inline-app-ssn-${index}`).value.trim();
+                const nextPhone = document.getElementById(`inline-app-phone-${index}`).value.trim();
+
+                // 동적으로 전환된 동의서 컴포넌트 정보 수집
+                const nextDuty = document.getElementById(`inline-app-duty-${index}`).value;
+                const nextCall = document.getElementById(`inline-app-call-${index}`).value;
+
+                // 예외 안전성 유효성 검사
+                if (!nextTitle || !nextName || !nextSsn || !nextPhone) {
+                    alert("알림: 참여 시험명, 대상자 성명, 생년월일, 연락처는 필수 데이터이므로 빈칸으로 둘 수 없습니다.");
+                    return;
+                }
+
+                // 마스터 배열 메모리 즉시 동기화 주입
+                dataStoreApplicant[index].title = nextTitle;
+                dataStoreApplicant[index].th = nextTh;
+                dataStoreApplicant[index].count = typeof getOnlyNumbers === "function" ? getOnlyNumbers(nextCount) : nextCount.replace(/[^0-9]/g, '');
+                dataStoreApplicant[index].period = typeof getOnlyNumbers === "function" ? getOnlyNumbers(nextPeriod) : nextPeriod.replace(/[^0-9]/g, '');
+                dataStoreApplicant[index].name = nextName;
+                dataStoreApplicant[index].ssn = nextSsn;
+                dataStoreApplicant[index].phone = nextPhone;
+                dataStoreApplicant[index].isDutyAgreed = nextDuty;
+                dataStoreApplicant[index].isCallAgreed = nextCall;
+
+                // 로컬스토리지 전역 트랜잭션 커밋
+                if (typeof commitToLocalStorage === "function") {
+                    commitToLocalStorage();
+                } else {
+                    localStorage.setItem('dataStoreApplicant', JSON.stringify(dataStoreApplicant));
+                }
+
+                // 통계 Dashboard 새로고침 연동 체인 호출
+                if (typeof calculateLiveDashboardStats === "function") {
+                    calculateLiveDashboardStats();
+                }
+
+                alert("🎉 해당 대상자의 임상 시험 정보 및 동의 상태가 안전하게 영구 저장되었습니다.");
+                window.currentEditingApplicantIndex = null; // 수정 모드 잠금 해제
+                refreshApplicantView(); // 조회 화면 갱신 복구
+            }
+
+            /**
+             * 3. 대상자 개별 삭제 핸들러
+             */
+            function deleteApplicantRecord(index) {
+                if (confirm("정말로 해당 대상자의 임상 기록 데이터를 영구 삭제하시겠습니까?")) {
+                    dataStoreApplicant.splice(index, 1);
+                    if (typeof commitToLocalStorage === "function") commitToLocalStorage();
+                    else localStorage.setItem('dataStoreApplicant', JSON.stringify(dataStoreApplicant));
+
+                    if (typeof calculateLiveDashboardStats === "function") calculateLiveDashboardStats();
+                    refreshApplicantView();
+                }
+            }
+
             /**
                      * 💥 [신규 개설 완수] 좌측 메뉴 3개 클릭 및 새로고침 시 화면/스타일 동시 전환 제어 엔진
                      * @param {string} viewName - 이동할 뷰포트 ID ('recruitmentView' | 'applicantView' | 'gradeView')
