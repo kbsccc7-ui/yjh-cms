@@ -482,6 +482,38 @@
             border-left: 4px solid var(--warning-color);
         }
 
+        /* =========26/08/19 18:50 ============================
+ [교정 완료] 목록 내 인라인 수정 모드 소집일자 캘린더 아이콘 커스텀
+ ========================================================== */
+
+        /* 1. refreshRecruitmentView() 내 소집일자 날짜 인풋 상자 전용 기본 확장 */
+        #dom-recruitment-table input[type="date"].inline-input {
+            position: relative;
+            padding-right: 32px !important;
+            /* 글자와 아이콘이 물리적으로 겹치지 않도록 방어 여백 배치 */
+        }
+
+        /* 2. 인라인 수정창 날짜 선택기(캘린더) 아이콘 색상 코드 제어 마스크 레이어 */
+        #dom-recruitment-table input[type="date"].inline-input::-webkit-calendar-picker-indicator {
+            /* 기존 브라우저 기본 검은색 아이콘의 윤곽선을 투명 마스크 셰이프로 전환 */
+            -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://w3.org' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z'/%3E%3C/svg%3E");
+            mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://w3.org' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z'/%3E%3C/svg%3E");
+            -webkit-mask-size: contain;
+            mask-size: contain;
+
+            /* 🎨 [수시 변경 영역]: 원하는 HEX 색상 코드를 여기에 입력하세요 */
+            background-color: #ffffff;
+
+            filter: none !important;
+            /* 과거의 강제 하드코딩 반전(invert) 필터 효과를 원천 무력화 */
+            cursor: pointer !important;
+            pointer-events: auto !important;
+            /* 마우스 클릭 막힘 현상을 한 번 더 이중 잠금 해제 */
+            width: 14px;
+            height: 14px;
+        }
+
+
         /* 직급별 1~10레벨 권한 인포 배지 고대비 전용 서식 디자인 */
         .lvl-badge {
             padding: 5px 10px;
