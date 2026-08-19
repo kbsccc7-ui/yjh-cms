@@ -1725,7 +1725,18 @@
 
                 // 🎯 [인라인 분기] 현재 행이 수정 버튼을 누른 타겟 행인지 판정
                 if (window.currentEditingRecruitmentIndex === index) {
-                    // 대상자 관리 디자인 시스템(.editing-row, .inline-input) 규격을 적용하여 인풋 상자 노출
+
+                    // ⭐️ [버그 해결 핵심 핵심]: 기존 값이 "미정"이거나 비어있다면, 
+                    // HTML 달력 태그가 정상 인식할 수 있도록 오늘 날짜 표준 포맷("2026-08-19")으로 강제 임시 전환 처리합니다.
+                    let defaultDateVal = row.recDate ? row.recDate.trim() : "";
+                    if (defaultDateVal === "미정" || !defaultDateVal || defaultDateVal.includes("년")) {
+                        const today = new Date();
+                        const yyyy = today.getFullYear();
+                        const mm = String(today.getMonth() + 1).padStart(2, '0');
+                        const dd = String(today.getUTCDate()).padStart(2, '0'); // 💡 현재 일자 '19' 반영
+                        defaultDateVal = `${yyyy}-${mm}-${dd}`; // 무조건 2026-08-19 형태로 표준화
+                    }
+
                     tr.className = "editing-row";
                     tr.innerHTML = `
             <td><input type="text" id="inline-rec-title-${index}" class="inline-input" value="${row.title || ''}" style="font-weight:700;"></td>
@@ -1745,9 +1756,8 @@
             <td><input type="text" id="inline-rec-period-${index}" class="inline-input" value="${row.period || '0'}"></td>
             <td><input type="text" id="inline-rec-crc-${index}" class="inline-input" value="${row.crc || '-'}"></td>
             
-            <!-- 🔥 [인라인 수정 모드 적용 완료]: 담당 CRC 다음 칸에 상단 양식과 동일한 캘린더 달력형 인풋박스 강제 투사 -->
-            <!-- 기존에 저장되어 있던 날짜 값(row.recDate)을 기본값으로 바인딩하여 출력합니다 -->
-            <td><input type="date" id="inline-rec-date-${index}" class="inline-input" value="${row.recDate || ''}" style="color: #fbbf24; font-weight: 700; height: 32px; cursor: pointer; text-align: center;"></td>
+            <!-- ⭐️ [보정 완료]: 형식이 정규화된 defaultDateVal 변수를 value에 주입하여 달력이 깨지지 않고 무조건 선명하게 보이게 만듭니다 -->
+            <td><input type="date" id="inline-rec-date-${index}" class="inline-input" value="${defaultDateVal}" style="color: #fbbf24; font-weight: 700; height: 32px; cursor: pointer; text-align: center;"></td>
             
             <td><input type="text" id="inline-rec-notice-${index}" class="inline-input" value="${row.notice || ''}"></td>
             <td style="vertical-align: middle;"><button type="button" class="btn-inline list" style="background:#475569; opacity:0.5; cursor:not-allowed;" disabled>보기</button></td>
