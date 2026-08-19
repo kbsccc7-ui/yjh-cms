@@ -2192,17 +2192,11 @@
             resetForm(); // 💡 폼 초기화 및 버튼 전환
             refreshApplicantView();
 
-            // ⭐️ [이 위치의 기존 setTimeout 영역을 아래 코드로 전면 교체 및 딜레이 튜닝]
-            // refreshApplicantView가 목록 화면(tr)을 완전히 다 그릴 수 있도록 
-            // 넉넉하고 안전하게 300ms(0.3초)의 정밀 타임아웃 딜레이를 주어 엇박자 오류를 완벽하게 지워냅니다.
+            // 3. ⭐️ 물리 파일 세이브 안착 확인 후 통계 엔진 최종 폭발 가동!
             setTimeout(() => {
-                if (typeof initDashboardFilter === "function") {
-                    initDashboardFilter(); // 1. 시험명 및 기수 셀렉트 필터 데이터 동기화
-                }
-                if (typeof calculateLiveDashboardStats === "function") {
-                    calculateLiveDashboardStats(); // 2. 🎯 대시보드 통계 카운트를 즉시 리프레시 (1/60 -> 2/60 증가 완료!)
-                }
-            }, 500);
+                if (typeof initDashboardFilter === "function") initDashboardFilter();
+                if (typeof calculateLiveDashboardStats === "function") calculateLiveDashboardStats();
+            }, 400);
 
         }
 
@@ -3459,14 +3453,14 @@
   */
         function initDashboardFilter() {
             const titleSelect = document.getElementById("dashboard-filter-title");
+            const thSelect = document.getElementById("dashboard-filter-th");
             if (!titleSelect) return;
 
-            const currentSelected = titleSelect.value;
+            // ⭐️ [버그 해결 핵심 1] 관리자가 등록 버튼을 누르기 직전에 선택했던 두 값을 변수에 임시 저장
+            const savedTitle = titleSelect.value;
+            const savedTh = thSelect ? thSelect.value : "ALL";
 
-            // 💡 [버그 해결 핵심] refreshApplicantView와 소스 저장소를 'localStorage'로 완벽 일치화
             const actualData = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
-
-            // 로컬 스토리지 최신 파일에서 순수 고유 시험명 목록만 정밀 추출
             const uniqueTitles = [...new Set(actualData.map(item => item.title).filter(Boolean))];
 
             titleSelect.innerHTML = '<option value="ALL">— 전체 시험 보기 —</option>';
@@ -3477,26 +3471,30 @@
                 titleSelect.appendChild(option);
             });
 
-            if (uniqueTitles.includes(currentSelected)) {
-                titleSelect.value = currentSelected;
+            // 1번 시험명 선택 값 복원
+            if (uniqueTitles.includes(savedTitle)) {
+                titleSelect.value = savedTitle;
             } else {
                 titleSelect.value = "ALL";
             }
 
-            // 2단계 기수 셀렉트 박스 동기화 연쇄 호출
-            updateDashboardThOptions();
+            // ⭐️ [버그 해결 핵심 2] 2번 기수 셀렉트 박스 동기화 함수에 기존 기수 값을 인자로 전달하여 유도
+            updateDashboardThOptions(savedTh);
         }
 
         /**
-         * 2. [2단계 기수 연쇄 필터] 선택한 시험명에 속해 있는 순수 기수 목록만 동적 매운트
+         * 2. [2단계 기수 연쇄 필터] 
+         * 선택한 시험명에 속해 있는 순수 기수 목록을 채우고, 이전 기수 선택을 강제로 유지시킵니다.
          */
-        function updateDashboardThOptions() {
+        function updateDashboardThOptions(preservedTh = "ALL") {
             const titleSelect = document.getElementById("dashboard-filter-title");
             const thSelect = document.getElementById("dashboard-filter-th");
             if (!titleSelect || !thSelect) return;
 
             const selectedTitle = titleSelect.value;
             thSelect.innerHTML = '<option value="ALL">— 전체 기수 —</option>';
+
+            let uniqueThs = [];
 
             if (selectedTitle !== "ALL") {
                 const actualData = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
@@ -3506,7 +3504,7 @@
                     .map(item => item.th)
                     .filter(Boolean);
 
-                const uniqueThs = [...new Set(filteredThs)];
+                uniqueThs = [...new Set(filteredThs)];
 
                 uniqueThs.forEach(th => {
                     const option = document.createElement("option");
@@ -3516,13 +3514,20 @@
                 });
             }
 
-            // 셀렉트 변경 즉시 최종 대시보드 정산 연산 가동
+            // ⭐️ [버그 해결 핵심 3] 재생성된 기수 옵션 목록 중에 이전 선택값(예: 2기 1차)이 존재하면 강제 선택 고정
+            if (uniqueThs.includes(preservedTh)) {
+                thSelect.value = preservedTh;
+            } else {
+                thSelect.value = "ALL";
+            }
+
+            // 기수 고정 완료 후 즉시 최종 대시보드 정산 연산 가동
             calculateLiveDashboardStats();
         }
 
         /**
          * 3. [📊 대시보드 최종 정밀 산출] 
-         * 로컬 스토리지 마스터 파일 스펙을 기반으로 조건 매칭 후 대시보드 스펙에 실시간 바인딩
+         * 로컬 스토리지 최신 데이터를 기반으로 조건 매칭 후 대시보드 스펙에 실시간 바인딩
          */
         function calculateLiveDashboardStats() {
             const titleFilter = document.getElementById("dashboard-filter-title").value.trim();
@@ -3542,7 +3547,6 @@
                 return;
             }
 
-            // 💡 최신 로컬스토리지 데이터를 가져와서 연산 진행
             const actualData = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
 
             // 공백 제거 조건 검증 매칭
@@ -3564,7 +3568,6 @@
                 const countNum = parseInt(String(item.count).replace(/[^0-9]/g, ""), 10) || 0;
                 targetQuotaCount = countNum;
 
-                // refreshApplicantView와 변수 매칭 스펙 통일화 (item.payStatus 분석)
                 const payText = item.payStatus || "대기";
 
                 // 서류 존재 여부 판단 통합 가드 동기화
