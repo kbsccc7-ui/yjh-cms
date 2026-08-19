@@ -3445,7 +3445,6 @@
   * 대상자 테이블의 각 행(tr) 내 서류 배지 상태 및 정산 상태를 파악하도록 설계되었습니다.
   */
         function getActualSystemData() {
-            // 모집공고 관리 탭 테이블과 대상자 관리 탭 테이블을 순차적으로 탐색
             const listTable = document.getElementById("dom-applicant-table") ||
                 document.getElementById("dom-recruitment-table") ||
                 document.querySelector("#applicantView table tbody") ||
@@ -3458,32 +3457,39 @@
             rows.forEach(row => {
                 const cells = row.querySelectorAll("td");
 
-                // 정상적인 데이터가 차 있는 행인지 검증 (최소 3개 이상의 칸이 존재해야 함)
-                if (cells.length >= 3) {
-                    // ⭐️ [버그 해결의 핵심] 테이블의 '열 인덱스'를 개별 지정하여 글자가 섞이는 것을 원천 차단합니다.
-                    // 기본 모집공고 테이블 기준 구조: [0]시험명, [1]기수, [2]인원수
-                    const titleText = cells[0].textContent.trim(); // 1번째 칸: 시험명만 추출
-                    const thText = cells[1].textContent.trim();    // 2번째 칸: 기수만 추출
+                // 알려주신 컬럼 개수가 최소 10개 이상이므로, 안전하게 8개 이상인 행만 정밀 추출
+                if (cells.length >= 8) {
+                    // 💡 제시해주신 목록 순서에 기반한 정확한 td 방 번호(인덱스) 세팅
+                    // 0:시험명, 1:기수, 2:인원수, 3:기간, 4:이름, 5:생년월일, 6:전화번호, 7:참여비, 10:첨부서류
+                    const titleText = cells[0].textContent.trim(); // 0번째 칸: 시험명
+                    const thText = cells[1].textContent.trim();    // 1번째 칸: 기수
 
-                    // ⭐️ 3번째 칸(인원수)만 따로 지정하여 숫자만 정제하므로 기수의 '1기', '2기' 숫자가 절대 끼어들지 못함
+                    // ⭐️ [1/160 버그 완전 해결] 정확히 2번째 '인원수' 칸만 집어서 순수 숫자만 추출하므로 절대 안 섞임!
                     const maxCountText = cells[2].textContent.trim().replace(/[^0-9]/g, "") || "0";
 
-                    // 행 내부 소스코드를 기반으로 참여비 정산 상태 분류
-                    const rowHtml = row.innerHTML;
-                    const rowText = row.textContent;
+                    // 💡 7번째 '참여비(상태)' 칸의 텍스트와 10번째 '첨부서류' 칸의 HTML 내용을 정밀 분석
+                    const payText = cells[7] ? cells[7].textContent.trim() : "";
+                    const docHtml = cells[10] ? cells[10].innerHTML : "";
 
-                    let status = "대기"; // 기본 디폴트 상태 (아무것도 신청하지 않음)
+                    let status = "대기"; // 기본 디폴트 상태
 
-                    if (rowText.includes("지급완료") || rowText.includes("처리완료") || rowText.includes("정산종결")) {
+                    // A. 처리완료 / 지급완료 판별
+                    if (payText.includes("지급완료") || payText.includes("처리완료") || payText.includes("정산종결")) {
                         status = "지급완료";
-                    } else if (rowText.includes("처리중") || rowText.includes("재무검토") || rowHtml.includes("editing-row")) {
+                    }
+                    // B. 재무 검토 / 처리중 판별
+                    else if (payText.includes("처리중") || payText.includes("재무검토") || row.classList.contains("editing-row")) {
                         status = "처리중";
-                    } else if (
-                        rowText.includes("접수") ||
-                        (rowHtml.includes("doc-badge") && (rowHtml.includes("status-bank") || rowHtml.includes("status-id")))
+                    }
+                    // C. 접수 판별 (참여비 칸 텍스트가 '접수'이거나, 첨부서류에 유효한 파일 배지가 들어온 경우)
+                    else if (
+                        payText.includes("접수") ||
+                        (docHtml.includes("doc-badge") && (docHtml.includes("status-bank") || docHtml.includes("status-id")))
                     ) {
                         status = "접수";
-                    } else if (rowText.includes("대기") || rowHtml.includes("status-none")) {
+                    }
+                    // D. 대기 판별 (명시적으로 대기이거나 아무 액션이 없는 경우)
+                    else if (payText.includes("대기") || payText === "") {
                         status = "대기";
                     }
 
@@ -3502,7 +3508,7 @@
         }
 
         /**
-         * 2. [1단계 필터 초기화] 화면 진입 시 하단 표에 존재하는 실제 "시험명"만 고유하게 가져와 바인딩
+         * 2. [1단계 필터 초기화] 하단 표의 0번째 칸(시험명)에서 실제 등록된 목록만 추출하여 중복 제거 후 세팅
          */
         function initDashboardFilter() {
             const titleSelect = document.getElementById("dashboard-filter-title");
@@ -3511,7 +3517,6 @@
             const currentSelected = titleSelect.value;
             const actualData = getActualSystemData();
 
-            // 중복 제거된 고유 시험명 배열 추출
             const uniqueTitles = [...new Set(actualData.map(item => item.title))];
 
             titleSelect.innerHTML = '<option value="ALL">— 전체 시험 보기 —</option>';
@@ -3528,12 +3533,12 @@
                 titleSelect.value = "ALL";
             }
 
-            // 2단계 기수 셀렉트 박스 연쇄 동기화 호출
+            // 2단계 기수 셀렉트 박스 동기화 연쇄 호출
             updateDashboardThOptions();
         }
 
         /**
-         * 3. [2단계 연쇄 필터] 1번 시험명을 누르면 그에 맞는 실제 기수만 채워 넣음
+         * 3. [2단계 연쇄 필터] 1번 시험명을 누르면 그에 맞는 실제 기수(1번째 칸)만 채워 넣음
          */
         function updateDashboardThOptions() {
             const titleSelect = document.getElementById("dashboard-filter-title");
@@ -3564,7 +3569,7 @@
         }
 
         /**
-         * 4. [📊 4단계 데이터 투사] 두 셀렉트 박스가 모두 선택되었을 때만 정밀 계산 후 대시보드 출력
+         * 4. [📊 4단계 데이터 투사] 두 셀렉트 박스가 모두 완벽하게 선택되었을 때만 정밀 계산 후 출력
          */
         function calculateLiveDashboardStats() {
             const titleFilter = document.getElementById("dashboard-filter-title").value;
@@ -3575,7 +3580,7 @@
             const processingEl = document.getElementById("stat-processing-count");
             const completeEl = document.getElementById("stat-complete-count");
 
-            // [초기화 잠금 제어] 전체보기(ALL) 상태이거나 선택이 미완료된 경우 무조건 0 리셋
+            // [초기화 잠금 제어] 선택이 완료되지 않았거나 전체보기(ALL) 상태일 때는 강제로 0 리셋 후 종료
             if (titleFilter === "ALL" || thFilter === "ALL") {
                 if (totalEl) totalEl.textContent = "0 / 0명";
                 if (receivedEl) receivedEl.textContent = "0건";
@@ -3586,20 +3591,20 @@
 
             const allRecords = getActualSystemData();
 
-            // 선택된 두 조건(시험명 + 기수)이 완벽히 일치하는 행만 필터링
+            // 선택된 두 조건(시험명 + 기수)이 완벽히 일치하는 행만 정밀 여과
             const filteredData = allRecords.filter(item => {
                 return item.title === titleFilter && item.th === thFilter;
             });
 
             let currentParticipantCount = filteredData.length; // 조건에 부합하는 대상자 행 개수 (참여수)
-            let targetQuotaCount = 0;                          // 선택한 딱 '그 시험+그 기수'의 정확한 정원 (N수)
+            let targetQuotaCount = 0;                          // 선택한 딱 '그 시험+그 기수'의 정확한 인원수 (N수)
 
             let receivedCount = 0;                             // 청구서 접수 현황
             let processingCount = 0;                           // 재무 검토 (처리중)
             let completeCount = 0;                             // 정산 종결 (지급완료)
 
             filteredData.forEach(item => {
-                // 분리 수집된 해당 행 고유의 배정인원 지정
+                // 단독 격리 수집된 2번째 칸의 인원수 지정
                 targetQuotaCount = item.maxCount;
 
                 if (item.status === "지급완료") {
@@ -3640,9 +3645,10 @@
                 }, 200);
             };
 
+            // 테이블이 화면에 완벽하게 렌더링되도록 충분한 시간(700ms) 여유를 준 뒤 초기화 구동
             setTimeout(() => {
                 initDashboardFilter();
-            }, 600);
+            }, 700);
         });
 
     </script>
