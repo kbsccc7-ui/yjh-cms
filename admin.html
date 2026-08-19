@@ -1080,6 +1080,9 @@
                                 <th style="width: 100px;">인원수</th>
                                 <th style="width: 120px;">기간(시간)</th>
                                 <th style="width: 130px; text-align: left;">담당 CRC</th>
+                                <th
+                                    style="width: 140px; text-align: left; color: var(--secondary-color); font-weight: 700;">
+                                    소집일자</th>
                                 <th style="width: 10%;">주의사항</th>
                                 <th style="width: 10%;">시험일정</th>
                                 <th style="width: 120px;">참여비 지급일정</th>
@@ -1706,60 +1709,77 @@
                 localStorage.setItem('dataStoreRecruitment', JSON.stringify(dataStoreRecruitment));
             }
 
+            // 💡 refreshRecruitmentView() 함수 내의 tr.innerHTML 데이터 매칭 구역을 이 스펙으로 수정하세요
+            // (기존에 정의되어 있던 로직 흐름과 변수명 구조를 100% 안전하게 계승합니다)
             dataStoreRecruitment.forEach((row, index) => {
                 const tr = document.createElement('tr');
                 tr.style.display = "table-row";
+
+                // 기수 번호에 매칭되는 지능형 CSS 배지 클래스 분기 처리
+                const thNumMatch = (row.th || "").match(/\d+/);
+                const thNum = thNumMatch ? parseInt(thNumMatch) : 1;
+                let thBadgeClass = "lvl-1";
+                if (thNum === 2 || thNum === 3) thBadgeClass = "lvl-2";
+                else if (thNum === 4 || thNum === 5) thBadgeClass = "lvl-4";
+                else if (thNum >= 6) thBadgeClass = "lvl-6";
 
                 // 🎯 [인라인 분기] 현재 행이 수정 버튼을 누른 타겟 행인지 판정
                 if (window.currentEditingRecruitmentIndex === index) {
                     // 대상자 관리 디자인 시스템(.editing-row, .inline-input) 규격을 적용하여 인풋 상자 노출
                     tr.className = "editing-row";
                     tr.innerHTML = `
-                <td><input type="text" id="inline-rec-title-${index}" class="inline-input" value="${row.title}" style="font-weight:700;"></td>
-                <td>
-                    <select id="inline-rec-th-${index}" class="inline-input" style="height:32px; padding:2px 6px;">
-                        <option value="1기(1차)" ${row.th === '1기(1차)' ? 'selected' : ''}>1기 1차</option>
-                        <option value="1기(2차)" ${row.th === '1기(2차)' ? 'selected' : ''}>1기 2차</option>
-                        <option value="2기(1차)" ${row.th === '2기(1차)' ? 'selected' : ''}>2기 1차</option>
-                        <option value="2기(2차)" ${row.th === '2기(2차)' ? 'selected' : ''}>2기 2차</option>
-                        <option value="3기(1차)" ${row.th === '3기(1차)' ? 'selected' : ''}>3기 1차</option>
-                        <option value="3기(2차)" ${row.th === '3기(2차)' ? 'selected' : ''}>3기 2차</option>
-                        <option value="4기(1차)" ${row.th === '4기(1차)' ? 'selected' : ''}>4기 1차</option>
-                        <option value="4기(2차)" ${row.th === '4기(2차)' ? 'selected' : ''}>4기 2차</option>
-                    </select>
-                </td>
-                <td><input type="text" id="inline-rec-count-${index}" class="inline-input" value="${row.count}"></td>
-                <td><input type="text" id="inline-rec-period-${index}" class="inline-input" value="${row.period}"></td>
-                <td><input type="text" id="inline-rec-crc-${index}" class="inline-input" value="${row.crc || '-'}"></td>
-                <td><input type="text" id="inline-rec-notice-${index}" class="inline-input" value="${row.notice || ''}"></td>
-                <td style="vertical-align: middle;"><button type="button" class="btn-inline list" style="background:#475569; opacity:0.5; cursor:not-allowed;" disabled>보기</button></td>
-                <td><input type="text" id="inline-rec-pay-${index}" class="inline-input" value="${row.paySchedule || row.payDate || '추후공지'}"></td>
-                <td style="vertical-align: middle;">
-                    <div class="action-btn-wrapper" style="display: flex !important; justify-content: center !important; gap: 6px !important; width: 100% !important;">
-                        <button type="button" class="btn-inline save" onclick="saveInlineRecruitmentRecord(${index})" style="background: var(--success-color, #4ade80); color: #070a12; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 13px;">저장</button>
-                        <button type="button" class="btn-inline edit" onclick="cancelInlineRecruitmentEdit()" style="background: #475569; border:1px solid var(--border-color); color:#fff; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 13px;">취소</button>
-                    </div>
-                </td>
-            `;
+            <td><input type="text" id="inline-rec-title-${index}" class="inline-input" value="${row.title}" style="font-weight:700;"></td>
+            <td>
+                <select id="inline-rec-th-${index}" class="inline-input" style="height:32px; padding:2px 6px;">
+                    <option value="1기(1차)" ${row.th === '1기(1차)' ? 'selected' : ''}>1기 1차</option>
+                    <option value="1기(2차)" ${row.th === '1기(2차)' ? 'selected' : ''}>1기 2차</option>
+                    <option value="2기(1차)" ${row.th === '2기(1차)' ? 'selected' : ''}>2기 1차</option>
+                    <option value="2기(2차)" ${row.th === '2기(2차)' ? 'selected' : ''}>2기 2차</option>
+                    <option value="3기(1차)" ${row.th === '3기(1차)' ? 'selected' : ''}>3기 1차</option>
+                    <option value="3기(2차)" ${row.th === '3기(2차)' ? 'selected' : ''}>3기 2차</option>
+                    <option value="4기(1차)" ${row.th === '4기(1차)' ? 'selected' : ''}>4기 1차</option>
+                    <option value="4기(2차)" ${row.th === '4기(2차)' ? 'selected' : ''}>4기 2차</option>
+                </select>
+            </td>
+            <td><input type="text" id="inline-rec-count-${index}" class="inline-input" value="${row.count}"></td>
+            <td><input type="text" id="inline-rec-period-${index}" class="inline-input" value="${row.period}"></td>
+            <td><input type="text" id="inline-rec-crc-${index}" class="inline-input" value="${row.crc || '-'}"></td>
+            
+            <!-- 🔥 [인라인 수정 모드 신규 추가]: 수정 상태일 때 소집일자를 달력으로 바로 변경할 수 있도록 인풋 탑재 -->
+            <td><input type="date" id="inline-rec-date-${index}" class="inline-input" value="${row.recDate || ''}" style="color: #fbbf24; font-weight: 700;"></td>
+            
+            <td><input type="text" id="inline-rec-notice-${index}" class="inline-input" value="${row.notice || ''}"></td>
+            <td style="vertical-align: middle;"><button type="button" class="btn-inline list" style="background:#475569; opacity:0.5; cursor:not-allowed;" disabled>보기</button></td>
+            <td><input type="text" id="inline-rec-pay-${index}" class="inline-input" value="${row.paySchedule || row.payDate || '추후공지'}"></td>
+            <td style="vertical-align: middle;">
+                <div class="action-btn-wrapper" style="display: flex !important; justify-content: center !important; gap: 6px !important; width: 100% !important;">
+                    <button type="button" class="btn-inline save" onclick="saveInlineRecruitmentRecord(${index})" style="background: var(--success-color, #4ade80); color: #070a12; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 13px;">저장</button>
+                    <button type="button" class="btn-inline edit" onclick="cancelInlineRecruitmentEdit()" style="background: #475569; border:1px solid var(--border-color); color:#fff; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 13px;">취소</button>
+                </div>
+            </td>
+        `;
                 } else {
                     // 일반 읽기 전용 모드 상태 렌더링
                     tr.innerHTML = `
-                <td style="font-weight: 700; color: #ffffff !important; vertical-align: middle;">${row.title}</td>
-                <td style="vertical-align: middle;"><span class="lvl-badge lvl-2">${row.th}</span></td>
-                <td style="vertical-align: middle; color: #eeeeee;">${row.count}명</td>
-                <td style="vertical-align: middle; color: #eeeeee;">${row.period}시간</td>
-                <td style="vertical-align: middle; color: #38bdf8; font-weight: 600;">${row.crc || '-'}</td>            
-                <td class="exam-notice-cell" style="max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #f87171; vertical-align: middle;" title="${row.notice || '-'}">${row.notice || '없음'}</td>
-                <td style="vertical-align: middle;"><button type="button" class="btn-inline list" onclick="openRecruitmentDetails(${index})" style="background: #475569; border: none; color: #ffffff; padding: 4px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 12px;">보기</button></td>
-                <td style="vertical-align: middle;"><span style="color: #fbbf24; font-weight: 700;">${row.paySchedule || row.payDate || '추후공지'}</span></td>
-                <td style="vertical-align: middle;">
-                    <div class="action-btn-wrapper" style="display: flex !important; justify-content: center !important; gap: 6px !important; width: 100% !important; white-space: nowrap !important;">
-                        <!-- 🎯 수정을 클릭하면 상단이 아닌 해당 라인에서 바로 열리도록 핸들러 바인딩 -->
-                        <button type="button" class="btn-inline edit" onclick="editInlineRecruitmentRecord(${index})" style="background: #334155; border: none; color: #ffffff; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 13px;">수정</button>
-                        <button type="button" class="btn-inline delete" onclick="deleteRecruitmentRecord(${index})" style="background: rgba(239, 68, 68, 0.15); border: 1px solid #f87171; color: #f87171; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 13px;">삭제</button>
-                    </div>
-                </td>
-            `;
+            <td style="font-weight: 700; color: #ffffff !important; vertical-align: middle;">${row.title}</td>
+            <td style="vertical-align: middle;"><span class="lvl-badge ${thBadgeClass}">${row.th}</span></td>
+            <td style="vertical-align: middle; color: #eeeeee;">${row.count}명</td>
+            <td style="vertical-align: middle; color: #eeeeee;">${row.period}시간</td>
+            <td style="vertical-align: middle; color: #38bdf8; font-weight: 600;">${row.crc || '-'}</td>            
+            
+            <!-- 🔥 [일반 읽기 모드 신규 추가]: 담당 CRC 다음 칸에 시각적 캘린더 아이콘과 소집일자 문자열 출력 -->
+            <td style="vertical-align: middle; color: #fbbf24; font-weight: 700; white-space: nowrap;"><i class="fa-regular fa-calendar-check"></i> ${row.recDate || '미정'}</td>
+            
+            <td class="exam-notice-cell" style="max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #f87171; vertical-align: middle;" title="${row.notice || '-'}">${row.notice || '없음'}</td>
+            <td style="vertical-align: middle;"><button type="button" class="btn-inline list" onclick="openRecruitmentDetails(${index})" style="background: #475569; border: none; color: #ffffff; padding: 4px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 12px;">보기</button></td>
+            <td style="vertical-align: middle;"><span style="color: #fbbf24; font-weight: 700;">${row.paySchedule || row.payDate || '추후공지'}</span></td>
+            <td style="vertical-align: middle;">
+                <div class="action-btn-wrapper" style="display: flex !important; justify-content: center !important; gap: 6px !important; width: 100% !important; white-space: nowrap !important;">
+                    <button type="button" class="btn-inline edit" onclick="editInlineRecruitmentRecord(${index})" style="background: #334155; border: none; color: #ffffff; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 13px;">수정</button>
+                    <button type="button" class="btn-inline delete" onclick="deleteRecruitmentRecord(${index})" style="background: rgba(239, 68, 68, 0.15); border: 1px solid #f87171; color: #f87171; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 13px;">삭제</button>
+                </div>
+            </td>
+        `;
                 }
                 tbody.appendChild(tr);
             });
@@ -1782,11 +1802,15 @@
             const nextCount = document.getElementById(`inline-rec-count-${index}`).value.trim();
             const nextPeriod = document.getElementById(`inline-rec-period-${index}`).value.trim();
             const nextCrc = document.getElementById(`inline-rec-crc-${index}`).value.trim();
+            // 🔥 [신규 추가]: 인라인 달력 인풋 필드로부터 수정된 소집일자 값 추출
+            const nextDate = document.getElementById(`inline-rec-date-${index}`).value;
+
             const nextNotice = document.getElementById(`inline-rec-notice-${index}`).value.trim();
             const nextPay = document.getElementById(`inline-rec-pay-${index}`).value.trim();
 
-            if (!nextTitle || !nextCount || !nextPeriod) {
-                alert("알림: 시험명, 인원수, 기간 데이터는 필수 항목이므로 빈칸으로 둘 수 없습니다.");
+            // 소집일자(nextDate) 유효성 검사 추가 반영
+            if (!nextTitle || !nextCount || !nextPeriod || !nextDate) {
+                alert("알림: 시험명, 인원수, 기간, 소집일자 데이터는 필수 항목이므로 빈칸으로 둘 수 없습니다.");
                 return;
             }
 
@@ -1796,6 +1820,9 @@
             dataStoreRecruitment[index].count = typeof getOnlyNumbers === "function" ? getOnlyNumbers(nextCount) : nextCount.replace(/[^0-9]/g, '');
             dataStoreRecruitment[index].period = typeof getOnlyNumbers === "function" ? getOnlyNumbers(nextPeriod) : nextPeriod.replace(/[^0-9]/g, '');
             dataStoreRecruitment[index].crc = nextCrc;
+            // 🔥 [신규 추가]: 수정된 소집일자 필드 마스터 대장에 적재
+            dataStoreRecruitment[index].recDate = nextDate;
+
             dataStoreRecruitment[index].notice = nextNotice;
             dataStoreRecruitment[index].paySchedule = nextPay;
             dataStoreRecruitment[index].payDate = nextPay;
@@ -1807,7 +1834,12 @@
                 localStorage.setItem('dataStoreRecruitment', JSON.stringify(dataStoreRecruitment));
             }
 
-            alert("🎉 해당 줄(Line)의 모집공고 수정 데이터가 성공적으로 저장되었습니다.");
+            // 상단 데이터 통계 필터 및 대상자 이력 맵핑 실시간 동기화
+            if (typeof initDashboardFilter === "function") {
+                initDashboardFilter();
+            }
+
+            alert("🎉 해당 줄(Line)의 모집공고 수정 데이터(소집일자 포함)가 성공적으로 저장되었습니다.");
             window.currentEditingRecruitmentIndex = null; // 수정 상태 해제
             refreshRecruitmentView(); // 원래 리스트 형태로 원상 복귀
         }
