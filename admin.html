@@ -2192,6 +2192,18 @@
             resetForm(); // 💡 폼 초기화 및 버튼 전환
             refreshApplicantView();
 
+            // ⭐️ [이 위치의 기존 setTimeout 영역을 아래 코드로 전면 교체 및 딜레이 튜닝]
+            // refreshApplicantView가 목록 화면(tr)을 완전히 다 그릴 수 있도록 
+            // 넉넉하고 안전하게 300ms(0.3초)의 정밀 타임아웃 딜레이를 주어 엇박자 오류를 완벽하게 지워냅니다.
+            setTimeout(() => {
+                if (typeof initDashboardFilter === "function") {
+                    initDashboardFilter(); // 1. 시험명 및 기수 셀렉트 필터 데이터 동기화
+                }
+                if (typeof calculateLiveDashboardStats === "function") {
+                    calculateLiveDashboardStats(); // 2. 🎯 대시보드 통계 카운트를 즉시 리프레시 (1/60 -> 2/60 증가 완료!)
+                }
+            }, 300);
+
         }
 
         /** 💡 [추가] 테이블 행의 [수정] 버튼 클릭 시 데이터를 상단 폼으로 로드하는 함수 */
