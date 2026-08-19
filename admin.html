@@ -2163,19 +2163,25 @@
                 /* ==========================================================
                    ⚠️ [최종 폭파 가드] 무슨 일이 있어도 무조건 원래 목록 상태로 강제 복귀
                    ========================================================== */
-                // 브라우저에 존재하는 모든 형태의 편집 모드 변수를 완전히 무력화(null)합니다.
+                // 1. 시스템 변수명 불일치를 원천 차단하기 위해 유력한 편집 인덱스 포인터를 일괄 초기화(null)합니다.
                 window.currentEditingApplicantIndex = null;
-                window.currentEditingUid = null;
-                if (window.hasOwnProperty('recEditingUid')) window.recEditingUid = null;
+                window.currentEditingRecruitmentIndex = null; // 모집공고 포인터 동시 해제
+                window.currentEditingUid = null;              // 원본 대상자 추적 포인터 해제
 
-                // 대상자 테이블 뷰포트를 일반 조회 모드로 강제 리렌더링
+                if (window.hasOwnProperty('recEditingUid')) window.recEditingUid = null;
+                if (window.hasOwnProperty('memberEditingSabun')) window.memberEditingSabun = null;
+
+                // 2. 브라우저 저장소의 편집 세션 찌꺼기까지 확실하게 소거합니다.
+                localStorage.removeItem('adminActiveEditingIndex');
+
+                // 3. 대상자 마스터 테이블 화면을 일반 조회용 읽기 전용 포맷으로 강제 재렌더링합니다.
                 if (typeof refreshApplicantView === "function") {
                     refreshApplicantView();
                 } else if (typeof renderApplicantTable === "function") {
                     renderApplicantTable();
                 }
 
-                // 대시보드 레이아웃 화면을 리프레시 스위칭
+                // 4. 대시보드 내비게이션 상태를 강제로 동기화 스위칭하여 대상자 탭 화면을 완전히 리프레시합니다.
                 if (typeof changeMainViewport === "function") {
                     changeMainViewport('applicantView');
                 }
