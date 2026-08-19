@@ -3456,7 +3456,7 @@
             const thSelect = document.getElementById("dashboard-filter-th");
             if (!titleSelect) return;
 
-            // ⭐️ [버그 해결 핵심 1] 관리자가 등록 버튼을 누르기 직전에 선택했던 두 값을 변수에 임시 저장
+            // 관리자가 등록 버튼을 누르기 직전에 선택했던 두 값을 변수에 임시 저장
             const savedTitle = titleSelect.value;
             const savedTh = thSelect ? thSelect.value : "ALL";
 
@@ -3478,7 +3478,7 @@
                 titleSelect.value = "ALL";
             }
 
-            // ⭐️ [버그 해결 핵심 2] 2번 기수 셀렉트 박스 동기화 함수에 기존 기수 값을 인자로 전달하여 유도
+            // 2단계 기수 셀렉트 박스 동기화 함수에 기존 기수 값을 인자로 전달하여 유도
             updateDashboardThOptions(savedTh);
         }
 
@@ -3514,7 +3514,7 @@
                 });
             }
 
-            // ⭐️ [버그 해결 핵심 3] 재생성된 기수 옵션 목록 중에 이전 선택값(예: 2기 1차)이 존재하면 강제 선택 고정
+            // 재생성된 기수 옵션 목록 중에 이전 선택값이 존재하면 강제 선택 고정
             if (uniqueThs.includes(preservedTh)) {
                 thSelect.value = preservedTh;
             } else {
@@ -3527,7 +3527,7 @@
 
         /**
          * 3. [📊 대시보드 최종 정밀 산출] 
-         * 로컬 스토리지 최신 데이터를 기반으로 조건 매칭 후 대시보드 스펙에 실시간 바인딩
+         * 다른 텍스트 필드와 섞이지 않도록 item.count 단독 변수에서만 마지막 숫자를 완전히 격리 추출합니다.
          */
         function calculateLiveDashboardStats() {
             const titleFilter = document.getElementById("dashboard-filter-title").value.trim();
@@ -3559,13 +3559,16 @@
             let currentParticipantCount = filteredData.length; // 분자: 실제 조건에 맞는 총 참여자 명수
             let targetQuotaCount = 0;                          // 분모: 목표 정원수 (N수)
 
-            let receivedCount = 0;                             // 청구서 접수 현황
-            let processingCount = 0;                           // 재무 검토 (처리중)
-            let completeCount = 0;                             // 정산 종결 (지급완료)
+            let receivedCount = 0;
+            let processingCount = 0;
+            let completeCount = 0;
 
             filteredData.forEach(item => {
-                // payload 스펙 변수인 item.count 파싱
-                const countNum = parseInt(String(item.count).replace(/[^0-9]/g, ""), 10) || 0;
+                // ⭐️ [버그 원천 분쇄] 기수(th) 칸의 숫자와 절대 섞이지 않도록 
+                // 오직 순수한 item.count 단독 문자열/숫자 필드 내부에서만 숫자를 독립 추출하여 대입합니다.
+                const pureCountStr = item.count ? String(item.count).trim() : "0";
+                const countMatch = pureCountStr.match(/\d+/g);
+                const countNum = countMatch ? parseInt(countMatch[countMatch.length - 1], 10) : 0;
                 targetQuotaCount = countNum;
 
                 const payText = item.payStatus || "대기";
@@ -3584,7 +3587,7 @@
                 }
             });
 
-            // 🎯 최종 대시보드 화면 투사 (2 / 60명 완벽 동기화 표출)
+            // 🎯 최종 대시보드 화면 투사 (2 / 46명 자릿수 오류 완벽 보정 해결!)
             if (totalEl) {
                 totalEl.textContent = currentParticipantCount + " / " + targetQuotaCount + "명";
             }
