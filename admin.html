@@ -1754,13 +1754,14 @@
                 /* ==========================================================
            ⚠️ [3중 전역 가드 해제] 알림창 이후 목록 미복귀 버그 원천 진압
            ========================================================== */
-                // 1. 시스템 변수명 불일치 결함을 방어하기 위해 유력한 편집 포인터를 일괄 무력화합니다.
+                // 1. 시스템 내부 변수명 불일치 결함을 방어하기 위해 후보 변수들을 통틀어 완전 초기화(null)합니다.
                 window.currentEditingApplicantIndex = null;
                 window.currentEditingUid = null;
+
                 if (window.hasOwnProperty('recEditingUid')) window.recEditingUid = null;
                 if (window.hasOwnProperty('memberEditingSabun')) window.memberEditingSabun = null;
 
-                // 2. 브라우저 메모리에 '수정 모드가 완전히 끝났다'는 상태를 강제로 각인시킵니다.
+                // 2. 브라우저 저장소에 남아있을 수 있는 편집 인덱스 찌꺼기 버퍼까지 완전히 영구 소거합니다.
                 localStorage.removeItem('adminActiveEditingIndex');
 
                 // 3. 대상자 마스터 테이블 화면을 태초의 깨끗한 일반 조회 모드로 강제 리렌더링합니다.
@@ -1770,7 +1771,7 @@
                     renderApplicantTable();
                 }
 
-                // 4. 좌측 대시보드 내비게이션 엔진을 강제로 자극하여 대상자 뷰포트를 전체 리프레시합니다.
+                // 4. 대시보드 내비게이션 엔진을 강제로 자극하여 대상자 뷰포트 레이아웃을 전체 리프레시 스위칭합니다.
                 if (typeof changeMainViewport === "function") {
                     changeMainViewport('applicantView');
                 }
