@@ -2085,6 +2085,7 @@
                 // 🎯 [완전 종결 - 2부] 마스터 레이아웃 분기 출력 및 12열 크기 보존형 템플릿 엔진
                 // ========================================================
 
+
                 // [A 분기]: 수정 상태가 활성화되었을 때 (인라인 입력 서식 노출)
                 if (isCurrentlyEditing) {
                     tr.className = "editing-row";
@@ -2109,9 +2110,9 @@
                 <td style="width: 75px;"><input type="text" id="inline-app-call-${index}" class="inline-input" value="${callAgreed}" style="text-align:center;"></td>
                 <td style="vertical-align: middle;">${documentLinksHTML}</td>
                 <td style="text-align: center; width: 180px; min-width: 180px; white-space: nowrap; padding-right: 15px; vertical-align: middle;">
-                    <!-- 🎯 [함수명 2중 상쇄 가드]: 시스템 내부에 선언된 함수명이 무엇이든 상관없이 무조건 캐치하여 트랜잭션을 강제 성공시킵니다. -->
+                    <!-- 🎯 [함수명 3중 결합 프리패스 가드]: admin.html 내부에 선언될 수 있는 모든 대상자 저장 함수명을 차례대로 자동 검색해 가동시킵니다 -->
                     <button type="button" class="btn-inline save" 
-                        onclick="if(typeof saveApplicantRecord === 'function'){ saveApplicantRecord(${index}); } else if(typeof saveApplicantInline === 'function'){ saveApplicantInline(${index}); }" 
+                        onclick="if(typeof saveApplicantInline === 'function'){ saveApplicantInline(${index}); } else if(typeof saveApplicantRecord === 'function'){ saveApplicantRecord(${index}); } else if(typeof insertApplicantRecord === 'function'){ insertApplicantRecord(${index}); }" 
                         style="background: var(--success-color, #4ade80); color: #070a12; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 13px;">저장</button>
                     
                     <button type="button" class="btn-inline edit" onclick="window.currentAppEditingIndex = null; if(typeof currentAppEditingIndex !== 'undefined'){currentAppEditingIndex = null;} if(typeof currentEditingApplicantIndex !== 'undefined'){currentEditingApplicantIndex = null;} refreshApplicantView();" style="background: #475569; border:1px solid var(--border-color); color:#fff; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 13px;">취소</button>
