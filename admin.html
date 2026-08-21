@@ -2512,11 +2512,12 @@
 
             if (editIndex === "") {
                 // [신규 등록 모드]
-                // ⭐️ [버그 원천 분쇄 2]: 어떤 서브 함수가 오염을 일으켜도 무조건 "대기"가 들어가도록 저장 직전 한 번 더 강제 락
+                // ⭐️ [버그 원천 분쇄 2 원안 유지]: 어떤 서브 함수가 오염을 일으켜도 무조건 "대기"가 들어가도록 저장 직전 한 번 더 강제 락
                 payload.result = "대기";
                 payload.payStatus = "대기";
 
-                dataStoreApplicant.push(payload);
+                // 🎯 [교정 핵심]: 기존 push() 대신 unshift()를 적용하여 신규 대상자가 목록 최상단(맨 위)에 즉시 정렬되도록 인가
+                dataStoreApplicant.unshift(payload);
                 alert(`📢 신규 대상자 [${n}]님이 대장에 성공적으로 등록 보존되었습니다.`);
             } else {
                 // [수정 완료 모드]
@@ -2524,7 +2525,7 @@
                 alert(`📋 정보 갱신 완료: [${n}] 피험자의 마스터 레코드가 업데이트되었습니다.`);
             }
 
-            // ⭐️ [버그 원천 분쇄 3]: commitToLocalStorage() 내부의 자동 "접수" 변환 오작동을 무력화하기 위해,
+            // ⭐️ [버그 원천 분쇄 3 원안 유지]: commitToLocalStorage() 내부의 자동 "접수" 변환 오작동을 무력화하기 위해,
             // 정제된 마스터 배열을 로컬 스토리지 하드웨어 파일에 최종 다이렉트 강제 주입(세이브)합니다.
             localStorage.setItem('dataStoreApplicant', JSON.stringify(dataStoreApplicant));
 
@@ -2536,7 +2537,7 @@
             resetForm(); // 💡 폼 초기화 및 버튼 전환
             refreshApplicantView();
 
-            // 4. ⭐️ 물리 파일 세이브 안착 확인 후 통계 엔진 리프레시 가동!
+            // 4. ⭐️ 물리 파일 세이브 안착 확인 후 통계 엔진 리프레시 가동! [원안 레이턴시 스펙 100% 유지]
             setTimeout(() => {
                 if (typeof initDashboardFilter === "function") initDashboardFilter();
                 if (typeof calculateLiveDashboardStats === "function") calculateLiveDashboardStats();
