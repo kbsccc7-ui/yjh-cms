@@ -1771,14 +1771,12 @@
             }
 
             let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
-            // ==========================================================================
-            // 🎯 [모집공고 관리 - 2부] 타이핑 락 해결 전용 이식 및 원본 템플릿 마운트
-            // ==========================================================================
+
             dataStoreRecruitment.forEach((row, index) => {
                 const tr = document.createElement('tr');
                 tr.style.display = "table-row";
 
-                // 기수 번호에 매칭되는 지능형 CSS 배지 클래스 분기 처리
+                // 기수 배지 스타일 분기
                 const thNumMatch = (row.th || "").match(/\d+/);
                 const thNum = thNumMatch ? parseInt(thNumMatch) : 1;
                 let thBadgeClass = "lvl-1";
@@ -1790,14 +1788,15 @@
                 let groupMatchCount = adminApplicantDB.filter(item => `${item.title}_${item.th}` === currentThKey).length;
                 const totalQuota = row.count || "60";
 
-                // 🎯 [버그 해결 핵심 요충지]: 타이핑이 막히던 타인 변수(Applicant) 간섭을 완벽히 제거하고,
-                // 모집공고 전용 편집 제어 포인터 변수 2종(currentEditingRecruitmentIndex, recEditingUid)으로 정확히 싱크 결합!
+                // 편집 제어 포인터 변수 2종 정밀 결합
                 const isRecEditing =
                     (window.currentEditingRecruitmentIndex === index) ||
                     (typeof currentEditingRecruitmentIndex !== 'undefined' && currentEditingRecruitmentIndex === index) ||
                     (typeof recEditingUid !== 'undefined' && recEditingUid === row.uid);
 
-                // [A 분기]: 모집공고 인라인 수정 모드 활성화 시 (원래 존재하던 소집일자 입력창 사양 복원)
+                // ==========================================================================
+                // 🎯 [모집공고 목록 - 2부] 인라인 수정창 내 컴팩트형 세로 3단 가변 피커 적재
+                // ==========================================================================
                 if (isRecEditing) {
                     let defaultDateVal = row.recDate ? row.recDate.trim() : "";
                     if (defaultDateVal === "미정" || !defaultDateVal || defaultDateVal.includes("년")) {
@@ -1833,6 +1832,7 @@
                 <td><input type="text" id="inline-rec-notice-${index}" class="inline-input" value="${row.notice || ''}" style="color: #f87171; pointer-events: auto !important; background: var(--card-color) !important;"></td>
                 <td style="vertical-align: middle; text-align: center;"><button type="button" class="btn-inline list" style="background:#475569; opacity:0.5; cursor:not-allowed; pointer-events: none;" disabled>보기</button></td>
                 
+                <!-- 🎯 [인라인 수정 수직 3단 미니 달력 피커 구역] -->
                 <td style="vertical-align: middle;">
                     <div style="display: flex; flex-direction: column; gap: 3px; white-space: nowrap;">
                         <input type="date" id="inline-rec-pay1-${index}" class="inline-input" value="${row.payDate1 || ''}" style="height:22px; font-size:11px; padding:0 2px; color:#fbbf24; background:#0f172a !important;" title="1차 지급일 고치기">
@@ -1851,7 +1851,7 @@
                 }
 
                 // ==========================================================================
-                // 🎯 [모집공고 관리 - 3부] 원래 완벽했던 읽기 전용 레이아웃 및 캘린더 아이콘 마감 복원
+                // 🎯 [모집공고 목록 - 3부] 조회 모드 시 두 줄, 세 줄 수직 복층 스택 레이아웃 출력 및 마감
                 // ==========================================================================
                 else {
                     // 🎯 [지능형 동적 분기 파싱 엔진]: 대장에 기억된 차수별 날짜 데이터를 추출하여 화면에 <br> 줄바꿈 태그로 정렬 가공합니다.
@@ -1892,7 +1892,7 @@
                 <td class="exam-notice-cell" style="max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #f87171; vertical-align: middle;" title="${row.notice || '-'}">${row.notice || '없음'}</td>
                 <td style="vertical-align: middle; text-align: center;"><button type="button" class="btn-inline list" onclick="openNoticeEditor(${index})" style="background: #475569; border: none; color: #ffffff; padding: 4px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 12px;">보기</button></td>
                 
-                <!-- 🎯 [복층 멀티라인 반영]: 가로로 길어지던 데이터가 차수별로 한 줄씩 수직(두 줄, 세 줄) 정렬되어 출력됩니다. -->
+                <!-- 🎯 [출력 목록 수직 멀티라인 락업 구역]: 한 줄로 길어지던 텍스트를 위아래 2줄, 3줄 블록형태로 정밀 출력시킵니다. -->
                 <td style="vertical-align: middle; padding-top: 10px; padding-bottom: 10px;">
                     <div style="display: flex; flex-direction: column; justify-content: center; align-items: flex-start;">
                         ${multiLinePayHTML}
