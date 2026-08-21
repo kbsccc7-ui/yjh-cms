@@ -1900,15 +1900,32 @@
             const nextDate = document.getElementById(`inline-rec-date-${index}`).value;
 
             const nextNotice = document.getElementById(`inline-rec-notice-${index}`).value.trim();
+
+            // 🎯 [가변 차수 버그 완전 치료 가드]: 인라인 수정 필드에서 텍스트 수집 처리
             const nextPay = document.getElementById(`inline-rec-pay-${index}`).value.trim();
 
-            // 소집일자(nextDate) 유효성 검사 추가 반영
+            // 소집일자(nextDate) 유효성 검사 추가 반영 [원형 보존]
             if (!nextTitle || !nextCount || !nextPeriod || !nextDate) {
                 alert("알림: 시험명, 인원수, 기간, 소집일자 데이터는 필수 항목이므로 빈칸으로 둘 수 없습니다.");
                 return;
             }
 
-            // 마스터 데이터 정밀 교정 주입
+            // 🎯 [정밀 가변 파싱 가드]: 수정창에서 관리자가 타이핑한 '참여비 지급일정' 문자열을 분석합니다.
+            // 입력창에 적힌 원본 텍스트(예: "1차: 2026-08-25 / 2차: 2026-09-10")에서 비어있는 차수가 없는지 필터링 정형화
+            let finalPayText = "추후공지";
+            if (nextPay && nextPay !== "추후공지" && nextPay !== "-") {
+                // 관리자가 직접 가공하거나 가변 입력한 문자열을 원형 손실 없이 파이프라인에 그대로 적재
+                let payParts = nextPay.split('/').map(p => p.trim());
+                let validParts = payParts.filter(p => p.length > 3 && p.includes(':'));
+
+                if (validParts.length > 0) {
+                    finalPayText = validParts.join(' / ');
+                } else {
+                    finalPayText = nextPay; // 커스텀 문자열 서식 기입 시 원형 그대로 수용 패스
+                }
+            }
+
+            // 마스터 데이터 정밀 교정 주입 [원형 보존]
             dataStoreRecruitment[index].title = nextTitle;
             dataStoreRecruitment[index].th = nextTh;
             dataStoreRecruitment[index].count = typeof getOnlyNumbers === "function" ? getOnlyNumbers(nextCount) : nextCount.replace(/[^0-9]/g, '');
@@ -1918,17 +1935,19 @@
             dataStoreRecruitment[index].recDate = nextDate;
 
             dataStoreRecruitment[index].notice = nextNotice;
-            dataStoreRecruitment[index].paySchedule = nextPay;
-            dataStoreRecruitment[index].payDate = nextPay;
 
-            // 로컬스토리지 영구 커밋 연동
+            // 🎯 정제된 가변 차수별 문자열을 데이터베이스 대장에 최종 영구 안착시킵니다.
+            dataStoreRecruitment[index].paySchedule = finalPayText;
+            dataStoreRecruitment[index].payDate = finalPayText;
+
+            // 로컬스토리지 영구 커밋 연동 [원형 보존]
             if (typeof commitToLocalStorage === "function") {
                 commitToLocalStorage();
             } else {
                 localStorage.setItem('dataStoreRecruitment', JSON.stringify(dataStoreRecruitment));
             }
 
-            // 상단 데이터 통계 필터 및 대상자 이력 맵핑 실시간 동기화
+            // 상단 데이터 통계 필터 및 대상자 이력 맵핑 실시간 동기화 [원형 보존]
             if (typeof initDashboardFilter === "function") {
                 initDashboardFilter();
             }
@@ -1961,17 +1980,31 @@
             const dateEl = document.getElementById('form-rec-date');
             const recDate = dateEl ? dateEl.value : "";
 
-            // 2. 2층 분할 지급일자 캘린더 피커 벨류 정밀 스캔
+            // 2. 2층 분할 지급일자 캘린더 피커 벨류 스캔
             const pay1 = document.getElementById('form-rec-pay1')?.value || "";
             const pay2 = document.getElementById('form-rec-pay2')?.value || "";
             const pay3 = document.getElementById('form-rec-pay3')?.value || "";
 
-            // 3. 필수 예외 데이터 유효성 검사 (안내문 기반 1~3차 지급일 완전 강제 가드)
-            if (!t || !th || !c || !p || !recDate || !pay1 || !pay2 || !pay3) {
-                return alert('알림: 빈칸(1~3차 참여비 차수별 지급일정 포함)을 모두 채워 넣어야 등록이 완료됩니다.');
+            // 3. 1층 마스터 필수 값 검증 (시험명, 기수, 인원, 기간, 소집일자는 필수)
+            if (!t || !th || !c || !p || !recDate) {
+                return alert('알림: 시험 기본 정보와 소집일자는 빈칸으로 둘 수 없습니다.');
             }
 
-            // 4. 가상 마스터 대장 스키마 구조에 분할 세부 일정 통합 인가
+            // 🎯 [핵심 기획 보정]: 1~3차 중 관리자가 날짜를 입력한 차수만 동적으로 판별하여 조립합니다.
+            let paySchedulesArray = [];
+            if (pay1) paySchedulesArray.push(`1차: ${pay1}`);
+            if (pay2) paySchedulesArray.push(`2차: ${pay2}`);
+            if (pay3) paySchedulesArray.push(`3차: ${pay3}`);
+
+            // 만약 1~3차 지급일을 단 하나도 입력하지 않았다면 기본 예외 처리
+            if (paySchedulesArray.length === 0) {
+                paySchedulesArray.push("추후공지");
+            }
+
+            // 배열 요소를 슬래시(/) 기호로 결합하여 깔끔한 문자열 스트림 형성
+            const finalPayScheduleText = paySchedulesArray.join(' / ');
+
+            // 4. 가상 마스터 대장 스키마 구조에 분할 세부 일정 가변 인가
             dataStoreRecruitment.push({
                 uid: Date.now(),
                 title: t,
@@ -1982,8 +2015,7 @@
                 recDate: recDate,
                 notice: "공복 유지 필수 및 소집 10분 전 대기",
                 examSchedule: "",
-                // 💡 기존 리스트 테이블 연동 스펙 하방 호환성을 위해 3개 일정을 가독성 높은 텍스트 체인으로 자동 믹싱하여 인가합니다.
-                paySchedule: `1차: ${pay1} / 2차: ${pay2} / 3차: ${pay3}`,
+                paySchedule: finalPayScheduleText, // 🎯 입력된 차수만 예쁘게 조립된 텍스트가 바인딩됩니다.
                 payDate1: pay1,
                 payDate2: pay2,
                 payDate3: pay3
@@ -2010,7 +2042,7 @@
             if (document.getElementById('form-rec-pay2')) document.getElementById('form-rec-pay2').value = '';
             if (document.getElementById('form-rec-pay3')) document.getElementById('form-rec-pay3').value = '';
 
-            alert("🎉 1~3차 참여비 분할 지급일정이 포함된 신규 모집공고가 대장에 안전하게 등록되었습니다.");
+            alert("🎉 선택하신 차수별 참여비 일정이 정상적으로 반영되어 등록되었습니다.");
         }
 
 
