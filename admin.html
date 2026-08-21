@@ -421,6 +421,19 @@
             /* 마우스 호버 시 안정적인 손가락 포인터 마크 유지 */
         }
 
+
+        /* 상단 스타일 시트 내 기존 처리 구역에 ID 선택자 3종을 추가 매칭 바인딩 하세요 */
+        #form-rec-date::-webkit-calendar-picker-indicator,
+        #form-rec-pay1::-webkit-calendar-picker-indicator,
+        #form-rec-pay2::-webkit-calendar-picker-indicator,
+        #form-rec-pay3::-webkit-calendar-picker-indicator,
+        [id^="inline-rec-date-"]::-webkit-calendar-picker-indicator,
+        [id^="inline-app-date-"]::-webkit-calendar-picker-indicator {
+            filter: invert(1) !important;
+            cursor: pointer !important;
+        }
+
+
         /* ==========================================================
    6. [데이터 명단 테이블 표 및 가변 배지 가독성 최적화]
    ========================================================== */
@@ -1077,6 +1090,23 @@
                             <input type="date" id="form-rec-date"
                                 style="width: 100%; height: 38px; border-radius: 6px; background: #1e293b; color: #fff; border: 1px solid #334155; padding: 0 10px;">
                         </div>
+                        <!-- 🎯 [3단계 추가 기획]: 참여비 1~3차 분할 지급일정 및 캘린더 동적 입력 필드 -->
+                        <div class="form-group" style="min-width: 140px;">
+                            <label style="color: #fbbf24;">참여비 1차 지급일</label>
+                            <input type="date" id="form-rec-pay1"
+                                style="width: 100%; height: 38px; border-radius: 6px; background: #1e293b; color: #fff; border: 1px solid #334155; padding: 0 10px;">
+                        </div>
+                        <div class="form-group" style="min-width: 140px;">
+                            <label style="color: #fbbf24;">참여비 2차 지급일</label>
+                            <input type="date" id="form-rec-pay2"
+                                style="width: 100%; height: 38px; border-radius: 6px; background: #1e293b; color: #fff; border: 1px solid #334155; padding: 0 10px;">
+                        </div>
+                        <div class="form-group" style="min-width: 140px;">
+                            <label style="color: #fbbf24;">참여비 3차 지급일</label>
+                            <input type="date" id="form-rec-pay3"
+                                style="width: 100%; height: 38px; border-radius: 6px; background: #1e293b; color: #fff; border: 1px solid #334155; padding: 0 10px;">
+                        </div>
+
                         <button class="action-btn" onclick="insertRecruitmentRecord()">공고 등록</button>
                     </div>
                 </div>
@@ -1900,22 +1930,26 @@
 
 
         function insertRecruitmentRecord() {
-            // 1. 각 인풋 필드 및 셀렉트박스 값 추출
+            // 1. 기존 인풋 필드 값 추출
             const t = document.getElementById('form-rec-title').value.trim();
             const th = document.getElementById('form-rec-th').value;
             const c = document.getElementById('form-rec-count').value.trim();
             const p = document.getElementById('form-rec-period').value.trim();
             const crc = document.getElementById('form-rec-crc') ? document.getElementById('form-rec-crc').value.trim() : "";
-            // 🔥 [1단계 신규 추가]: HTML 달력 인풋에서 선택된 소집일자 값 추출
             const dateEl = document.getElementById('form-rec-date');
             const recDate = dateEl ? dateEl.value : "";
 
-            // 2. 필수 값 검증 (소집일자도 필수로 등록하도록 검증 조건에 추가)
-            if (!t || !th || !c || !p || !recDate) {
-                return alert('알림: 빈칸(소집일자 포함)을 모두 채워 넣어야 등록이 완료됩니다.');
+            // 🎯 [신규 수집]: 1~3차 참여비 분할 지급일자 캘린더 벨류 스캔
+            const pay1 = document.getElementById('form-rec-pay1')?.value || "";
+            const pay2 = document.getElementById('form-rec-pay2')?.value || "";
+            const pay3 = document.getElementById('form-rec-pay3')?.value || "";
+
+            // 2. 필수 값 검증 (소집일자 및 차수별 지급일정 누락 방지 가드)
+            if (!t || !th || !c || !p || !recDate || !pay1 || !pay2 || !pay3) {
+                return alert('알림: 빈칸(차수별 참여비 지급일자 포함)을 모두 채워 넣어야 등록이 완료됩니다.');
             }
 
-            // 3. 마스터 데이터 구조 스키마에 소집일자(recDate) 필드 결합 적재
+            // 3. 마스터 데이터 구조 스키마에 차수별 일정 필드 완벽 결합 적재
             dataStoreRecruitment.push({
                 uid: Date.now(),
                 title: t,
@@ -1923,32 +1957,39 @@
                 count: getOnlyNumbers(c),
                 period: getOnlyNumbers(p),
                 crc: crc || "-",
-                recDate: recDate, // 🔥 [1단계 신규 추가]: '2026-08-19' 형태로 오염 없이 안전하게 세이브
+                recDate: recDate,
                 notice: "공복 유지 필수 및 소집 10분 전 대기",
                 examSchedule: "",
-                paySchedule: ""
+                // 🎯 원래 하나였던 paySchedule 통로를 안내문 규격에 맞춰 3차 분할 구조로 대장에 파티셔닝 보관합니다.
+                paySchedule: `1차:${pay1} / 2차:${pay2} / 3차:${pay3}`,
+                payDate1: pay1,
+                payDate2: pay2,
+                payDate3: pay3
             });
 
-            // 4. 로컬스토리지 영구 커밋 및 목록 새로고침
+            // 4. 로컬스토리지 커밋 및 목록 즉시 최신화
             commitToLocalStorage();
             refreshRecruitmentView();
 
-            // 상단 데이터 통계 필터 셀렉트 박스도 실시간 연동 새로고침 (안전장치)
             if (typeof initDashboardFilter === "function") {
                 initDashboardFilter();
             }
 
-            // 5. 다음 등록을 위해 모든 서식 인풋 박스 리셋 초기화 (달력 포함)
+            // 5. 다음 등록을 위해 모든 서식 폼 리셋 초기화
             document.getElementById('form-rec-title').value = '';
             document.getElementById('form-rec-count').value = '';
             document.getElementById('form-rec-period').value = '';
-            if (document.getElementById('form-rec-crc')) {
-                document.getElementById('form-rec-crc').value = '';
-            }
-            if (dateEl) {
-                dateEl.value = ''; // 🔥 달력 인풋 박스도 깨끗하게 리셋 초기화
-            }
+            if (document.getElementById('form-rec-crc')) document.getElementById('form-rec-crc').value = '';
+            if (dateEl) dateEl.value = '';
+
+            // 캘린더 피커 박스 리셋
+            if (document.getElementById('form-rec-pay1')) document.getElementById('form-rec-pay1').value = '';
+            if (document.getElementById('form-rec-pay2')) document.getElementById('form-rec-pay2').value = '';
+            if (document.getElementById('form-rec-pay3')) document.getElementById('form-rec-pay3').value = '';
+
+            alert("🎉 1~3차 참여비 분할 지급일정이 포함된 신규 모집공고가 대장에 안전하게 등록되었습니다.");
         }
+
 
         function enableRecInlineEditMode(id) { recEditingUid = id; refreshRecruitmentView(); }
         function cancelRecInlineEditMode() { recEditingUid = null; refreshRecruitmentView(); }
