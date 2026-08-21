@@ -2094,35 +2094,35 @@
                 <td style="padding-left: 15px;"><input type="text" id="inline-app-title-${index}" class="inline-input" value="${row.title || ''}" style="font-weight:700;"></td>
                 
                 <!-- 🎯 [기수 셀렉트 박스 완전 복원]: 기존 input 창을 걷어내고 기수 정밀 매칭 드롭다운 메뉴를 탑재합니다. -->
-                <td style="width: 100px;">
-                    <select id="inline-app-th-${index}" class="inline-input" 
-                        style="height:28px; padding:2px; font-size:12px; font-weight:700; background: #0f172a; color: #fff; border: 1px solid #334155; text-align:center; cursor: pointer; width: 100%;">
-                        <optgroup label="1기" style="background: #1e293b;">
-                            <option value="1기(1차)" ${row.th === '1기(1차)' ? 'selected' : ''}>1기 1차</option>
-                            <option value="1기(2차)" ${row.th === '1기(2차)' ? 'selected' : ''}>1기 2차</option>
-                            <option value="1기(3차)" ${row.th === '1기(3차)' ? 'selected' : ''}>1기 3차</option>
-                            <option value="1기(4차)" ${row.th === '1기(4차)' ? 'selected' : ''}>1기 4차</option>
-                        </optgroup>
-                        <optgroup label="2기" style="background: #1e293b;">
-                            <option value="2기(1차)" ${row.th === '2기(1차)' ? 'selected' : ''}>2기 1차</option>
-                            <option value="2기(2차)" ${row.th === '2기(2차)' ? 'selected' : ''}>2기 2차</option>
-                            <option value="2기(3차)" ${row.th === '2기(3차)' ? 'selected' : ''}>2기 3차</option>
-                            <option value="2기(4차)" ${row.th === '2기(4차)' ? 'selected' : ''}>2기 4차</option>
-                        </optgroup>
-                        <optgroup label="3기" style="background: #1e293b;">
-                            <option value="3기(1차)" ${row.th === '3기(1차)' ? 'selected' : ''}>3기 1차</option>
-                            <option value="3기(2차)" ${row.th === '3기(2차)' ? 'selected' : ''}>3기 2차</option>
-                            <option value="3기(3차)" ${row.th === '3기(3차)' ? 'selected' : ''}>3기 3차</option>
-                            <option value="3기(4차)" ${row.th === '3기(4차)' ? 'selected' : ''}>3기 4차</option>
-                        </optgroup>
-                        <optgroup label="4기" style="background: #1e293b;">
-                            <option value="4기(1차)" ${row.th === '4기(1차)' ? 'selected' : ''}>4기 1차</option>
-                            <option value="4기(2차)" ${row.th === '4기(2차)' ? 'selected' : ''}>4기 2차</option>
-                            <option value="4기(3차)" ${row.th === '4기(3차)' ? 'selected' : ''}>4기 3차</option>
-                            <option value="4기(4차)" ${row.th === '4기(4차)' ? 'selected' : ''}>4기 4차</option>
-                        </optgroup>
-                    </select>
-                </td>
+<td style="width: 100px;">
+    <select id="inline-app-th-${index}" class="inline-input" 
+        style="height:28px; padding:2px 4px; font-size:12px; font-weight:700; background: #0f172a; color: #fff; border: 1px solid #334155; text-align:center; text-align-last:center; -webkit-appearance:none; -moz-appearance:none; appearance:none; cursor: pointer; width: 100%;">
+        <optgroup label="1기" style="background: #1e293b; text-align:center;">
+            <option value="1기(1차)" ${row.th === '1기(1차)' ? 'selected' : ''}>1기 1차</option>
+            <option value="1기(2차)" ${row.th === '1기(2차)' ? 'selected' : ''}>1기 2차</option>
+            <option value="1기(3차)" ${row.th === '1기(3차)' ? 'selected' : ''}>1기 3차</option>
+            <option value="1기(4차)" ${row.th === '1기(4차)' ? 'selected' : ''}>1기 4차</option>
+        </optgroup>
+        <optgroup label="2기" style="background: #1e293b; text-align:center;">
+            <option value="2기(1차)" ${row.th === '2기(1차)' ? 'selected' : ''}>2기 1차</option>
+            <option value="2기(2차)" ${row.th === '2기(2차)' ? 'selected' : ''}>2기 2차</option>
+            <option value="2기(3차)" ${row.th === '2기(3차)' ? 'selected' : ''}>2기 3차</option>
+            <option value="2기(4차)" ${row.th === '2기(4차)' ? 'selected' : ''}>2기 4차</option>
+        </optgroup>
+        <optgroup label="3기" style="background: #1e293b; text-align:center;">
+            <option value="3기(1차)" ${row.th === '3기(1차)' ? 'selected' : ''}>3기 1차</option>
+            <option value="3기(2차)" ${row.th === '3기(2차)' ? 'selected' : ''}>3기 2차</option>
+            <option value="3기(3차)" ${row.th === '3기(3차)' ? 'selected' : ''}>3기 3차</option>
+            <option value="3기(4차)" ${row.th === '3기(4차)' ? 'selected' : ''}>3기 4차</option>
+        </optgroup>
+        <optgroup label="4기" style="background: #1e293b; text-align:center;">
+            <option value="4기(1차)" ${row.th === '4기(1차)' ? 'selected' : ''}>4기 1차</option>
+            <option value="4기(2차)" ${row.th === '4기(2차)' ? 'selected' : ''}>4기 2차</option>
+            <option value="4기(3차)" ${row.th === '4기(3차)' ? 'selected' : ''}>4기 3차</option>
+            <option value="4기(4차)" ${row.th === '4기(4차)' ? 'selected' : ''}>4기 4차</option>
+        </optgroup>
+    </select>
+</td>
                 
                 <td style="width: 75px;"><input type="text" id="inline-app-count-${index}" class="inline-input" value="${row.count || '60'}" style="text-align:center;"></td>
                 <td style="width: 65px;"><input type="text" id="inline-app-period-${index}" class="inline-input" value="${row.period || '0'}" style="text-align:center;"></td>
