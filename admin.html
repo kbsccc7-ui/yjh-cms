@@ -407,12 +407,18 @@
         }
 
 
-        /* 소집일자 날짜 선택기(캘린더) 아이콘 색상 흰색 교정 */
-        #form-rec-date::-webkit-calendar-picker-indicator {
-            filter: invert(1);
-            /* 검은색 아이콘을 반전시켜 완전한 흰색(#ffffff)으로 변경 */
-            cursor: pointer;
-            /* 마우스 호버 시 손가락 모양 표시 */
+        /* 1. 상단 신규 공고 등록용 달력 상자 아이콘 흰색 처리 */
+        #form-rec-date::-webkit-calendar-picker-indicator,
+        /* 2. 모집공고 관리 목록 인라인 수정 모드용 달력 상자 아이콘 흰색 처리 */
+        [id^="inline-rec-date-"]::-webkit-calendar-picker-indicator,
+        /* 3. 대상자 관리 목록 인라인 수정 모드용 달력 상자 아이콘 흰색 처리 */
+        [id^="inline-app-date-"]::-webkit-calendar-picker-indicator,
+        /* 4. 임의의 가변 데이터 데이트 피커 요소 일체 교차 방어 처리 */
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1) !important;
+            /* 💡 기존 검은색 아이콘을 완벽하게 반전시켜 고대비 순백색(#ffffff)으로 강제 변환 */
+            cursor: pointer !important;
+            /* 마우스 호버 시 안정적인 손가락 포인터 마크 유지 */
         }
 
         /* ==========================================================
