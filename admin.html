@@ -1980,31 +1980,32 @@
             const dateEl = document.getElementById('form-rec-date');
             const recDate = dateEl ? dateEl.value : "";
 
-            // 2. 2층 분할 지급일자 캘린더 피커 벨류 스캔
+            // 2. 2층 가변 분할 지급일자 캘린더 피커 벨류 스캔
             const pay1 = document.getElementById('form-rec-pay1')?.value || "";
             const pay2 = document.getElementById('form-rec-pay2')?.value || "";
             const pay3 = document.getElementById('form-rec-pay3')?.value || "";
 
-            // 3. 1층 마스터 필수 값 검증 (시험명, 기수, 인원, 기간, 소집일자는 필수)
+            // 3. 🎯 [버그 해결 유효성 검증]: 필수 시험 정보 5개와 소집일자만 차단 검증합니다.
+            // 💡 차수별 지급일(pay1, pay2, pay3)은 비어있어도 무조건 통과하도록 프리패스 가드를 적용합니다.
             if (!t || !th || !c || !p || !recDate) {
-                return alert('알림: 시험 기본 정보와 소집일자는 빈칸으로 둘 수 없습니다.');
+                return alert('알림: 시험 기본 정보(시험명, 기수, 인원수, 기간)와 소집일자는 빈칸으로 둘 수 없습니다.');
             }
 
-            // 🎯 [핵심 기획 보정]: 1~3차 중 관리자가 날짜를 입력한 차수만 동적으로 판별하여 조립합니다.
+            // 🎯 [지능형 가변 차수 조립]: 관리자가 날짜를 기입한 차수만 동적으로 판별하여 조립 스트림을 형성합니다.
             let paySchedulesArray = [];
             if (pay1) paySchedulesArray.push(`1차: ${pay1}`);
             if (pay2) paySchedulesArray.push(`2차: ${pay2}`);
             if (pay3) paySchedulesArray.push(`3차: ${pay3}`);
 
-            // 만약 1~3차 지급일을 단 하나도 입력하지 않았다면 기본 예외 처리
+            // 만약 1~3차 지급일을 단 하나도 입력하지 않고 공란으로 두었다면 기본 예외 매칭
             if (paySchedulesArray.length === 0) {
                 paySchedulesArray.push("추후공지");
             }
 
-            // 배열 요소를 슬래시(/) 기호로 결합하여 깔끔한 문자열 스트림 형성
+            // 배열 요소를 슬래시(/) 기호로 가독성 좋게 결합
             const finalPayScheduleText = paySchedulesArray.join(' / ');
 
-            // 4. 가상 마스터 대장 스키마 구조에 분할 세부 일정 가변 인가
+            // 4. 가상 마스터 대장 스키마 구조에 분할 세부 일정 동적 인가 세이브
             dataStoreRecruitment.push({
                 uid: Date.now(),
                 title: t,
@@ -2015,13 +2016,13 @@
                 recDate: recDate,
                 notice: "공복 유지 필수 및 소집 10분 전 대기",
                 examSchedule: "",
-                paySchedule: finalPayScheduleText, // 🎯 입력된 차수만 예쁘게 조립된 텍스트가 바인딩됩니다.
+                paySchedule: finalPayScheduleText, // 🎯 2차까지만 고르면 "1차: 날짜 / 2차: 날짜" 로만 완벽히 조립되어 대장에 박제됩니다.
                 payDate1: pay1,
                 payDate2: pay2,
                 payDate3: pay3
             });
 
-            // 5. 로컬스토리지 영구 트랜잭션 커밋 및 목록 즉시 리렌더링
+            // 5. 로컬스토리지 영구 트랜잭션 커밋 및 목록 즉시 최신 리렌더링 기동
             commitToLocalStorage();
             refreshRecruitmentView();
 
@@ -2037,12 +2038,12 @@
             if (document.getElementById('form-rec-crc')) document.getElementById('form-rec-crc').value = '';
             if (dateEl) dateEl.value = '';
 
-            // 2층 캘린더 박스 리셋
+            // 2층 가변 캘린더 박스 완전 리셋
             if (document.getElementById('form-rec-pay1')) document.getElementById('form-rec-pay1').value = '';
             if (document.getElementById('form-rec-pay2')) document.getElementById('form-rec-pay2').value = '';
             if (document.getElementById('form-rec-pay3')) document.getElementById('form-rec-pay3').value = '';
 
-            alert("🎉 선택하신 차수별 참여비 일정이 정상적으로 반영되어 등록되었습니다.");
+            alert("🎉 선택하신 차수별 참여비 일정이 정상적으로 반영되어 새 모집공고가 성공적으로 등록되었습니다.");
         }
 
 
