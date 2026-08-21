@@ -2042,7 +2042,7 @@
             const finalPayScheduleText = paySchedulesArray.join(' / ');
 
             // 4. 가상 마스터 대장 스키마 구조에 분할 세부 일정 동적 인가 세이브
-            dataStoreRecruitment.push({
+            dataStoreRecruitment.unshift({
                 uid: Date.now(),
                 title: t,
                 th: th,
