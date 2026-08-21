@@ -3964,8 +3964,6 @@
         /**
          * 이력조회 버튼 클릭 시 에러를 해결하고 피험자 데이터와 공고 마스터 일정을 교차 맵핑하여 모달창에 렌더링하는 함수
          */
-
-
         function openApplicantHistoryModal(index) {
             // A. 안전장치: 로컬스토리지 최신 데이터 스토어 로드 및 인덱스 범위 확인
             const adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
@@ -3995,35 +3993,44 @@
             }
 
             // 🎯 [전수 역추적 스캔]: 성명과 생년월일이 일치하는 모든 참여 레코드를 필터링 추출
-            // 최신 참여 과제가 모달 위쪽에 먼저 나오도록 최신순 정렬(.reverse()) 적용
             let matchedHistoryList = adminApplicantDB.filter(item => {
                 const itemCleanName = (item.name || '').replace(/[^\w\sㄱ-ㅎㅏ-ㅣ가-힣]/g, '').trim();
                 const itemSsn = item.ssn ? item.ssn.trim() : "";
                 return itemCleanName === cleanName && itemSsn === targetSsn;
             }).reverse();
 
-            // 🎯 [지능형 가변 카드 루프 엔진]: 참여한 시험 개수만큼 [임상시험 배정 및 일정 연동 이력] 블록을 동적으로 복사 생성
+            // 🎯 [지능형 가변 카드 루프]: 참여한 시험 개수만큼 세부 지급일정을 동적 파싱하여 복사 생성
             let historyCardsHTML = "";
 
             matchedHistoryList.forEach((historyRow) => {
-                // 각 역사적 레코드별 과제명과 매칭되는 공고의 '소집일자'를 1:1 역추적 크로스 바인딩
+                // 🎯 [크로스 매핑 종결]: 각 참여 기록별 [시험명 + 기수]와 일치하는 공고를 찾아 소집일과 참여비 지급일정을 동적으로 추출합니다.
                 const matchedRec = recDB.find(rec => rec.title === historyRow.title && rec.th === historyRow.th);
+
                 const matchedScheduleDate = matchedRec && matchedRec.recDate ? matchedRec.recDate : "-";
+
+                // 💡 모집공고 등록 시점에 대장에 세이브된 1~3차 통합 지급일정 문자열 확보 (없으면 추후공지 폴백)
+                const matchedPaySchedule = matchedRec && matchedRec.paySchedule ? matchedRec.paySchedule : "추후공지";
 
                 let statusText = historyRow.payStatus || '대기';
                 if (statusText === '확인' || statusText === '접수완료') statusText = '접수';
                 if (statusText === '지급완료') statusText = '처리완료';
                 if (statusText === '처리중') statusText = '재무 검토 (처리중)';
 
-                // 💡 오리지널 [임상시험 배정 이력] 디자인 컨테이너 100% 동일 복사 주입
+                // 💡 오리지널 [임상시험 배정 이력] 내부에 '참여비 세부 지급일정' 행을 정밀 결합 추가
                 historyCardsHTML += `
             <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); padding: 20px; border-radius: 10px; margin-bottom: 12px; background-image: linear-gradient(to right, rgba(30, 41, 59, 0.2), transparent);">
                 <h4 style="font-size: 15px; color: #ffffff; margin-bottom: 15px; display: flex; align-items: center; gap: 6px; margin-top:0;">
                     <i class="fa-solid fa-flask-vial" style="color: var(--warning-color);"></i> 임상시험 배정 및 일정 연동 이력
                 </h4>
-                <div class="history-grid-container" style="grid-template-columns: 1fr; margin-bottom: 12px;">
+                <div class="history-grid-container" style="grid-template-columns: 1fr; margin-bottom: 10px;">
                     <div style="color: var(--text-muted); font-size:13px; font-weight:700; margin-bottom: 4px;">배정 과제명: <span style="color:#ffffff; margin-left:6px;">${historyRow.title || '-'}</span></div>
                 </div>
+                
+                <!-- 🎯 [신규 추가 구역]: 모집공고 탭에서 등록한 1~3차 가변 참여비 지급일정을 카드의 수평 중간 허리에 시원하게 표출시킵니다. -->
+                <div class="history-grid-container" style="grid-template-columns: 1fr; margin-bottom: 12px; background: rgba(15, 23, 42, 0.3); padding: 8px 12px; border-radius: 6px; border: 1px dashed rgba(251, 191, 36, 0.3);">
+                    <div style="color: #fbbf24; font-size:12.5px; font-weight:700;"><i class="fa-solid fa-sack-dollar"></i> 참여비 차수별 지급일정: <span style="color:#ffffff; margin-left:8px; font-weight:600; letter-spacing: 0.3px;">${matchedPaySchedule}</span></div>
+                </div>
+
                 <div class="history-grid-container" style="margin-bottom: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
                     <div style="color: var(--text-muted); font-size:13px; font-weight:700;">참여 차수(기수): <span style="color:#38bdf8; margin-left:6px; font-weight:800;">${historyRow.th || '-'}</span></div>
                     <div style="color: var(--text-muted); font-size:13px; font-weight:700;">임상 소집일자: <span style="color:#fbbf24; margin-left:6px; font-weight:800;"><i class="fa-regular fa-calendar-check"></i> ${matchedScheduleDate}</span></div>
@@ -4035,7 +4042,6 @@
             });
 
             // D. [최종 출력 위임]: contentSlot 내부에 인포그래픽 정형 바인딩 주입
-            // 💡 [스크롤 가드]: max-height 및 overflow-y 속성을 빌드하여 이력이 많아지면 깔끔하게 내부 스크롤바 활성화
             contentSlot.innerHTML = `
         <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); padding: 20px; border-radius: 10px; margin-bottom: 16px;">
             <h4 style="font-size: 15px; color: #ffffff; margin-bottom: 15px; display: flex; align-items: center; gap: 6px;">
@@ -4057,30 +4063,23 @@
             // ==========================================================================
             // 🎯 [이력 모달 - 2부] 4단계 정산 라이프사이클 원격 통제 액션 버튼 장착 및 마감
             // ==========================================================================
-            // E. 하단 닫기 단추 및 4단계 상태 제어 버튼 결합 마운트 [원안 프레임 100% 원형 복원]
+            // E. 하단 닫기 단추 및 4단계 상태 제어 버튼 결합 마운트 [원안 프레임 100% 보존]
             actionSlot.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; flex-wrap: nowrap;">
             <!-- 좌측: 상태 변경 통제 버튼 그룹 -->
             <div style="display: flex; gap: 8px;">
-                <!-- 1. 참여 확인 (접수 상태 전환) -->
                 <button type="button" onclick="updateApplicantStatusViaModal(${index}, '접수')" 
                     style="background: rgba(14, 165, 233, 0.15); border: 1px solid #0ea5e9; color: #38bdf8; padding: 10px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size:12.5px; transition: all 0.2s;">
                     <i class="fa-solid fa-user-check"></i> 참여확인(접수)
                 </button>
-                
-                <!-- 2. 재무 검토 (처리중 상태 전환) -->
                 <button type="button" onclick="updateApplicantStatusViaModal(${index}, '처리중')" 
                     style="background: rgba(245, 158, 11, 0.15); border: 1px solid #fbbf24; color: #fbbf24; padding: 10px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size:12.5px; transition: all 0.2s;">
                     <i class="fa-solid fa-calculator"></i> 재무검토
                 </button>
-                
-                <!-- 3. 지급 완료 (처리완료/지급완료 상태 전환) -->
                 <button type="button" onclick="updateApplicantStatusViaModal(${index}, '지급완료')" 
                     style="background: rgba(52, 211, 153, 0.15); border: 1px solid #34d399; color: #34d399; padding: 10px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size:12.5px; transition: all 0.2s;">
                     <i class="fa-solid fa-money-check-dollar"></i> 지급완료
                 </button>
-                
-                <!-- 4. 미참석 / 탈락 처리 (초기 대기 상태로 역전환 및 대시보드 리셋) -->
                 <button type="button" onclick="updateApplicantStatusViaModal(${index}, '대기')" 
                     style="background: rgba(239, 68, 68, 0.1) ; border: 1px solid var(--danger-color); color: var(--danger-color); padding: 10px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size:12.5px; transition: all 0.2s;">
                     <i class="fa-solid fa-user-slash"></i> 미참석/탈락(대기)
@@ -4097,7 +4096,7 @@
         </div>
     `;
 
-            // F. 모달 디스플레이 활성화 (Flexbox 정렬 투사) [원형 보존]
+            // F. 모달 디스플레이 활성화 (Flexbox 정렬 투사)
             overlay.style.display = "flex";
         }
 
