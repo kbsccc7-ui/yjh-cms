@@ -2094,9 +2094,9 @@
                 <td style="padding-left: 15px;"><input type="text" id="inline-app-title-${index}" class="inline-input" value="${row.title || ''}" style="font-weight:700;"></td>
                 
                 <!-- 🎯 [기수 셀렉트 박스 완전 복원]: 기존 input 창을 걷어내고 기수 정밀 매칭 드롭다운 메뉴를 탑재합니다. -->
-<td>
-    <select id="inline-app-th-${index}" class="inline-input" 
-          style="height:32px; padding:2px 6px; pointer-events: auto !important;"> 
+                <td>
+         <select id="inline-app-th-${index}" class="inline-input" 
+        style="height:32px; padding:2px 6px; pointer-events: auto !important; text-align: center; text-align-last: center; -webkit-appearance: none; -moz-appearance: none; appearance: none; cursor: pointer;"> 
        
         <optgroup label="1기" style="background: #1e293b; color: var(--secondary-color); text-align: center; text-align-last: center;">
             <option value="1기(1차)" style="text-align: center; text-align-last: center;" ${row.th === '1기(1차)' ? 'selected' : ''}>1기 1차</option>
@@ -2126,7 +2126,7 @@
             <option value="4기(4차)" style="text-align: center; text-align-last: center;" ${row.th === '4기(4차)' ? 'selected' : ''}>4기 4차</option>
         </optgroup>
     </select>
-</td>
+    </td>
                 
                 <td style="width: 75px;"><input type="text" id="inline-app-count-${index}" class="inline-input" value="${row.count || '60'}" style="text-align:center;"></td>
                 <td style="width: 65px;"><input type="text" id="inline-app-period-${index}" class="inline-input" value="${row.period || '0'}" style="text-align:center;"></td>
