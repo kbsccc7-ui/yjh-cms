@@ -2001,6 +2001,10 @@
                 const rawName = row.name || '';
                 const cleanName = rawName.replace(/[^\w\sㄱ-ㅎㅏ-ㅣ가-힣]/g, '').trim();
 
+                // 🎯 [에러 원천 방어]: 하단 템플릿에서 참조하는 변수를 최상단에 강제 선언하여 호이스팅 및 참조 에러 완벽 차단
+                const dutyAgreed = row.isDutyAgreed || row.isAgreed || "동의";
+                const callAgreed = row.isCallAgreed || row.isAgreed || "동의";
+
                 // 연락처 오피셜 하이픈(-) 자동 변환 포맷 가드
                 const rawPhone = (row.phone || '').replace(/[^0-9]/g, '');
                 let formattedPhone = '-';
@@ -2036,13 +2040,9 @@
                 if (hasBankBook && finalBankBookSrc !== "placeholder") {
                     documentLinksHTML += `<button type="button" class="btn-inline list" onclick="openDocModal('${finalBankBookSrc}', '${cleanName} - 통장사본')" style="padding: 4px 8px; font-size: 11px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; border-radius: 4px; font-weight: 700; cursor:pointer;"><i class="fa-solid fa-wallet"></i> 통장</button>`;
                 } else {
-                    documentLinksHTML += `<span class="doc-badge status-none" style="padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(14, 165, 233, 0.08); border: 1px solid rgba(14, 165, 233, 0.2); color: #64748b; cursor: not-allowed;">통장</span>`;
+                    documentLinksHTML += `<span class="doc-badge status-none" style="padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(14, 165, 233, 0.08); border: 1px solid rgba(148, 163, 184, 0.2); color: #64748b; cursor: not-allowed;">통장</span>`;
                 }
                 documentLinksHTML += `</div>`;
-
-                // 🎯 [에러 방지 핵심 마감]: 하단 HTML 템플릿에 도달하기 전 필수 참조 변수 2종 정밀 바인딩 완료
-                const dutyAgreed = row.isDutyAgreed || row.isAgreed || "동의";
-                const callAgreed = row.isCallAgreed || row.isAgreed || "동의";
 
                 // 🎯 [상태 배지 고대비 색상 매칭 허브 구역] - 상단 현황판 위젯 카드와 1:1 컬러 레이어 동기화 [index: 0.1.44]
                 let currentStatus = row.payStatus || '대기';
@@ -2144,6 +2144,8 @@
                 tbody.appendChild(tr);
             });
         }
+
+
         /**
          * 🎯 원본 호출 인터페이스 매칭: 수정 버튼 클릭 처리
          */
