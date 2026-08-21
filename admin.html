@@ -1721,14 +1721,16 @@
                 localStorage.setItem('dataStoreRecruitment', JSON.stringify(dataStoreRecruitment));
             }
 
-            // 대상자 관리 테이블 내부의 총 정산 카운트 동기화를 위한 변수 바인딩 수집 [index: 0.1.44]
             let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
 
+            // ==========================================================================
+            // 🎯 [모집공고 관리 - 2부] 배지 레벨 마킹 및 3중 변수 간섭 파괴 독립 제어 구역
+            // ==========================================================================
             dataStoreRecruitment.forEach((row, index) => {
                 const tr = document.createElement('tr');
                 tr.style.display = "table-row";
 
-                // 기수 번호에 매칭되는 지능형 CSS 배지 클래스 분기 처리
+                // 기수 배지 스타일 분기
                 const thNumMatch = (row.th || "").match(/\d+/);
                 const thNum = thNumMatch ? parseInt(thNumMatch) : 1;
                 let thBadgeClass = "lvl-1";
@@ -1736,17 +1738,24 @@
                 else if (thNum === 4 || thNum === 5) thBadgeClass = "lvl-4";
                 else if (thNum >= 6) thBadgeClass = "lvl-6";
 
-                // 현재 고유 과제 기수별 실제 배정 및 매칭된 신청인원 실시간 집계 연동 [index: 0.1.44]
                 const currentThKey = `${row.title}_${row.th}`;
                 let groupMatchCount = adminApplicantDB.filter(item => `${item.title}_${item.th}` === currentThKey).length;
                 const totalQuota = row.count || "60";
 
-                // ==========================================================================
-                // 🎯 [모집공고 관리 - 2부] 인라인 수정(A분기) 및 일반 조회(B분기) 렌더러 통합본
-                // ==========================================================================
+                // 🎯 [완전 매칭]: 타인 필드 변수(Applicant) 간섭을 전면 파괴하고,
+                // 모집공고 전용 편집 제어 포인터 변수 2종(currentEditingRecruitmentIndex, recEditingUid)을 완벽 락인합니다.
+                const isRecEditing =
+                    (window.currentEditingRecruitmentIndex === index) ||
+                    (typeof currentEditingRecruitmentIndex !== 'undefined' && currentEditingRecruitmentIndex === index) ||
+                    (typeof recEditingUid !== 'undefined' && recEditingUid === row.uid);
 
-                // [A 분기]: 모집공고 인라인 수정 모드 활성화 시 (대상자 탭 디자인 시스템 100% 이식)
-                if (window.currentEditingRecruitmentIndex === index) {
+                // ==========================================================================
+                // 🎯 [모집공고 관리 - 3부] 인라인 입력창 타이핑 개방형 대칭 템플릿 마운트
+                // ==========================================================================
+                if (isRecEditing) {
+                    tr.className = "editing-row";
+                    tr.style.pointerEvents = "auto !important"; // 마우스 차단 오버레이 가드 원천 제거
+                    tr.style.cursor = "default";
 
                     // 데이터 포맷 정화 및 달력 기본값 매칭 가드
                     let defaultDateVal = row.recDate ? row.recDate.trim() : "";
@@ -1758,35 +1767,23 @@
                         defaultDateVal = `${yyyy}-${mm}-${dd}`;
                     }
 
-                    tr.className = "editing-row";
-                    tr.style.pointerEvents = "auto";
-                    tr.style.cursor = "default";
-
-                    // 🎯 [UI 대통합 매칭 디자인]: 모든 input, select 필드에 var(--card-color) 배경 및 테두리 칼정렬 완벽 주입
+                    // 모든 엘리먼트에 var(--card-color) 배경과 함께 타이핑 차단 전면 해제 적용
                     tr.innerHTML = `
-                <td style="vertical-align: middle; padding-left: 15px;"><input type="text" id="inline-rec-title-${index}" class="inline-input" value="${row.title || ''}" style="font-weight:700; background: var(--card-color) !important; color: #ffffff !important; border: 1px solid #334155 !important; padding: 4px 8px; border-radius: 6px; width: 100%;"></td>
+                <td style="vertical-align: middle; padding-left: 15px;"><input type="text" id="inline-rec-title-${index}" class="inline-input" value="${row.title || ''}" style="font-weight:700; background: var(--card-color) !important; color: #ffffff !important; border: 1px solid #334155 !important; padding: 4px 8px; border-radius: 6px; width: 100%; pointer-events: auto !important;"></td>
                 
-                <!-- 🎯 기수 정밀 선택 매칭 셀렉트 박스 (가운데 정렬 및 다운화살표 완벽 고정) -->
                 <td style="width: 100px; text-align: center !important; vertical-align: middle;">
-                    <select id="inline-rec-th-${index}" class="inline-input" 
-                        style="height:32px !important; padding:2px 24px 2px 6px !important; font-size:12px !important; font-weight:700 !important; background: #1e293b !important; color: #fff !important; border: 1px solid #334155 !important; border-radius: 6px !important; text-align: center !important; text-align-last: center !important; cursor: pointer !important; width: 100% !important; display: inline-block !important; box-sizing: border-box !important;">
+                    <select id="inline-rec-th-${index}" class="inline-input" style="height:32px !important; padding:2px 24px 2px 6px !important; font-size:12px !important; font-weight:700 !important; background: #1e293b !important; color: #fff !important; border: 1px solid #334155 !important; border-radius: 6px !important; text-align: center !important; text-align-last: center !important; cursor: pointer !important; width: 100% !important; display: inline-block !important; box-sizing: border-box !important; pointer-events: auto !important;">
                         <optgroup label="1기" style="background: #1e293b; color: var(--secondary-color); text-align: center;">
                             <option value="1기(1차)" ${row.th === '1기(1차)' ? 'selected' : ''}>1기 1차</option>
                             <option value="1기(2차)" ${row.th === '1기(2차)' ? 'selected' : ''}>1기 2차</option>
-                            <option value="1기(3차)" ${row.th === '1기(3차)' ? 'selected' : ''}>1기 3차</option>
-                            <option value="1기(4차)" ${row.th === '1기(4차)' ? 'selected' : ''}>1기 4차</option>
                         </optgroup>
                         <optgroup label="2기" style="background: #1e293b; color: var(--secondary-color); text-align: center;">
                             <option value="2기(1차)" ${row.th === '2기(1차)' ? 'selected' : ''}>2기 1차</option>
                             <option value="2기(2차)" ${row.th === '2기(2차)' ? 'selected' : ''}>2기 2차</option>
-                            <option value="2기(3차)" ${row.th === '2기(3차)' ? 'selected' : ''}>2기 3차</option>
-                            <option value="2기(4차)" ${row.th === '2기(4차)' ? 'selected' : ''}>2기 4차</option>
                         </optgroup>
                         <optgroup label="3기" style="background: #1e293b; color: var(--secondary-color); text-align: center;">
                             <option value="3기(1차)" ${row.th === '3기(1차)' ? 'selected' : ''}>3기 1차</option>
                             <option value="3기(2차)" ${row.th === '3기(2차)' ? 'selected' : ''}>3기 2차</option>
-                            <option value="3기(3차)" ${row.th === '3기(3차)' ? 'selected' : ''}>3기 3차</option>
-                            <option value="3기(4차)" ${row.th === '3기(4차)' ? 'selected' : ''}>3기 4차</option>
                         </optgroup>
                         <optgroup label="4기" style="background: #1e293b; color: var(--secondary-color); text-align: center;">
                             <option value="4기(1차)" ${row.th === '4기(1차)' ? 'selected' : ''}>4기 1차</option>
@@ -1797,20 +1794,13 @@
                     </select>
                 </td>
                 
-                <td style="text-align: center !important; vertical-align: middle;"><input type="text" id="inline-rec-count-${index}" class="inline-input" value="${row.count || '0'}" style="background: var(--card-color) !important; text-align:center; color: #fff !important; border: 1px solid #334155 !important; border-radius: 6px; width: 100%;"></td>
-                <td style="text-align: center !important; vertical-align: middle;"><input type="text" id="inline-rec-period-${index}" class="inline-input" value="${row.period || '0'}" style="background: var(--card-color) !important; text-align:center; color: #fff !important; border: 1px solid #334155 !important; border-radius: 6px; width: 100%;"></td>
-                <td style="vertical-align: middle;"><input type="text" id="inline-rec-crc-${index}" class="inline-input" value="${row.crc || '-'}" style="background: var(--card-color) !important; color: #38bdf8 !important; font-weight: 600; border: 1px solid #334155 !important; border-radius: 6px; width: 100%;"></td>
-                
-                <!-- 🎯 [순백색 아이콘 복원 달력 피커 구역]: 정중앙 정렬 및 이전 단계의 필터 반전 가드를 완벽 적용 -->
-                <td style="text-align: center !important; vertical-align: middle;">
-                    <input type="date" id="inline-rec-date-${index}" class="inline-input" value="${defaultDateVal}" 
-                        style="background: var(--card-color) !important; color: #fbbf24 !important; font-weight: 700; height: 32px; text-align: center; text-align-last: center; display: inline-block; width: 130px; cursor: pointer; border: 1px solid #334155 !important; border-radius: 6px; box-sizing: border-box; padding: 2px 6px;">
-                </td>
-
-                <td style="vertical-align: middle;"><input type="text" id="inline-rec-notice-${index}" class="inline-input" value="${row.notice || ''}" style="background: var(--card-color) !important; color: #f87171 !important; border: 1px solid #334155 !important; border-radius: 6px; width: 100%;"></td>
+                <td style="text-align: center !important; vertical-align: middle;"><input type="text" id="inline-rec-count-${index}" class="inline-input" value="${row.count || '0'}" style="background: var(--card-color) !important; text-align:center; color: #fff !important; border: 1px solid #334155 !important; border-radius: 6px; width: 100%; pointer-events: auto !important;"></td>
+                <td style="text-align: center !important; vertical-align: middle;"><input type="text" id="inline-rec-period-${index}" class="inline-input" value="${row.period || '0'}" style="background: var(--card-color) !important; text-align:center; color: #fff !important; border: 1px solid #334155 !important; border-radius: 6px; width: 100%; pointer-events: auto !important;"></td>
+                <td style="vertical-align: middle;"><input type="text" id="inline-rec-crc-${index}" class="inline-input" value="${row.crc || '-'}" style="background: var(--card-color) !important; color: #38bdf8 !important; font-weight: 600; border: 1px solid #334155 !important; border-radius: 6px; width: 100%; pointer-events: auto !important;"></td>
+                <td style="text-align: center !important; vertical-align: middle;"><input type="date" id="inline-rec-date-${index}" class="inline-input" value="${defaultDateVal}" style="background: var(--card-color) !important; color: #fbbf24 !important; font-weight: 700; height: 32px; text-align: center; text-align-last: center; display: inline-block; width: 130px; cursor: pointer; border: 1px solid #334155 !important; border-radius: 6px; box-sizing: border-box; padding: 2px 6px; pointer-events: auto !important;"></td>
+                <td style="vertical-align: middle;"><input type="text" id="inline-rec-notice-${index}" class="inline-input" value="${row.notice || ''}" style="background: var(--card-color) !important; color: #f87171 !important; border: 1px solid #334155 !important; border-radius: 6px; width: 100%; pointer-events: auto !important;"></td>
                 <td style="vertical-align: middle; text-align: center;"><button type="button" class="btn-inline list" style="background:#475569; opacity:0.5; cursor:not-allowed; pointer-events: none; padding: 4px 10px; border-radius: 4px;" disabled>보기</button></td>
-                <td style="vertical-align: middle; text-align: center;"><input type="text" id="inline-rec-pay-${index}" class="inline-input" value="${row.paySchedule || row.payDate || '추후공지'}" style="background: var(--card-color) !important; color: #fbbf24 !important; font-weight: 700; text-align: center; border: 1px solid #334155 !important; border-radius: 6px; width: 100%;"></td>
-
+                <td style="vertical-align: middle; text-align: center;"><input type="text" id="inline-rec-pay-${index}" class="inline-input" value="${row.paySchedule || row.payDate || '추후공지'}" style="background: var(--card-color) !important; color: #fbbf24 !important; font-weight: 700; text-align: center; border: 1px solid #334155 !important; border-radius: 6px; width: 100%; pointer-events: auto !important;"></td>
                 <td style="vertical-align: middle; text-align: center; padding-right: 15px;">
                     <div class="action-btn-wrapper" style="display: flex !important; justify-content: center !important; gap: 6px !important; width: 100% !important;">
                         <button type="button" class="btn-inline save" onclick="saveInlineRecruitmentRecord(${index})" style="background: var(--success-color, #4ade80); color: #070a12; padding: 5px 10px; border-radius: 5px; font-weight: 700; cursor: pointer; font-size: 13px; border:none;">저장</button>
@@ -1818,8 +1808,12 @@
                     </div>
                 </td>
             `;
-                } else {
-                    // [B 분기]: 일반 읽기 전용 모드 상태 렌더링 (기존 12열 원형 구조 완벽 유지)
+                }
+
+                // ==========================================================================
+                // 🎯 [모집공고 관리 - 4부] 일반 Read 모드 레이아웃 마감 및 테이블 바인딩 완료
+                // ==========================================================================
+                else {
                     tr.innerHTML = `
                 <td style="font-weight: 700; color: #ffffff !important; vertical-align: middle; padding-left: 15px;">${row.title}</td>
                 <td style="vertical-align: middle; text-align: center;"><span class="lvl-badge ${thBadgeClass}" style="padding: 4px 8px; font-size:12px; display: inline-block;">${row.th}</span></td>
@@ -1841,6 +1835,7 @@
                 tbody.appendChild(tr);
             });
         }
+
 
 
 
