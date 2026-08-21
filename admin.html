@@ -2092,34 +2092,63 @@
                     tr.style.pointerEvents = "auto";
                     tr.innerHTML = `
                 <td style="padding-left: 15px;"><input type="text" id="inline-app-title-${index}" class="inline-input" value="${row.title || ''}" style="font-weight:700;"></td>
-                <td style="width: 90px;"><input type="text" id="inline-app-th-${index}" class="inline-input" value="${row.th || ''}" style="text-align:center;"></td>
+                
+                <!-- 🎯 [기수 셀렉트 박스 완전 복원]: 기존 input 창을 걷어내고 기수 정밀 매칭 드롭다운 메뉴를 탑재합니다. -->
+                <td style="width: 100px;">
+                    <select id="inline-app-th-${index}" class="inline-input" 
+                        style="height:28px; padding:2px; font-size:12px; font-weight:700; background: #0f172a; color: #fff; border: 1px solid #334155; text-align:center; cursor: pointer; width: 100%;">
+                        <optgroup label="1기" style="background: #1e293b;">
+                            <option value="1기(1차)" ${row.th === '1기(1차)' ? 'selected' : ''}>1기 1차</option>
+                            <option value="1기(2차)" ${row.th === '1기(2차)' ? 'selected' : ''}>1기 2차</option>
+                            <option value="1기(3차)" ${row.th === '1기(3차)' ? 'selected' : ''}>1기 3차</option>
+                            <option value="1기(4차)" ${row.th === '1기(4차)' ? 'selected' : ''}>1기 4차</option>
+                        </optgroup>
+                        <optgroup label="2기" style="background: #1e293b;">
+                            <option value="2기(1차)" ${row.th === '2기(1차)' ? 'selected' : ''}>2기 1차</option>
+                            <option value="2기(2차)" ${row.th === '2기(2차)' ? 'selected' : ''}>2기 2차</option>
+                            <option value="2기(3차)" ${row.th === '2기(3차)' ? 'selected' : ''}>2기 3차</option>
+                            <option value="2기(4차)" ${row.th === '2기(4차)' ? 'selected' : ''}>2기 4차</option>
+                        </optgroup>
+                        <optgroup label="3기" style="background: #1e293b;">
+                            <option value="3기(1차)" ${row.th === '3기(1차)' ? 'selected' : ''}>3기 1차</option>
+                            <option value="3기(2차)" ${row.th === '3기(2차)' ? 'selected' : ''}>3기 2차</option>
+                            <option value="3기(3차)" ${row.th === '3기(3차)' ? 'selected' : ''}>3기 3차</option>
+                            <option value="3기(4차)" ${row.th === '3기(4차)' ? 'selected' : ''}>3기 4차</option>
+                        </optgroup>
+                        <optgroup label="4기" style="background: #1e293b;">
+                            <option value="4기(1차)" ${row.th === '4기(1차)' ? 'selected' : ''}>4기 1차</option>
+                            <option value="4기(2차)" ${row.th === '4기(2차)' ? 'selected' : ''}>4기 2차</option>
+                            <option value="4기(3차)" ${row.th === '4기(3차)' ? 'selected' : ''}>4기 3차</option>
+                            <option value="4기(4차)" ${row.th === '4기(4차)' ? 'selected' : ''}>4기 4차</option>
+                        </optgroup>
+                    </select>
+                </td>
+                
                 <td style="width: 75px;"><input type="text" id="inline-app-count-${index}" class="inline-input" value="${row.count || '60'}" style="text-align:center;"></td>
                 <td style="width: 65px;"><input type="text" id="inline-app-period-${index}" class="inline-input" value="${row.period || '0'}" style="text-align:center;"></td>
                 <td style="width: 80px;"><input type="text" id="inline-app-name-${index}" class="inline-input" value="${cleanName}" style="text-align:center; font-weight:700;"></td>
                 <td style="width: 85px;"><input type="text" id="inline-app-ssn-${index}" class="inline-input" value="${row.ssn || ''}" style="text-align:center;"></td>
                 <td style="width: 125px;"><input type="text" id="inline-app-phone-${index}" class="inline-input" value="${formattedPhone}" style="text-align:center;"></td>
                 <td>
-                  <select id="inline-app-payStatus-${index}" class="inline-input" 
-                    style="height:28px; padding:2px; font-size:12px; font-weight:700; ${statusStyle} cursor: pointer;">
-                    <option value="대기" style="background: var(--card-color); color: #94a3b8;" ${currentStatus === '대기' ? 'selected' : ''}>대기</option>
-                    <option value="접수" style="background: var(--card-color); color: #38bdf8;" ${currentStatus === '접수' ? 'selected' : ''}>접수</option>
-                    <option value="처리중" style="background: var(--card-color); color: #fbbf24;" ${currentStatus === '처리중' ? 'selected' : ''}>재무 검토 (처리중)</option>
-                    <option value="지급완료" style="background: var(--card-color); color: #34d399;" ${(currentStatus === '처리완료' || currentStatus === '지급완료') ? 'selected' : ''}>처리완료</option>
-                  </select>
+                    <select id="inline-app-payStatus-${index}" class="inline-input" style="height:28px; padding:2px; font-size:12px; font-weight:700; ${statusStyle} cursor: pointer;">
+                        <option value="대기" style="background: var(--card-color); color: #94a3b8;" ${currentStatus === '대기' ? 'selected' : ''}>대기</option>
+                        <option value="접수" style="background: var(--card-color); color: #38bdf8;" ${currentStatus === '접수' ? 'selected' : ''}>접수</option>
+                        <option value="처리중" style="background: var(--card-color); color: #fbbf24;" ${currentStatus === '처리중' ? 'selected' : ''}>재무 검토 (처리중)</option>
+                        <option value="지급완료" style="background: var(--card-color); color: #34d399;" ${(currentStatus === '처리완료' || currentStatus === '지급완료') ? 'selected' : ''}>처리완료</option>
+                    </select>
                 </td>
                 <td style="width: 75px;"><input type="text" id="inline-app-duty-${index}" class="inline-input" value="${dutyAgreed}" style="text-align:center;"></td>
                 <td style="width: 75px;"><input type="text" id="inline-app-call-${index}" class="inline-input" value="${callAgreed}" style="text-align:center;"></td>
                 <td style="vertical-align: middle;">${documentLinksHTML}</td>
                 <td style="text-align: center; width: 180px; min-width: 180px; white-space: nowrap; padding-right: 15px; vertical-align: middle;">
-                    <!-- 🎯 [함수명 3중 결합 프리패스 가드]: admin.html 내부에 선언될 수 있는 모든 대상자 저장 함수명을 차례대로 자동 검색해 가동시킵니다 -->
                     <button type="button" class="btn-inline save" 
                         onclick="if(typeof saveApplicantInline === 'function'){ saveApplicantInline(${index}); } else if(typeof saveApplicantRecord === 'function'){ saveApplicantRecord(${index}); } else if(typeof insertApplicantRecord === 'function'){ insertApplicantRecord(${index}); }" 
                         style="background: var(--success-color, #4ade80); color: #070a12; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 13px;">저장</button>
-                    
                     <button type="button" class="btn-inline edit" onclick="window.currentAppEditingIndex = null; if(typeof currentAppEditingIndex !== 'undefined'){currentAppEditingIndex = null;} if(typeof currentEditingApplicantIndex !== 'undefined'){currentEditingApplicantIndex = null;} refreshApplicantView();" style="background: #475569; border:1px solid var(--border-color); color:#fff; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 13px;">취소</button>
                 </td>
             `;
                 }
+
                 // [B 분기]: 일반 읽기 전용 상태 렌더링
                 else {
                     const displayStatusText = (currentStatus === '처리중') ? '재무 검토 (처리중)' : currentStatus;
