@@ -2141,8 +2141,10 @@
 
             // 로컬 스토리지 최신 데이터 파일 세트 로드
             let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
+            let displayDB = adminApplicantDB.slice().reverse();
 
-            adminApplicantDB.forEach((row, index) => {
+            displayDB.forEach((row, index) => {
+                const originalIndex = adminApplicantDB.length - 1 - index;
                 const tr = document.createElement('tr');
 
                 // 성명 특수문자 파편 제거 정제
@@ -2239,11 +2241,11 @@
                     tr.className = "editing-row";
                     tr.style.pointerEvents = "auto";
                     tr.innerHTML = `
-                <td style="padding-left: 15px;"><input type="text" id="inline-app-title-${index}" class="inline-input" value="${row.title || ''}" style="font-weight:700;"></td>
+                <td style="padding-left: 15px;"><input type="text" id="inline-app-title-${originalIndex}" class="inline-input" value="${row.title || ''}" style="font-weight:700;"></td>
                 
               <td style="text-align: center !important; vertical-align: middle;">
     <!-- 🎯 [최종 결론]: 기존 외부 CSS 스타일 시트의 left 정렬 강제 규칙을 !important 가드로 완전히 부수고 정중앙을 확립합니다. -->
-    <select id="inline-app-th-${index}" class="inline-input" 
+    <select id="inline-app-payStatus-${originalIndex}" class="inline-input" 
         style="height:32px !important; padding:2px 0 !important; font-size:12px !important; font-weight:700 !important; background: #1e293b !important; color: #fff !important; border: 1px solid #334155 !important; border-radius: 6px !important; text-align: center !important; text-align-last: center !important; -webkit-appearance: none !important; -moz-appearance: none !important; appearance: none !important; cursor: pointer !important; width: 100% !important; display: inline-block !important; box-sizing: border-box !important; pointer-events: auto !important;"> 
        
         <optgroup label="1기" style="background: #1e293b !important; color: var(--secondary-color) !important; text-align: center !important; text-align-last: center !important;">
@@ -2292,12 +2294,16 @@
                 <td style="width: 75px;"><input type="text" id="inline-app-duty-${index}" class="inline-input" value="${dutyAgreed}" style="text-align:center;"></td>
                 <td style="width: 75px;"><input type="text" id="inline-app-call-${index}" class="inline-input" value="${callAgreed}" style="text-align:center;"></td>
                 <td style="vertical-align: middle;">${documentLinksHTML}</td>
-                <td style="text-align: center; width: 180px; min-width: 180px; white-space: nowrap; padding-right: 15px; vertical-align: middle;">
-                    <button type="button" class="btn-inline save" 
-                        onclick="if(typeof saveApplicantInline === 'function'){ saveApplicantInline(${index}); } else if(typeof saveApplicantRecord === 'function'){ saveApplicantRecord(${index}); } else if(typeof insertApplicantRecord === 'function'){ insertApplicantRecord(${index}); }" 
-                        style="background: var(--success-color, #4ade80); color: #070a12; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 13px;">저장</button>
-                    <button type="button" class="btn-inline edit" onclick="window.currentAppEditingIndex = null; if(typeof currentAppEditingIndex !== 'undefined'){currentAppEditingIndex = null;} if(typeof currentEditingApplicantIndex !== 'undefined'){currentEditingApplicantIndex = null;} refreshApplicantView();" style="background: #475569; border:1px solid var(--border-color); color:#fff; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 13px;">취소</button>
-                </td>
+                <td style="text-align: center !important; width: 180px; min-width: 180px; white-space: nowrap; padding-right: 15px; vertical-align: middle;">
+    <!-- 🎯 [완전 종결]: 역순 정렬 스캔 상태에서도 진짜 원본 데이터베이스 배열 순번인 originalIndex 주소를 타격하도록 가드를 연동합니다. -->
+    <button type="button" class="btn-inline save" 
+        onclick="if(typeof saveApplicantInline === 'function'){ saveApplicantInline(${originalIndex}); } else if(typeof saveApplicantRecord === 'function'){ saveApplicantRecord(${originalIndex}); } else if(typeof insertApplicantRecord === 'function'){ insertApplicantRecord(${originalIndex}); }" 
+        style="background: var(--success-color, #4ade80); color: #070a12; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 13px; border: none;">저장</button>
+    
+    <button type="button" class="btn-inline edit" 
+        onclick="window.currentAppEditingIndex = null; if(typeof currentAppEditingIndex !== 'undefined'){currentAppEditingIndex = null;} if(typeof currentEditingApplicantIndex !== 'undefined'){currentEditingApplicantIndex = null;} refreshApplicantView();" 
+        style="background: #475569; border:1px solid var(--border-color); color:#fff; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 13px; border: none;">취소</button>
+</td>
             `;
                 }
 
@@ -2321,11 +2327,16 @@
                 <td style="text-align: center; width: 75px; min-width: 75px; color: #34d399; font-weight:700; font-size: 13px; vertical-align: middle;">${dutyAgreed}</td>
                 <td style="text-align: center; width: 75px; min-width: 75px; color: #34d399; font-weight:700; font-size: 13px; vertical-align: middle;">${callAgreed}</td>
                 <td style="text-align: center; width: 140px; min-width: 140px; vertical-align: middle;">${documentLinksHTML}</td>
-                <td style="text-align: center; width: 180px; min-width: 180px; white-space: nowrap; padding-right: 15px; vertical-align: middle;">
-                    <button type="button" class="btn-inline save" onclick="openApplicantHistoryModal(${index})" style="background: var(--secondary-color); color: #ffffff; padding: 4px 10px; font-size: 12px; font-weight: 700; border-radius: 5px; margin-right: 3px; cursor: pointer; transition: opacity 0.2s;">이력조회</button>
-                    <button type="button" class="btn-inline edit" onclick="window.currentAppEditingIndex = ${index}; if(typeof currentAppEditingIndex !== 'undefined') { currentAppEditingIndex = ${index}; } if(typeof currentEditingApplicantIndex !== 'undefined') { currentEditingApplicantIndex = ${index}; } refreshApplicantView();" style="background: #334155; border: 1px solid var(--border-color); color: var(--text-color); padding: 4px 10px; font-size: 12px; font-weight: 700; border-radius: 5px; margin-right: 3px; cursor: pointer;">수정</button>
-                    <button type="button" class="btn-inline delete" onclick="deleteApplicantRecord(${index})" style="background: rgba(239, 68, 68, 0.15); border: 1px solid var(--danger-color); color: var(--danger-color); padding: 4px 10px; font-size: 12px; font-weight: 700; border-radius: 5px; cursor: pointer;">삭제</button>
-                </td>
+                <td style="text-align: center !important; width: 180px; min-width: 180px; white-space: nowrap; padding-right: 15px; vertical-align: middle;">
+    <!-- 🎯 [이력조회]: 진짜 원본 장부의 originalIndex 주소를 연결하여 정확한 피험자의 과거 이력 팝업을 호출합니다. -->
+    <button type="button" class="btn-inline save" onclick="openApplicantHistoryModal(${originalIndex})" style="background: var(--secondary-color); color: #ffffff; padding: 4px 10px; font-size: 12px; font-weight: 700; border-radius: 5px; margin-right: 3px; cursor: pointer; transition: opacity 0.2s; border: none;">이력조회</button>
+    
+    <!-- 🎯 [수정]: 수정 버튼 클릭 시에도 3중 포인터 플래그 변수에 진짜 원본 배열 인덱스를 강제 락인시켜 인라인 에디터를 활성화합니다. -->
+    <button type="button" class="btn-inline edit" onclick="window.currentAppEditingIndex = ${originalIndex}; if(typeof currentAppEditingIndex !== 'undefined') { currentAppEditingIndex = ${originalIndex}; } if(typeof currentEditingApplicantIndex !== 'undefined') { currentEditingApplicantIndex = ${originalIndex}; } refreshApplicantView();" style="background: #334155; border: 1px solid var(--border-color); color: var(--text-color); padding: 4px 10px; font-size: 12px; font-weight: 700; border-radius: 5px; margin-right: 3px; cursor: pointer;">수정</button>
+    
+    <!-- 🎯 [삭제]: 삭제 트랜잭션 역시 originalIndex를 직격 타격하여 엉뚱한 데이터가 삭제되는 참사를 원천 차단합니다. -->
+    <button type="button" class="btn-inline delete" onclick="deleteApplicantRecord(${originalIndex})" style="background: rgba(239, 68, 68, 0.15); border: 1px solid var(--danger-color); color: var(--danger-color); padding: 4px 10px; font-size: 12px; font-weight: 700; border-radius: 5px; cursor: pointer; border: 1px solid var(--danger-color);">삭제</button>
+</td>
             `;
                 }
                 tbody.appendChild(tr);
