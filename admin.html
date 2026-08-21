@@ -1983,22 +1983,25 @@
         // ========================================================
         // 🎯 [완전 종결] 대상자 마스터 테이블 기수 문자열 싱크 및 배지 드로잉 엔진 (당직/소집 분리형)
         // ========================================================
+        // ========================================================
+        // 🎯 [완전 종결 - 1부] ReferenceError 영구 폐쇄형 데이터 분석 및 조건 가드 엔진
+        // ========================================================
         function refreshApplicantView() {
             const tbody = document.getElementById('dom-applicant-table');
             if (!tbody) return;
-            tbody.innerHTML = ''; // 테이블 내부 초기화
+            tbody.innerHTML = ''; // 테이블 내부 잔재 초기화
 
-            // 로컬 스토리지 최신 데이터 로드
+            // 로컬 스토리지 최신 데이터 파일 세트 로드
             let adminApplicantDB = JSON.parse(localStorage.getItem('dataStoreApplicant')) || [];
 
             adminApplicantDB.forEach((row, index) => {
                 const tr = document.createElement('tr');
 
-                // 성명 특수문자 제거 정제
+                // 성명 특수문자 파편 제거 정제
                 const rawName = row.name || '';
                 const cleanName = rawName.replace(/[^\w\sㄱ-ㅎㅏ-ㅣ가-힣]/g, '').trim();
 
-                // 연락처 하이픈 포맷 정형화
+                // 연락처 오피셜 하이픈(-) 자동 변환 포맷 가드
                 const rawPhone = (row.phone || '').replace(/[^0-9]/g, '');
                 let formattedPhone = '-';
                 if (rawPhone.length === 11) {
@@ -2011,7 +2014,7 @@
                     }
                 } else if (rawPhone.length > 0) { formattedPhone = row.phone; }
 
-                // 서류 배지 상태 분석 조건절
+                // 증빙 서류 뷰어 유효성 정밀 스캔 분석 구역 [index: 0.1.43]
                 const isIdImgValid = row.idCardImg && typeof row.idCardImg === 'string' && row.idCardImg.length > 20 && row.idCardImg.indexOf('fakepath') === -1 && row.idCardImg !== "placeholder";
                 const isIdUrlValid = row.idCardUrl && typeof row.idCardUrl === 'string' && row.idCardUrl.length > 20 && row.idCardUrl.indexOf('fakepath') === -1;
                 const hasIdCard = (row.idCard === true || row.idCard === "true" || isIdImgValid || isIdUrlValid) && (row.idCard !== false && row.idCard !== "false");
@@ -2023,29 +2026,30 @@
                 let finalIdCardSrc = isIdImgValid ? row.idCardImg : (isIdUrlValid ? row.idCardUrl : "placeholder");
                 let finalBankBookSrc = isBankImgValid ? row.bankBookImg : (isBankUrlValid ? row.bankBookUrl : "placeholder");
 
-                // 첨부서류 단순화 배지 HTML 빌드
+                // 첨부서류 액션 앵커 배지 HTML 빌드 [index: 0.1.43]
                 let documentLinksHTML = `<div style="display: flex; gap: 4px; justify-content: center; align-items: center; white-space: nowrap;">`;
                 if (hasIdCard && finalIdCardSrc !== "placeholder") {
                     documentLinksHTML += `<button type="button" class="btn-inline list" onclick="openDocModal('${finalIdCardSrc}', '${cleanName} - 신분증')" style="padding: 4px 8px; font-size: 11px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; border-radius: 4px; font-weight: 700; cursor:pointer;"><i class="fa-solid fa-id-card"></i> 신분증</button>`;
                 } else {
-                    documentLinksHTML += `<span class="doc-badge status-none" style="padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(148, 163, 184, 0.08); border: 1px solid rgba(148, 163, 184, 0.2); color: #64748b; cursor: not-allowed;">신분증</span>`;
+                    documentLinksHTML += `<span class="doc-badge status-none" style="padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(14, 165, 233, 0.08); border: 1px solid rgba(148, 163, 184, 0.2); color: #64748b; cursor: not-allowed;">신분증</span>`;
                 }
                 if (hasBankBook && finalBankBookSrc !== "placeholder") {
                     documentLinksHTML += `<button type="button" class="btn-inline list" onclick="openDocModal('${finalBankBookSrc}', '${cleanName} - 통장사본')" style="padding: 4px 8px; font-size: 11px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; border-radius: 4px; font-weight: 700; cursor:pointer;"><i class="fa-solid fa-wallet"></i> 통장</button>`;
                 } else {
-                    documentLinksHTML += `<span class="doc-badge status-none" style="padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(148, 163, 184, 0.08); border: 1px solid rgba(148, 163, 184, 0.2); color: #64748b; cursor: not-allowed;">통장</span>`;
+                    documentLinksHTML += `<span class="doc-badge status-none" style="padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(14, 165, 233, 0.08); border: 1px solid rgba(14, 165, 233, 0.2); color: #64748b; cursor: not-allowed;">통장</span>`;
                 }
                 documentLinksHTML += `</div>`;
 
-                // ========================================================
-                // 🎯 [완전 종결] 상태 4단계 프로세스 및 상단 위젯 카드 1:1 동기화 엔진
-                // ========================================================
+                // 🎯 [에러 방지 핵심 마감]: 하단 HTML 템플릿에 도달하기 전 필수 참조 변수 2종 정밀 바인딩 완료
+                const dutyAgreed = row.isDutyAgreed || row.isAgreed || "동의";
+                const callAgreed = row.isCallAgreed || row.isAgreed || "동의";
+
+                // 🎯 [상태 배지 고대비 색상 매칭 허브 구역] - 상단 현황판 위젯 카드와 1:1 컬러 레이어 동기화 [index: 0.1.44]
                 let currentStatus = row.payStatus || '대기';
                 if (currentStatus === '확인' || currentStatus === '접수완료') currentStatus = '접수';
-                // 💡 기획안의 기계 호환용 '지급완료' 규격을 신규 출력 규격인 '처리완료'와 내부 인터셉트 싱크 결합
                 if (currentStatus === '지급완료') currentStatus = '처리완료';
 
-                // 🎯 [상태별 스타일 정의] - 상단 위젯 카드와 동일한 디자인 시스템 적용 (var(--card-color) 및 1px solid 강조)
+                // 상태별 스타일 속성 정의 (var(--card-color) 매칭 기반 다크 모드 전용 고해상도 디자인)
                 let statusStyle = "";
                 if (currentStatus === '대기') {
                     statusStyle = "background: var(--card-color); color: #94a3b8; border: 1px solid #334155;";
@@ -2057,7 +2061,7 @@
                     statusStyle = "background: var(--card-color); color: #34d399; border: 1px solid #34d399;";
                 }
 
-                // 🎯 [에러 원천 차단 가드]: ReferenceError: statusBadgeClass is not defined 해결
+                // 구버전 호환용 상쇄 변수 선언
                 let statusBadgeClass = "";
 
                 const thNumMatch = (row.th || "").match(/\d+/);
@@ -2071,11 +2075,15 @@
                 let groupMatchCount = adminApplicantDB.slice(0, index + 1).filter(item => `${item.title}_${item.th}` === currentThKey).length;
                 const totalQuota = row.count || "60";
 
-                // 3중 안전 장치 매칭 포인터 변수 통합 인지
+                // 3중 안전 장치 에디터 추적 포인터 상태 검증 분기점
                 const isCurrentlyEditing =
                     (typeof currentAppEditingIndex !== 'undefined' && currentAppEditingIndex === index) ||
                     (typeof window.currentAppEditingIndex !== 'undefined' && window.currentAppEditingIndex === index) ||
                     (typeof currentEditingApplicantIndex !== 'undefined' && currentEditingApplicantIndex === index);
+
+                // ========================================================
+                // 🎯 [완전 종결 - 2부] 마스터 레이아웃 분기 출력 및 12열 크기 보존형 템플릿 엔진
+                // ========================================================
 
                 // [A 분기]: 수정 상태가 활성화되었을 때 (인라인 입력 서식 노출)
                 if (isCurrentlyEditing) {
@@ -2089,39 +2097,25 @@
                 <td style="width: 80px;"><input type="text" id="inline-app-name-${index}" class="inline-input" value="${cleanName}" style="text-align:center; font-weight:700;"></td>
                 <td style="width: 85px;"><input type="text" id="inline-app-ssn-${index}" class="inline-input" value="${row.ssn || ''}" style="text-align:center;"></td>
                 <td style="width: 125px;"><input type="text" id="inline-app-phone-${index}" class="inline-input" value="${formattedPhone}" style="text-align:center;"></td>
-                
-                <!-- 🎯 [교정 핵심]: 기획안 원형의 value 기계 처리를 완벽하게 유지하면서 화면 텍스트 양식만 깔끔하게 보정 -->
                 <td>
-                    <select id="inline-app-paystatus-${index}" class="inline-input"
-                        style="height:28px; padding:2px; font-size:12px; font-weight:700; ${statusStyle} cursor: pointer;">
+                    <select id="inline-app-paystatus-${index}" class="inline-input" style="height:28px; padding:2px; font-size:12px; font-weight:700; ${statusStyle} cursor: pointer;">
                         <option value="대기" style="background: var(--card-color); color: #94a3b8;" ${currentStatus === '대기' ? 'selected' : ''}>대기</option>
                         <option value="접수" style="background: var(--card-color); color: #38bdf8;" ${currentStatus === '접수' ? 'selected' : ''}>접수</option>
                         <option value="처리중" style="background: var(--card-color); color: #fbbf24;" ${currentStatus === '처리중' ? 'selected' : ''}>재무 검토 (처리중)</option>
                         <option value="지급완료" style="background: var(--card-color); color: #34d399;" ${(currentStatus === '처리완료' || currentStatus === '지급완료') ? 'selected' : ''}>처리완료</option>
                     </select>
                 </td>
-                <td>
-                    <select id="inline-app-duty-${index}" class="inline-input" style="height:28px; padding:2px; font-size:12px;">
-                        <option value="동의" ${dutyAgreed === '동의' ? 'selected' : ''}>동의</option>
-                        <option value="미동의" ${dutyAgreed === '미동의' ? 'selected' : ''}>미동의</option>
-                    </select>
-                </td>
-                <td>
-                    <select id="inline-app-call-${index}" class="inline-input" style="height:28px; padding:2px; font-size:12px;">
-                        <option value="동의" ${callAgreed === '동의' ? 'selected' : ''}>동의</option>
-                        <option value="미동의" ${callAgreed === '미동의' ? 'selected' : ''}>미동의</option>
-                    </select>
-                </td>
-                <td style="text-align: center; width: 140px; vertical-align: middle;">${documentLinksHTML}</td>
-                <td style="text-align: center; width: 180px; white-space: nowrap; padding-right: 15px; vertical-align: middle;">
-                    <button type="button" class="btn-inline save" onclick="saveInlineApplicantRecord(${index})" style="background: var(--success-color, #4ade80); color: #070a12; padding: 4px 10px; font-size: 12px; font-weight: 700; border-radius: 5px; margin-right: 3px; cursor: pointer;">저장</button>
-                    <button type="button" class="btn-inline edit" onclick="window.currentAppEditingIndex = null; if(typeof currentAppEditingIndex !== 'undefined'){currentAppEditingIndex=null;} refreshApplicantView();" style="background: #475569; border: 1px solid var(--border-color); color: #fff; padding: 4px 10px; font-size: 12px; font-weight: 700; border-radius: 5px; cursor: pointer;">취소</button>
+                <td style="width: 75px;"><input type="text" id="inline-app-duty-${index}" class="inline-input" value="${dutyAgreed}" style="text-align:center;"></td>
+                <td style="width: 75px;"><input type="text" id="inline-app-call-${index}" class="inline-input" value="${callAgreed}" style="text-align:center;"></td>
+                <td style="vertical-align: middle;">${documentLinksHTML}</td>
+                <td style="text-align: center; width: 180px; min-width: 180px; white-space: nowrap; padding-right: 15px; vertical-align: middle;">
+                    <button type="button" class="btn-inline save" onclick="saveApplicantRecord(${index})" style="background: var(--success-color, #4ade80); color: #070a12; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 13px;">저장</button>
+                    <button type="button" class="btn-inline edit" onclick="window.currentAppEditingIndex = null; if(typeof currentAppEditingIndex !== 'undefined'){currentAppEditingIndex = null;} if(typeof currentEditingApplicantIndex !== 'undefined'){currentEditingApplicantIndex = null;} refreshApplicantView();" style="background: #475569; border:1px solid var(--border-color); color:#fff; padding: 5px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 13px;">취소</button>
                 </td>
             `;
                 }
-                // [B 분기]: 일반 읽기 전용 상태 렌더링 (원본 구조 및 스타일 100% 영속화)
+                // [B 분기]: 일반 읽기 전용 상태 렌더링
                 else {
-                    // 🎯 [한글 출력 치환 가드]: 데이터 가공 체인은 '처리중'/'지급완료'로 돌리되 화면 문구만 기획 사양 매칭
                     const displayStatusText = (currentStatus === '처리중') ? '재무 검토 (처리중)' : currentStatus;
 
                     tr.innerHTML = `
@@ -2132,39 +2126,24 @@
                 <td style="text-align: center; width: 80px; min-width: 80px; font-weight: 700; color: #ffffff; vertical-align: middle;">${cleanName}</td>
                 <td style="text-align: center; width: 85px; min-width: 85px; color: #cbd5e1; letter-spacing: 0.5px; vertical-align: middle;">${row.ssn || '-'}</td>
                 <td style="text-align: center; width: 125px; min-width: 125px; color: #cbd5e1; font-size: 13px; vertical-align: middle;">${formattedPhone}</td>
-                
-                <!-- 🎯 [상태 배지 고대비 교정 구역]: 상단 현황판 카드와 1:1로 일치하는 statusStyle 및 변환 텍스트 반영 -->
                 <td style="text-align: center; width: 85px; min-width: 85px; vertical-align: middle;">
                     <span class="lvl-badge" style="${statusStyle} padding: 4px 10px; border-radius: 5px; font-size: 12px; font-weight:700; white-space: nowrap;">
                         ${displayStatusText}
                     </span>
                 </td>
-                
                 <td style="text-align: center; width: 75px; min-width: 75px; color: #34d399; font-weight:700; font-size: 13px; vertical-align: middle;">${dutyAgreed}</td>
                 <td style="text-align: center; width: 75px; min-width: 75px; color: #34d399; font-weight:700; font-size: 13px; vertical-align: middle;">${callAgreed}</td>
                 <td style="text-align: center; width: 140px; min-width: 140px; vertical-align: middle;">${documentLinksHTML}</td>
                 <td style="text-align: center; width: 180px; min-width: 180px; white-space: nowrap; padding-right: 15px; vertical-align: middle;">
                     <button type="button" class="btn-inline save" onclick="openApplicantHistoryModal(${index})" style="background: var(--secondary-color); color: #ffffff; padding: 4px 10px; font-size: 12px; font-weight: 700; border-radius: 5px; margin-right: 3px; cursor: pointer; transition: opacity 0.2s;">이력조회</button>
-                    
-                    <!-- 🎯 [3중 변수 락업 해제]: 수정 버튼을 누르는 순간 시스템 내부의 모든 편집 플래그 변수들을 동시에 락인하여 어떤 뷰어 분기에서도 수정 레이어가 풀리지 않도록 원천 방어합니다. -->
-                    <button type="button" class="btn-inline edit" 
-                        onclick="window.currentAppEditingIndex = ${index}; if(typeof currentAppEditingIndex !== 'undefined') { currentAppEditingIndex = ${index}; } if(typeof currentEditingApplicantIndex !== 'undefined') { currentEditingApplicantIndex = ${index}; } refreshApplicantView();" 
-                        style="background: #334155; border: 1px solid var(--border-color); color: var(--text-color); padding: 4px 10px; font-size: 12px; font-weight: 700; border-radius: 5px; margin-right: 3px; cursor: pointer;">수정</button>
-                    
+                    <button type="button" class="btn-inline edit" onclick="window.currentAppEditingIndex = ${index}; if(typeof currentAppEditingIndex !== 'undefined') { currentAppEditingIndex = ${index}; } if(typeof currentEditingApplicantIndex !== 'undefined') { currentEditingApplicantIndex = ${index}; } refreshApplicantView();" style="background: #334155; border: 1px solid var(--border-color); color: var(--text-color); padding: 4px 10px; font-size: 12px; font-weight: 700; border-radius: 5px; margin-right: 3px; cursor: pointer;">수정</button>
                     <button type="button" class="btn-inline delete" onclick="deleteApplicantRecord(${index})" style="background: rgba(239, 68, 68, 0.15); border: 1px solid var(--danger-color); color: var(--danger-color); padding: 4px 10px; font-size: 12px; font-weight: 700; border-radius: 5px; cursor: pointer;">삭제</button>
                 </td>
             `;
                 }
                 tbody.appendChild(tr);
-
             });
-
-            // 화면 그리기가 완료된 순간 상단 통계 현황판 정산 연쇄 트리거 가동
-            if (typeof calculateLiveDashboardStats === "function") {
-                calculateLiveDashboardStats();
-            }
         }
-
         /**
          * 🎯 원본 호출 인터페이스 매칭: 수정 버튼 클릭 처리
          */
