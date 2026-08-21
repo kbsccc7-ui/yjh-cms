@@ -1985,9 +1985,7 @@
         // ========================================================
         // 🎯 [완전 종결] 대상자 마스터 테이블 기수 문자열 싱크 및 배지 드로잉 엔진 (당직/소집 분리형)
         // ========================================================
-        // ========================================================
-        // 🎯 [완전 종결 - 1부] ReferenceError 영구 폐쇄형 데이터 분석 및 조건 가드 엔진
-        // ========================================================
+
         function refreshApplicantView() {
             const tbody = document.getElementById('dom-applicant-table');
             if (!tbody) return;
@@ -2101,12 +2099,13 @@
                 <td style="width: 85px;"><input type="text" id="inline-app-ssn-${index}" class="inline-input" value="${row.ssn || ''}" style="text-align:center;"></td>
                 <td style="width: 125px;"><input type="text" id="inline-app-phone-${index}" class="inline-input" value="${formattedPhone}" style="text-align:center;"></td>
                 <td>
-                    <select id="inline-app-paystatus-${index}" class="inline-input" style="height:28px; padding:2px; font-size:12px; font-weight:700; ${statusStyle} cursor: pointer;">
-                        <option value="대기" style="background: var(--card-color); color: #94a3b8;" ${currentStatus === '대기' ? 'selected' : ''}>대기</option>
-                        <option value="접수" style="background: var(--card-color); color: #38bdf8;" ${currentStatus === '접수' ? 'selected' : ''}>접수</option>
-                        <option value="처리중" style="background: var(--card-color); color: #fbbf24;" ${currentStatus === '처리중' ? 'selected' : ''}>재무 검토 (처리중)</option>
-                        <option value="지급완료" style="background: var(--card-color); color: #34d399;" ${(currentStatus === '처리완료' || currentStatus === '지급완료') ? 'selected' : ''}>처리완료</option>
-                    </select>
+                  <select id="inline-app-payStatus-${index}" class="inline-input" 
+                    style="height:28px; padding:2px; font-size:12px; font-weight:700; ${statusStyle} cursor: pointer;">
+                    <option value="대기" style="background: var(--card-color); color: #94a3b8;" ${currentStatus === '대기' ? 'selected' : ''}>대기</option>
+                    <option value="접수" style="background: var(--card-color); color: #38bdf8;" ${currentStatus === '접수' ? 'selected' : ''}>접수</option>
+                    <option value="처리중" style="background: var(--card-color); color: #fbbf24;" ${currentStatus === '처리중' ? 'selected' : ''}>재무 검토 (처리중)</option>
+                    <option value="지급완료" style="background: var(--card-color); color: #34d399;" ${(currentStatus === '처리완료' || currentStatus === '지급완료') ? 'selected' : ''}>처리완료</option>
+                  </select>
                 </td>
                 <td style="width: 75px;"><input type="text" id="inline-app-duty-${index}" class="inline-input" value="${dutyAgreed}" style="text-align:center;"></td>
                 <td style="width: 75px;"><input type="text" id="inline-app-call-${index}" class="inline-input" value="${callAgreed}" style="text-align:center;"></td>
@@ -2182,7 +2181,6 @@
 
             try {
                 // 2. 인라인 엘리먼트 존재 여부를 검증하며 실시간 데이터 수집 (예외 오류 방지)
-                // 🎯 [완전 종결 핵심 교정]: 화면의 2부 렌더러 태그 ID 규격(inline-app-)과 완벽하게 1:1 대칭 일치화
                 const elTitle = document.getElementById(`inline-app-title-${index}`);
                 const elTh = document.getElementById(`inline-app-th-${index}`);
                 const elCount = document.getElementById(`inline-app-count-${index}`);
@@ -2191,8 +2189,9 @@
                 const elSsn = document.getElementById(`inline-app-ssn-${index}`);
                 const elPhone = document.getElementById(`inline-app-phone-${index}`);
 
-                // 💡 기획안 2부 레이아웃 태그의 ID(inline-app-paystatus-) 및 동의 필드 규격 정밀 타격 매칭
-                const elPayStatus = document.getElementById(`inline-app-paystatus-${index}`);
+                // 🎯 [버그 해결 핵심 요충지]: 출력 HTML 태그의 대소문자 규격(payStatus - 대문자 S)과 100% 완벽 싱크 결합!
+                const elPayStatus = document.getElementById(`inline-app-payStatus-${index}`);
+
                 const elDuty = document.getElementById(`inline-app-duty-${index}`);
                 const elCall = document.getElementById(`inline-app-call-${index}`);
 
@@ -2210,56 +2209,57 @@
                 adminApplicantDB[index].ssn = elSsn ? elSsn.value.trim() : adminApplicantDB[index].ssn;
                 adminApplicantDB[index].phone = elPhone ? elPhone.value.trim() : adminApplicantDB[index].phone;
 
-                // 🎯 [버그 영구 현역 종결]: 프로세스 진행 상태 교차 동기화 마킹 (payStatus와 result 필드 동시 주입 및 복원)
-                const finalStatus = elPayStatus ? elPayStatus.value : (adminApplicantDB[index].payStatus || "접수");
+                // 🎯 [교정 종결 파이프라인]: 엘리먼트 캡처가 완벽히 성공했으므로, 
+                // 관리자가 드롭다운에서 선택한 '대기'/'접수'/'처리중'/'지급완료' 순수 변경 데이터가 대장에 직격 저장됩니다.
+                const finalStatus = elPayStatus ? elPayStatus.value : (adminApplicantDB[index].payStatus || "대기");
                 adminApplicantDB[index].payStatus = finalStatus;
                 adminApplicantDB[index].result = finalStatus;
 
-                // 🎯 [동의 필드 ID 교정]: 미칭 불일치로 데이터가 덮어써지던 버그 수정
                 adminApplicantDB[index].isDutyAgreed = elDuty ? elDuty.value.trim() : (adminApplicantDB[index].isDutyAgreed || "동의");
                 adminApplicantDB[index].isCallAgreed = elCall ? elCall.value.trim() : (adminApplicantDB[index].isCallAgreed || "동의");
                 adminApplicantDB[index].stage = `${adminApplicantDB[index].th} 참여(소집)`;
 
-                // 4. 🌟 [핵심 가드 1 원안 유지]: 로컬 스토리지뿐 아니라, 메모리 전역 대장(배열 변수 2종 모두) 강제 동기화 시켜 폭파 차단
+                // 4. 🌟 [메모리 폭파 방지 가드]: 로컬 스토리지뿐 아니라, 메모리 전역 대장(배열 변수 2종 모두) 강제 동기화 시켜 유실 원천 차단
                 if (typeof dataStoreApplicant !== 'undefined') dataStoreApplicant = adminApplicantDB;
-                if (typeof adminApplicantDBGlobal !== 'undefined') adminApplicantDBGlobal = adminApplicantDB; // 다른 전역 변수 대응용 가드
+                if (typeof adminApplicantDBGlobal !== 'undefined') adminApplicantDBGlobal = adminApplicantDB;
 
                 // 5. 로컬 스토리지 최종 세이브 커밋
                 localStorage.setItem('dataStoreApplicant', JSON.stringify(adminApplicantDB));
 
-                // 6. 🌟 [핵심 가드 2 원안 유지]: 문자열 혼선 방지를 위해 인라인 편집 활성 인덱스를 완전히 비웁니다 (3중 제어 플래그 교차 초기화)
+                // 6. 🌟 [편집 스위치 완전 초기화]: 문자열 혼선 방지를 위해 인라인 편집 활성 인덱스를 완전히 비웁니다
                 window.currentAppEditingIndex = null;
                 if (typeof currentAppEditingIndex !== 'undefined') currentAppEditingIndex = undefined;
                 if (typeof currentEditingApplicantIndex !== 'undefined') currentEditingApplicantIndex = null;
-                currentEditingUid = null; // 시스템 우회용 플래그 동시 해제
+                currentEditingUid = null;
 
-                // 상단 대시보드 통계 실시간 재계산 함수가 존재한다면 연동 기동 (안전장치)
+                // 상단 대시보드 통계 실시간 재계산 함수 자동 리트리거 연동
                 if (typeof calculateLiveDashboardStats === 'function') {
                     calculateLiveDashboardStats();
                 }
 
-                // 7. 🌟 [핵심 가드 3 원안 유지]: 뷰 새로고침 함수가 깨져있을 때를 대비한 안전 예외 분기 처리
+                // 7. 🌟 [안전 분기 리렌더링]: 새로고침 없이 화면 UI 가 최상위 고대비 색상으로 정렬되도록 리플래시 가동
                 if (typeof refreshApplicantView === 'function') {
                     refreshApplicantView();
                 } else if (typeof renderApplicantTable === 'function') {
                     renderApplicantTable();
                 } else {
-                    console.error("화면 새로고침 함수를 호출할 수 없어 브라우저를 강제 새로고침합니다.");
-                    window.location.reload(); // 최후의 수단으로 데이터 유실 없이 화면 강제 복구
+                    window.location.reload();
                 }
 
                 alert("📢 대상자 정보 및 정산 프로세스 상태가 대장에 완전 저장되었습니다.");
 
             } catch (error) {
                 console.error("saveApplicantInline 트랜잭션 도중 치명적인 오류가 발생했습니다:", error);
-                alert("시스템 오류: 저장 중 문제가 발생했습니다. 개발자 도구(F12) 콘솔 로그를 확인하세요.");
+                alert("시스템 오류: 저장 중 문제가 발생했습니다.");
             }
         }
 
-        // 💡 [2중 호출 케이스 대비]: saveApplicantRecord 라는 이름으로 호출이 들어와도 완벽하게 대응하도록 링크 포워딩 추가
+        // 💡 하방 링크 안전 포워딩 가드 매칭
         function saveApplicantRecord(index) {
             saveApplicantInline(index);
         }
+
+
 
         /**
          * 🎯 원본 호출 인터페이스 매칭: 삭제 버튼 클릭 처리
