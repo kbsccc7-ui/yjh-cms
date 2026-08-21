@@ -2091,7 +2091,9 @@
                     tr.className = "editing-row";
                     tr.style.pointerEvents = "auto";
                     tr.innerHTML = `
-               <td style="text-align: center !important; vertical-align: middle;">
+                <td style="padding-left: 15px;"><input type="text" id="inline-app-title-${index}" class="inline-input" value="${row.title || ''}" style="font-weight:700;"></td>
+                
+              <td style="text-align: center !important; vertical-align: middle;">
     <!-- 🎯 [최종 결론]: 기존 외부 CSS 스타일 시트의 left 정렬 강제 규칙을 !important 가드로 완전히 부수고 정중앙을 확립합니다. -->
     <select id="inline-app-th-${index}" class="inline-input" 
         style="height:32px !important; padding:2px 0 !important; font-size:12px !important; font-weight:700 !important; background: #1e293b !important; color: #fff !important; border: 1px solid #334155 !important; border-radius: 6px !important; text-align: center !important; text-align-last: center !important; -webkit-appearance: none !important; -moz-appearance: none !important; appearance: none !important; cursor: pointer !important; width: 100% !important; display: inline-block !important; box-sizing: border-box !important; pointer-events: auto !important;"> 
