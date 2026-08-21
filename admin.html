@@ -1948,8 +1948,11 @@
         //// 8-18 추가 위...
 
 
+        /**
+     * 🎯 [대안 1 전용] 복층 폼 1~3차 분할 일정 통합 바인딩 및 저장소 커밋 엔진
+     */
         function insertRecruitmentRecord() {
-            // 1. 기존 인풋 필드 값 추출
+            // 1. 1층 기본 정보 필드 스캔 추출
             const t = document.getElementById('form-rec-title').value.trim();
             const th = document.getElementById('form-rec-th').value;
             const c = document.getElementById('form-rec-count').value.trim();
@@ -1958,17 +1961,17 @@
             const dateEl = document.getElementById('form-rec-date');
             const recDate = dateEl ? dateEl.value : "";
 
-            // 🎯 [신규 수집]: 1~3차 참여비 분할 지급일자 캘린더 벨류 스캔
+            // 2. 2층 분할 지급일자 캘린더 피커 벨류 정밀 스캔
             const pay1 = document.getElementById('form-rec-pay1')?.value || "";
             const pay2 = document.getElementById('form-rec-pay2')?.value || "";
             const pay3 = document.getElementById('form-rec-pay3')?.value || "";
 
-            // 2. 필수 값 검증 (소집일자 및 차수별 지급일정 누락 방지 가드)
+            // 3. 필수 예외 데이터 유효성 검사 (안내문 기반 1~3차 지급일 완전 강제 가드)
             if (!t || !th || !c || !p || !recDate || !pay1 || !pay2 || !pay3) {
-                return alert('알림: 빈칸(차수별 참여비 지급일자 포함)을 모두 채워 넣어야 등록이 완료됩니다.');
+                return alert('알림: 빈칸(1~3차 참여비 차수별 지급일정 포함)을 모두 채워 넣어야 등록이 완료됩니다.');
             }
 
-            // 3. 마스터 데이터 구조 스키마에 차수별 일정 필드 완벽 결합 적재
+            // 4. 가상 마스터 대장 스키마 구조에 분할 세부 일정 통합 인가
             dataStoreRecruitment.push({
                 uid: Date.now(),
                 title: t,
@@ -1979,29 +1982,30 @@
                 recDate: recDate,
                 notice: "공복 유지 필수 및 소집 10분 전 대기",
                 examSchedule: "",
-                // 🎯 원래 하나였던 paySchedule 통로를 안내문 규격에 맞춰 3차 분할 구조로 대장에 파티셔닝 보관합니다.
-                paySchedule: `1차:${pay1} / 2차:${pay2} / 3차:${pay3}`,
+                // 💡 기존 리스트 테이블 연동 스펙 하방 호환성을 위해 3개 일정을 가독성 높은 텍스트 체인으로 자동 믹싱하여 인가합니다.
+                paySchedule: `1차: ${pay1} / 2차: ${pay2} / 3차: ${pay3}`,
                 payDate1: pay1,
                 payDate2: pay2,
                 payDate3: pay3
             });
 
-            // 4. 로컬스토리지 커밋 및 목록 즉시 최신화
+            // 5. 로컬스토리지 영구 트랜잭션 커밋 및 목록 즉시 리렌더링
             commitToLocalStorage();
             refreshRecruitmentView();
 
+            // 상단 드롭다운 검색 필터 인덱스 동적 갱신
             if (typeof initDashboardFilter === "function") {
                 initDashboardFilter();
             }
 
-            // 5. 다음 등록을 위해 모든 서식 폼 리셋 초기화
+            // 6. 다음 입력을 위해 1층 및 2층 모든 엘리먼트 폼 밸류 완벽 초기화 리셋
             document.getElementById('form-rec-title').value = '';
             document.getElementById('form-rec-count').value = '';
             document.getElementById('form-rec-period').value = '';
             if (document.getElementById('form-rec-crc')) document.getElementById('form-rec-crc').value = '';
             if (dateEl) dateEl.value = '';
 
-            // 캘린더 피커 박스 리셋
+            // 2층 캘린더 박스 리셋
             if (document.getElementById('form-rec-pay1')) document.getElementById('form-rec-pay1').value = '';
             if (document.getElementById('form-rec-pay2')) document.getElementById('form-rec-pay2').value = '';
             if (document.getElementById('form-rec-pay3')) document.getElementById('form-rec-pay3').value = '';
