@@ -2648,13 +2648,9 @@
                 return;
             }
 
-            // 엘리먼트가 존재할 때만 안전하게 내부 HTML 옵션 주입
+            // 🎯 [요구사항 반영] 초기값은 1기~4기가 미리 보이지 않도록 가리고, 시험명 선택을 유도하는 비활성 안내문만 주입
             filterTh.innerHTML = `
-        <option value="ALL">— 전체 기수 —</option>
-        <option value="1기">1기</option>
-        <option value="2기">2기</option>
-        <option value="3기">3기</option>
-        <option value="4기">4기</option>
+        <option value="ALL">— 시험을 먼저 선택하세요 —</option>
     `;
         }
 
@@ -2691,7 +2687,7 @@
                 payStatus: elPayStatus ? elPayStatus.value : (dataStoreApplicant[idx].payStatus || "접수"),
                 isAgreed: dataStoreApplicant[idx].isAgreed || "동의",
                 category: dataStoreApplicant[idx].category || "내분비내과 / 대장 수동 등록",
-                stage: `${elTh ? elTh.value.trim() : (dataStoreApplicant[idx].th || "1기(1차)")} 참여(소집)`
+                stage: `${elTh ? elTh.value.trim() : (dataStoreApplicant[idx].th || "1기")} 참여(소집)`
             };
 
 
@@ -3916,33 +3912,36 @@
 
             const selectedTitle = filterTitle.value;
 
-            // 1. 🎯 [핵심 요구사항] 시험명을 클릭(변경)하자마자 무조건 뒤의 기수 선택지를 "전체 기수"로 강제 락인
-            filterTh.value = "ALL";
+            // 1. 🎯 [요구사항 반영] '전체 시험 보기' 상태일 때는 기수 선택지를 완전히 가림 (안내문구 고정)
+            if (selectedTitle === "ALL") {
+                filterTh.innerHTML = `<option value="ALL">— 시험을 먼저 선택하세요 —</option>`;
+                filterTh.value = "ALL";
+
+                // 통계판 숫자를 리계산하고 함수 종료
+                if (typeof calculateLiveDashboardStats === "function") {
+                    calculateLiveDashboardStats();
+                }
+                return;
+            }
 
             // 2. 모집공고 마스터 배열(dataStoreRecruitment) 싱크 로드
             const recruitmentDB = JSON.parse(localStorage.getItem('dataStoreRecruitment')) || [];
 
-            // 3. 현재 선택된 시험명에 해당하는 모집공고의 기수 데이터만 추출 (중복 제거)
-            let availableThs = [];
-            if (selectedTitle === "ALL") {
-                // 전체 시험 보기일 경우 등록된 모든 모집공고의 기수 취합
-                availableThs = [...new Set(recruitmentDB.map(row => row.th).filter(Boolean))];
-            } else {
-                // 특정 시험 선택 시 해당 시험명과 일치하는 공고의 기수만 필터링
-                availableThs = [...new Set(recruitmentDB
-                    .filter(row => row.title === selectedTitle)
-                    .map(row => row.th)
-                    .filter(Boolean)
-                )];
-            }
+            // 3. 🎯 [특정 시험 선택 상태] 해당 시험명과 100% 일치하는 공고의 기수만 필터링하여 추출
+            const availableThs = [...new Set(recruitmentDB
+                .filter(row => row.title === selectedTitle)
+                .map(row => row.th)
+                .filter(Boolean)
+            )];
 
-            // 4. 추출된 공고 기준 기수 데이터로 드롭다운 옵션 태그 동적 세팅 (1기~4기 포맷 보존)
+            // 4. 추출된 공고 기준 기수 데이터로 드롭다운 옵션 태그 동적 세팅 (1기~4기)
             let htmlOptions = `<option value="ALL">— 전체 기수 —</option>`;
             availableThs.sort().forEach(th => {
                 htmlOptions += `<option value="${th}">${th}</option>`;
             });
 
             filterTh.innerHTML = htmlOptions;
+            filterTh.value = "ALL"; // 시험명 변경 시 기수는 '전체 기수'가 기본 선택되도록 강제 락인
 
             // 5. 기수 목록 빌드가 끝나면 최종 통계 스코어보드 라이브 리계산 호출
             if (typeof calculateLiveDashboardStats === "function") {
