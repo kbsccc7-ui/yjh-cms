@@ -2223,6 +2223,18 @@
                     let s2 = row.payStatus2 || '대기'; if (s2 === '확인' || s2 === '접수완료') s2 = '접수'; if (s2 === '지급완료') s2 = '처리완료';
                     let s3 = row.payStatus3 || '대기'; if (s3 === '확인' || s3 === '접수완료') s3 = '접수'; if (s3 === '지급완료') s3 = '처리완료';
 
+                    // 🎯 [요구사항 반영 - 파이프라인 라이브 연동 가드] 
+                    // 전체 통계 파이프라인 결과값(result) 상태를 역추적하여 1~3차 기본 선택 값을 동적 바인딩합니다.
+                    const currentResult = (row.result || "접수").toString().trim();
+
+                    if (currentResult === "처리중") {
+                        s1 = "처리중"; // 4단계 통계가 '처리중'이면 수정 버튼을 클릭해 진입할 때 1차 선택지를 자동으로 '처리중(검토중)' 고정
+                    } else if (currentResult === "지급완료" || currentResult === "완료") {
+                        s1 = "처리완료";
+                        s2 = "처리완료";
+                        s3 = "처리완료"; // 정산이 이미 종결(지급완료)된 마스터 상태라면 1~3차 선택지를 자동으로 '처리완료' 고정
+                    }
+
                     // 🎯 선택된 값에 따라 배지 가독성 야광 컬러를 매칭해주는 내부 인라인 스타일 수식 맵
                     const getSelectColorStyle = (val) => {
                         if (val === '접수') return "color: #38bdf8 !important;";
@@ -2322,14 +2334,30 @@
                         `;
                     };
 
-                    // 🎯 1차, 2차, 3차 각각의 마스터 스토리지 상태를 매칭하여 수직 3단 스택 HTML 빌드
-                    const statusStackHTML = `
-                        <div style="display: flex; flex-direction: column; align-items: flex-start; justify-content: center; padding: 2px 0;">
-                            ${buildMiniBadgeHTML('1차', row.payStatus1)}
-                            ${buildMiniBadgeHTML('2차', row.payStatus2)}
-                            ${buildMiniBadgeHTML('3차', row.payStatus3)}
-                        </div>
-                    `;
+
+                    // 🎯 [참여비 파이프라인 연동] 대상자의 정산 상태(result)에 따라 1~3차 차수별 배지 상태를 가변 분기
+                    let status1 = "대기";
+                    let status2 = "대기";
+                    let status3 = "대기";
+
+                    const currentResult = (row.result || "접수").toString().trim();
+
+                    if (currentResult === "처리중") {
+                        status1 = "처리중"; // 처리중일 때 1차만 처리중으로 전환
+                    } else if (currentResult === "지급완료" || currentResult === "완료") {
+                        status1 = "지급완료";
+                        status2 = "지급완료";
+                        status3 = "지급완료"; // 정산 완결 시 전체 완료 처리
+                    }
+
+                    // 화면 목록에 들어갈 조밀한 3단 수직 스택 배지 레이아웃 생성
+                    let statusStackHTML = `
+                    <div style="display: flex; flex-direction: column; gap: 2px; font-size: 11px; white-space: nowrap;">
+                    <div><span style="color: #64748b;">1차:</span> <span class="lvl-badge ${status1 === '처리중' ? 'lvl-4' : (status1 === '지급완료' ? 'lvl-2' : 'lvl-1')}" style="padding: 2px 4px; font-size:11px;">${status1}</span></div>
+                    <div><span style="color: #64748b;">2차:</span> <span class="lvl-badge ${status2 === '지급완료' ? 'lvl-2' : 'lvl-1'}" style="padding: 2px 4px; font-size:11px;">${status2}</span></div>
+                    <div><span style="color: #64748b;">3차:</span> <span class="lvl-badge ${status3 === '지급완료' ? 'lvl-2' : 'lvl-1'}" style="padding: 2px 4px; font-size:11px;">${status3}</span></div>
+                    </div>
+`;
 
                     tr.innerHTML = `
                         <td style="text-align: left; padding-left: 15px; font-weight: 700; color: #f8fafc; white-space: normal; word-break: keep-all; vertical-align: middle;">${row.title || '-'}</td>
@@ -2395,8 +2423,10 @@
                 const elSsn = document.getElementById(`inline-app-ssn-${index}`);
                 const elPhone = document.getElementById(`inline-app-phone-${index}`);
 
-                // 🎯 [버그 해결 핵심 요충지]: 출력 HTML 태그의 대소문자 규격(payStatus - 대문자 S)과 100% 완벽 싱크 결합!
-                const elPayStatus = document.getElementById(`inline-app-payStatus-${index}`);
+                // 🎯 [차수별 독립 셀렉터 캡처 스캔]: 1~3차 초슬림 드롭다운 박스 엘리먼트 실시간 추적 스캔
+                const elS1 = document.getElementById(`inline-app-payStatus1-${index}`);
+                const elS2 = document.getElementById(`inline-app-payStatus2-${index}`);
+                const elS3 = document.getElementById(`inline-app-payStatus3-${index}`);
 
                 const elDuty = document.getElementById(`inline-app-duty-${index}`);
                 const elCall = document.getElementById(`inline-app-call-${index}`);
@@ -2415,11 +2445,29 @@
                 adminApplicantDB[index].ssn = elSsn ? elSsn.value.trim() : adminApplicantDB[index].ssn;
                 adminApplicantDB[index].phone = elPhone ? elPhone.value.trim() : adminApplicantDB[index].phone;
 
-                // 🎯 [교정 종결 파이프라인]: 엘리먼트 캡처가 완벽히 성공했으므로, 
-                // 관리자가 드롭다운에서 선택한 '대기'/'접수'/'처리중'/'지급완료' 순수 변경 데이터가 대장에 직격 저장됩니다.
-                const finalStatus = elPayStatus ? elPayStatus.value : (adminApplicantDB[index].payStatus || "대기");
-                adminApplicantDB[index].payStatus = finalStatus;
-                adminApplicantDB[index].result = finalStatus;
+                // 🎯 [1~3차 독립 데이터 개별 대장 적재]
+                const nextS1 = elS1 ? elS1.value : (adminApplicantDB[index].payStatus1 || "대기");
+                const nextS2 = elS2 ? elS2.value : (adminApplicantDB[index].payStatus2 || "대기");
+                const nextS3 = elS3 ? elS3.value : (adminApplicantDB[index].payStatus3 || "대기");
+
+                adminApplicantDB[index].payStatus1 = nextS1;
+                adminApplicantDB[index].payStatus2 = nextS2;
+                adminApplicantDB[index].payStatus3 = nextS3;
+
+                // 🎯 [통계 현황판 연쇄 연동] 1차~3차의 변경 상태를 조합하여 상단 4단계 통계 결과(result) 상태 자동 반영
+                let finalPipelineStatus = "접수";
+                if (nextS1 === "처리완료" && nextS2 === "처리완료" && nextS3 === "처리완료") {
+                    finalPipelineStatus = "지급완료"; // 3개 차수가 전부 마감되면 최종 정산종결(지급완료) 처리
+                } else if (nextS1 === "처리중" || nextS2 === "처리중" || nextS3 === "처리중") {
+                    finalPipelineStatus = "처리중";   // 어느 한 차수라도 검토중(처리중)이면 재무검토(처리중) 유지
+                } else if (nextS1 === "접수" || nextS2 === "접수" || nextS3 === "접수") {
+                    finalPipelineStatus = "접수";     // 대기 상태를 벗어나 접수된 건이 있다면 청구서접수(접수) 처리
+                } else {
+                    finalPipelineStatus = "접수";     // 기본 폴백 가드
+                }
+
+                adminApplicantDB[index].payStatus = finalPipelineStatus;
+                adminApplicantDB[index].result = finalPipelineStatus;
 
                 adminApplicantDB[index].isDutyAgreed = elDuty ? elDuty.value.trim() : (adminApplicantDB[index].isDutyAgreed || "동의");
                 adminApplicantDB[index].isCallAgreed = elCall ? elCall.value.trim() : (adminApplicantDB[index].isCallAgreed || "동의");
@@ -2452,7 +2500,7 @@
                     window.location.reload();
                 }
 
-                alert("📢 대상자 정보 및 정산 프로세스 상태가 대장에 완전 저장되었습니다.");
+                alert("📢 대상자 정보 및 1~3차 참여비 정산 프로세스 상태가 대장에 완전 반영되었습니다.");
 
             } catch (error) {
                 console.error("saveApplicantInline 트랜잭션 도중 치명적인 오류가 발생했습니다:", error);
