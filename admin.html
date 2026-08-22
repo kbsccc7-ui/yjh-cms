@@ -1584,50 +1584,51 @@
                 if (document.getElementById('loginScreen')) document.getElementById('loginScreen').style.display = 'flex';
                 if (document.getElementById('mainDashboard')) document.getElementById('mainDashboard').style.display = 'none';
             }
+        }
+        /**
+                 * 💥 [신규 개설 완수] 좌측 메뉴 3개 클릭 및 새로고침 시 화면/스타일 동시 전환 제어 엔진
+                 * @param {string} viewName - 이동할 뷰포트 ID ('recruitmentView' | 'applicantView' | 'gradeView')
+                 */
+        function changeMainViewport(viewName) {
+            // 1. 사용자가 클릭한 메뉴 명칭을 브라우저 저장소에 실시간 영구 기억
+            localStorage.setItem('adminActiveViewportId', viewName);
 
-            /**
-                     * 💥 [신규 개설 완수] 좌측 메뉴 3개 클릭 및 새로고침 시 화면/스타일 동시 전환 제어 엔진
-                     * @param {string} viewName - 이동할 뷰포트 ID ('recruitmentView' | 'applicantView' | 'gradeView')
-                     */
-            function changeMainViewport(viewName) {
-                // 1. 사용자가 클릭한 메뉴 명칭을 브라우저 저장소에 실시간 영구 기억
-                localStorage.setItem('adminActiveViewportId', viewName);
+            // 2. 우측 패널의 모든 본문 화면 섹션 전체 숨김
+            const views = ['recruitmentView', 'applicantView', 'gradeView'];
+            views.forEach(function (v) {
+                const el = document.getElementById(v);
+                if (el) el.style.display = 'none';
+            });
 
-                // 2. 우측 패널의 모든 본문 화면 섹션('recruitmentView', 'applicantView', 'gradeView') 전체 숨김
-                const views = ['recruitmentView', 'applicantView', 'gradeView'];
-                views.forEach(function (v) {
-                    const el = document.getElementById(v);
-                    if (el) el.style.display = 'none';
-                });
+            // 3. 사용자가 선택한 타겟 본문 화면만 즉시 노출
+            const targetView = document.getElementById(viewName);
+            if (targetView) targetView.style.display = 'block';
 
-                // 3. 사용자가 선택한 타겟 본문 화면만 즉시 노출
-                const targetView = document.getElementById(viewName);
-                if (targetView) targetView.style.display = 'block';
+            // 4. 좌측 사이드바 모든 메뉴 항목의 하이라이트(.active) 디자인 해제
+            const menuItems = document.querySelectorAll('.menu-item');
+            menuItems.forEach(function (item) {
+                item.classList.remove('active');
+            });
 
-                // 4. 좌측 사이드바 모든 메뉴 항목의 파란색 하이라이트(.active) 디자인 해제
-                const menuItems = document.querySelectorAll('.menu-item');
-                menuItems.forEach(function (item) {
-                    item.classList.remove('active');
-                });
+            // 5. ID 매칭 및 문자열 추적을 통한 2중 안전 장치 활성화
+            if (viewName === 'recruitmentView' && document.getElementById('menuRec')) {
+                document.getElementById('menuRec').classList.add('active');
+                if (typeof refreshRecruitmentView === "function") refreshRecruitmentView();
+            } else if (viewName === 'applicantView' && document.getElementById('menuApp')) {
+                document.getElementById('menuApp').classList.add('active');
 
-                // 5. 💥 [버그 제로 보강] ID 매칭 및 문자열 추적을 통한 2중 안전 장치로 무조건 활성화
-                if (viewName === 'recruitmentView' && document.getElementById('menuRec')) {
-                    document.getElementById('menuRec').classList.add('active');
-                } else if (viewName === 'applicantView' && document.getElementById('menuApp')) {
-                    document.getElementById('menuApp').classList.add('active');
-
-                    // 🎯 [추가 조치] 대상자 관리 탭 화면이 물리적으로 켜지는 바로 이 시점에 
-                    // HTML 필터 상자가 안전하게 마운트되므로 기수 옵션을 즉시 빌드해 줍니다.
-                    if (typeof initThSelectOptions === "function") {
-                        initThSelectOptions();
-                    }
-                } else if (viewName === 'gradeView' && document.getElementById('menuGrade')) {
-                    document.getElementById('menuGrade').classList.add('active');
-                } else {
-                    // 폴백 구조 유지
-                    const activeMenu = document.querySelector(`[onclick*="${viewName}"]`);
-                    if (activeMenu) activeMenu.classList.add('active');
+                // 대상자 관리 탭 화면이 물리적으로 켜지는 시점에 기수 옵션 즉시 빌드
+                if (typeof initThSelectOptions === "function") {
+                    initThSelectOptions();
                 }
+                if (typeof refreshApplicantView === "function") refreshApplicantView();
+            } else if (viewName === 'gradeView' && document.getElementById('menuGrade')) {
+                document.getElementById('menuGrade').classList.add('active');
+                if (typeof refreshAdminMemberTableView === "function") refreshAdminMemberTableView();
+            } else {
+                // 폴백 구조 유지
+                const activeMenu = document.querySelector(`[onclick*="${viewName}"]`);
+                if (activeMenu) activeMenu.classList.add('active');
             }
         }
 
@@ -1640,12 +1641,15 @@
 
         function bindTopBarProfile(sabunId) {
             const member = dataStoreAdminMembers.find(m => m.sabun === sabunId);
-            const span = document.getElementById('txtUserProfile'); if (!span) return;
+            const span = document.getElementById('txtUserProfile');
+            if (!span) return;
             if (member) {
                 const meta = DUTY_LEVEL_MATRIX[member.duty] || { level: 1, textType: "normal" };
                 span.innerHTML = meta.textType === "system" ?
                     `<i class="fa-solid fa-user-gear"></i> 시스템 관리자` : `<i class="fa-solid fa-user-shield"></i> 관리자(${member.name})`;
-            } else { span.innerHTML = `<i class="fa-solid fa-user-secret"></i> 임시관리자(${sabunId})`; }
+            } else {
+                span.innerHTML = `<i class="fa-solid fa-user-secret"></i> 임시관리자(${sabunId})`;
+            }
         }
 
         // [로그인 처리 함수] - 시스템 규격 ID(uid, upw) 매칭 완료
@@ -1662,8 +1666,8 @@
                 if (pw === account.pw || pw === account.sabun || (pw === "9793" && account.sabun === "admin")) {
                     sessionStorage.setItem('adminLoginSession', 'isAuthorizedSecureToken');
                     sessionStorage.setItem('adminLoginSabun', id);
-                    document.getElementById('loginScreen').style.display = 'none';
-                    document.getElementById('mainDashboard').style.display = 'flex';
+                    if (document.getElementById('loginScreen')) document.getElementById('loginScreen').style.display = 'none';
+                    if (document.getElementById('mainDashboard')) document.getElementById('mainDashboard').style.display = 'flex';
                     bindTopBarProfile(id);
                     changeMainViewport('recruitmentView');
                 } else {
@@ -1685,11 +1689,15 @@
         function executeSystemLogout() {
             if (confirm('세션을 파기하고 안전 로그아웃 하시겠습니까?')) {
                 sessionStorage.clear();
-                document.getElementById('mainDashboard').style.display = 'none';
-                document.getElementById('loginScreen').style.display = 'flex';
-                document.getElementById('uid').value = ''; document.getElementById('upw').value = '';
+                if (document.getElementById('mainDashboard')) document.getElementById('mainDashboard').style.display = 'none';
+                if (document.getElementById('loginScreen')) document.getElementById('loginScreen').style.display = 'flex';
+                if (document.getElementById('uid')) document.getElementById('uid').value = '';
+                if (document.getElementById('upw')) document.getElementById('upw').value = '';
             }
         }
+
+        function getOnlyNumbers(v) { if (!v) return ''; return v.toString().replace(/[^0-9]/g, ''); }
+        function formatTh(v) { const n = getOnlyNumbers(v); return n ? `${n}기` : v; }
 
         function changeMainViewport(targetId) {
             document.querySelectorAll('.content-section').forEach(v => v.style.display = 'none');
@@ -2001,27 +2009,24 @@
             const pay2 = document.getElementById('form-rec-pay2')?.value || "";
             const pay3 = document.getElementById('form-rec-pay3')?.value || "";
 
-            // 3. 🎯 [버그 해결 유효성 검증]: 필수 시험 정보 5개와 소집일자만 차단 검증합니다.
-            // 💡 차수별 지급일(pay1, pay2, pay3)은 비어있어도 무조건 통과하도록 프리패스 가드를 적용합니다.
+            // 3. 유효성 검증
             if (!t || !th || !c || !p || !recDate) {
                 return alert('알림: 시험 기본 정보(시험명, 기수, 인원수, 기간)와 소집일자는 빈칸으로 둘 수 없습니다.');
             }
 
-            // 🎯 [지능형 가변 차수 조립]: 관리자가 날짜를 기입한 차수만 동적으로 판별하여 조립 스트림을 형성합니다.
+            // 차수 조립
             let paySchedulesArray = [];
             if (pay1) paySchedulesArray.push(`1차: ${pay1}`);
             if (pay2) paySchedulesArray.push(`2차: ${pay2}`);
             if (pay3) paySchedulesArray.push(`3차: ${pay3}`);
 
-            // 만약 1~3차 지급일을 단 하나도 입력하지 않고 공란으로 두었다면 기본 예외 매칭
             if (paySchedulesArray.length === 0) {
                 paySchedulesArray.push("추후공지");
             }
 
-            // 배열 요소를 슬래시(/) 기호로 가독성 좋게 결합
             const finalPayScheduleText = paySchedulesArray.join(' / ');
 
-            // 4. 가상 마스터 대장 스키마 구조에 분할 세부 일정 동적 인가 세이브
+            // 4. 데이터 적재
             dataStoreRecruitment.unshift({
                 uid: Date.now(),
                 title: t,
@@ -2032,51 +2037,53 @@
                 recDate: recDate,
                 notice: "공복 유지 필수 및 소집 10분 전 대기",
                 examSchedule: "",
-                paySchedule: finalPayScheduleText, // 🎯 2차까지만 고르면 "1차: 날짜 / 2차: 날짜" 로만 완벽히 조립되어 대장에 박제됩니다.
+                paySchedule: finalPayScheduleText,
                 payDate1: pay1,
                 payDate2: pay2,
                 payDate3: pay3
             });
 
-            // 5. 로컬스토리지 영구 트랜잭션 커밋 및 목록 즉시 최신 리렌더링 기동
+            // 5. 커밋 및 뷰 최신화
             commitToLocalStorage();
             refreshRecruitmentView();
 
-            // 상단 드롭다운 검색 필터 인덱스 동적 갱신
             if (typeof initDashboardFilter === "function") {
                 initDashboardFilter();
             }
 
-            // 6. 다음 입력을 위해 1층 및 2층 모든 엘리먼트 폼 밸류 완벽 초기화 리셋
+            // 6. 인풋 필드 초기화 리셋
             document.getElementById('form-rec-title').value = '';
             document.getElementById('form-rec-count').value = '';
             document.getElementById('form-rec-period').value = '';
             if (document.getElementById('form-rec-crc')) document.getElementById('form-rec-crc').value = '';
             if (dateEl) dateEl.value = '';
 
-            // 2층 가변 캘린더 박스 완전 리셋
             if (document.getElementById('form-rec-pay1')) document.getElementById('form-rec-pay1').value = '';
             if (document.getElementById('form-rec-pay2')) document.getElementById('form-rec-pay2').value = '';
             if (document.getElementById('form-rec-pay3')) document.getElementById('form-rec-pay3').value = '';
 
             alert("🎉 선택하신 차수별 참여비 일정이 정상적으로 반영되어 새 모집공고가 성공적으로 등록되었습니다.");
+        } // insertRecruitmentRecord 끝
+
+        // =========================================================================
+        // 후속 연동 하위 기능 격리 구역 (기존 라인 문법 오류 완전 차단)
+        // =========================================================================
+        function enableRecInlineEditMode(id) {
+            recEditingUid = id;
+            refreshRecruitmentView();
         }
 
-
-        function enableRecInlineEditMode(id) { recEditingUid = id; refreshRecruitmentView(); }
-        function cancelRecInlineEditMode() { recEditingUid = null; refreshRecruitmentView(); }
-        function saveRecInlineEditRecord(id) {
-            const idx = dataStoreRecruitment.findIndex(d => d.uid === id); if (idx === -1) return;
-            const t = document.getElementById('inline-rec-title').value.trim(); const th = getOnlyNumbers(document.getElementById('inline-rec-th').value);
-            const c = getOnlyNumbers(document.getElementById('inline-rec-count').value); const p = getOnlyNumbers(document.getElementById('inline-rec-period').value);
-            if (!t || !th || !c || !p) return alert('알림: 공백 수정을 허용할 수 없습니다.');
-            dataStoreRecruitment[idx] = { ...dataStoreRecruitment[idx], title: t, th: th, count: c, period: p };
-            commitToLocalStorage(); recEditingUid = null; refreshRecruitmentView();
+        function cancelRecInlineEditMode() {
+            recEditingUid = null;
+            refreshRecruitmentView();
         }
 
         function removeRecruitmentRecord(id) {
             if (confirm('선택하신 임상 모집공고를 영구적으로 제거하시겠습니까?')) {
-                dataStoreRecruitment = dataStoreRecruitment.filter(d => d.uid !== id); commitToLocalStorage(); recEditingUid = null; refreshRecruitmentView();
+                dataStoreRecruitment = dataStoreRecruitment.filter(d => d.uid !== id);
+                commitToLocalStorage();
+                recEditingUid = null;
+                refreshRecruitmentView();
             }
         }
 
