@@ -1089,7 +1089,7 @@
                             style="display: flex; gap: 12px; align-items: flex-end; width: 100%; background: rgba(30, 41, 59, 0.4); padding: 14px 16px; border-radius: 8px; border: 1px dashed #334155;">
                             <div
                                 style="display: flex; align-items: center; gap: 6px; min-width: 150px; height: 38px; color: #fbbf24; font-weight: 700; font-size: 13px;">
-                                <i class="fa-solid fa-sack-dollar"></i> 참여비 차수별 지급일:
+                                <i class="fa-solid fa-sack-dollar"></i> 참여비 지급일:
                             </div>
                             <div class="form-group" style="flex: 1;">
                                 <label style="color: #fbbf24; font-size: 12px; margin-bottom: 4px;">참여비 1차 지급일</label>
@@ -1731,9 +1731,9 @@
             // 디폴트 데이터 가드 (비어있을 때 복구)
             if (dataStoreRecruitment.length === 0) {
                 dataStoreRecruitment = [
-                    { title: "애드파마 로잘탄+로수+에제", th: "2기(1차)", count: "60", period: "72", crc: "석정은", notice: "공복 유지 필수 및 소집 10분 전 대기", examSchedule: "2026-09-01", paySchedule: "2026-09-10" },
-                    { title: "신일제약-사쿠+발사", th: "4기(1차)", count: "46", period: "96", crc: "최미현", notice: "지정식 이외 취식 금지 및 격리 규정 준수", examSchedule: "2026-09-15", paySchedule: "2026-09-30" },
-                    { title: "경동제약 식후 임상시험", th: "4기(2차)", count: "46", period: "96", crc: "강은애", notice: "지정식 이외 취식 금지 및 격리 규정 준수", examSchedule: "2026-10-15", paySchedule: "2026-10-30" }
+                    { title: "애드파마 로잘탄+로수+에제", th: "2기", count: "60", period: "72", crc: "석정은", notice: "공복 유지 필수 및 소집 10분 전 대기", examSchedule: "2026-09-01", paySchedule: "2026-09-10" },
+                    { title: "신일제약-사쿠+발사", th: "4기", count: "46", period: "96", crc: "최미현", notice: "지정식 이외 취식 금지 및 격리 규정 준수", examSchedule: "2026-09-15", paySchedule: "2026-09-30" },
+                    { title: "경동제약 식후 임상시험", th: "4기", count: "46", period: "96", crc: "강은애", notice: "지정식 이외 취식 금지 및 격리 규정 준수", examSchedule: "2026-10-15", paySchedule: "2026-10-30" }
                 ];
                 localStorage.setItem('dataStoreRecruitment', JSON.stringify(dataStoreRecruitment));
             }
@@ -3614,7 +3614,7 @@
             let adminRecruitmentDB = [
                 {
                     title: "애드파마 로잘탄+로수+에제",
-                    th: "2기(1차)",
+                    th: "2기",
                     count: "60",
                     period: "72",
                     crc: "석정은",
@@ -3624,7 +3624,7 @@
                 },
                 {
                     title: "신일제약-사쿠+발사",
-                    th: "4기(1차)",
+                    th: "4기",
                     count: "46",
                     period: "96",
                     crc: "최미현",
@@ -3634,7 +3634,7 @@
                 },
                 {
                     title: "경동제약 식후 임상시험",
-                    th: "4기(2차)",
+                    th: "4기",
                     count: "46",
                     period: "96",
                     crc: "강은애",
@@ -4078,7 +4078,7 @@
                 </div>
 
                 <div class="history-grid-container" style="margin-bottom: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
-                    <div style="color: var(--text-muted); font-size:13px; font-weight:700;">참여 차수(기수): <span style="color:#38bdf8; margin-left:6px; font-weight:800;">${historyRow.th || '-'}</span></div>
+                    <div style="color: var(--text-muted); font-size:13px; font-weight:700;">참여 기수: <span style="color:#38bdf8; margin-left:6px; font-weight:800;">${historyRow.th || '-'}</span></div>
                     <div style="color: var(--text-muted); font-size:13px; font-weight:700;">임상 소집일자: <span style="color:#fbbf24; margin-left:6px; font-weight:800;"><i class="fa-regular fa-calendar-check"></i> ${matchedScheduleDate}</span></div>
                     <div style="color: var(--text-muted); font-size:13px; font-weight:700;">임상 진행시간: <span style="color:#ffffff; margin-left:6px;">${historyRow.period || '-'}h</span></div>
                     <div style="color: var(--text-muted); font-size:13px; font-weight:700;">현재 참여비 상태: <span style="color:#4ade80; margin-left:6px; font-weight:800;">${statusText}</span></div>
