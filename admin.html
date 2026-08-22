@@ -1752,8 +1752,19 @@
                 else if (thNum === 4 || thNum === 5) thBadgeClass = "lvl-4";
                 else if (thNum >= 6) thBadgeClass = "lvl-6";
 
-                const currentThKey = `${row.title}_${row.th}`;
-                let groupMatchCount = adminApplicantDB.filter(item => `${item.title}_${item.th}` === currentThKey).length;
+                // [안전 가드 교체] 기수(th) 데이터를 기준으로 카운트하여 글자 불일치 버그 차단
+                let groupMatchCount = 0;
+                try {
+                    groupMatchCount = adminApplicantDB.filter(item => {
+                        // 공고 기수와 대상자 기수에서 숫자만 추출하여 비교 (예: "4기"와 "4기" 또는 숫자 4 비교)
+                        const rowThNum = (row.th || "").replace(/[^0-9]/g, "");
+                        const itemThNum = (item.th || "").replace(/[^0-9]/g, "");
+                        return rowThNum === itemThNum && rowThNum !== "";
+                    }).length;
+                } catch (e) {
+                    groupMatchCount = 0; // 에러 발생 시 0명으로 처리하고 목록은 정상 출력
+                }
+
                 const totalQuota = row.count || "60";
 
                 // 편집 제어 포인터 변수 2종 정밀 결합
