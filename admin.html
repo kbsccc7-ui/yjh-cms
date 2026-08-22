@@ -2244,12 +2244,12 @@
                     tr.innerHTML = `
                         <td style="padding-left: 15px;"><input type="text" id="inline-app-title-${index}" class="inline-input" value="${row.title || ''}" style="font-weight:700;"></td>
                         <td style="width: 100px; text-align: center !important; vertical-align: middle;">
-                            <select id="inline-app-th-${index}" class="inline-input" style="height:32px; padding:2px 20px; font-size:12px; font-weight:700; background: #1e293b; color: #fff; border: 1px solid #334155; border-radius: 6px; text-align: center; text-align-last: center; cursor: pointer; width: 100%; display: inline-block; box-sizing: border-box; pointer-events: auto !important;"> 
-                                <optgroup label="1기" style="background: #1e293b; text-align: center;"><option value="1기(1차)" ${row.th === '1기(1차)' ? 'selected' : ''}>1기 1차</option><option value="1기(2차)" ${row.th === '1기(2차)' ? 'selected' : ''}>1기 2차</option></optgroup>
-                                <optgroup label="2기" style="background: #1e293b; text-align: center;"><option value="2기(1차)" ${row.th === '2기(1차)' ? 'selected' : ''}>2기 1차</option><option value="2기(2차)" ${row.th === '2기(2차)' ? 'selected' : ''}>2기 2차</option></optgroup>
-                                <optgroup label="3기" style="background: #1e293b; text-align: center;"><option value="3기(1차)" ${row.th === '3기(1차)' ? 'selected' : ''}>3기 1차</option><option value="3기(2차)" ${row.th === '3기(2차)' ? 'selected' : ''}>3기 2차</option></optgroup>
-                                <optgroup label="4기" style="background: #1e293b; text-align: center;"><option value="4기(1차)" ${row.th === '4기(1차)' ? 'selected' : ''}>4기 1차</option><option value="4기(2차)" ${row.th === '4기(2차)' ? 'selected' : ''}>4기 2차</option></optgroup>
-                            </select>
+                            <select id="inline-app-th-${index}" class="inline-input" style="height:32px; background:#1e293b; color:#fff;">
+    <option value="1기" ${row.th === '1기' ? 'selected' : ''}>1기</option>
+    <option value="2기" ${row.th === '2기' ? 'selected' : ''}>2기</option>
+    <option value="3기" ${row.th === '3기' ? 'selected' : ''}>3기</option>
+    <option value="4기" ${row.th === '4기' ? 'selected' : ''}>4기</option>
+</select>
                         </td>
                         <td style="width: 75px;"><input type="text" id="inline-app-count-${index}" class="inline-input" value="${row.count || '60'}" style="text-align:center;"></td>
                         <td style="width: 65px;"><input type="text" id="inline-app-period-${index}" class="inline-input" value="${row.period || '0'}" style="text-align:center;"></td>
@@ -2613,21 +2613,17 @@
             if (cancelBtn) cancelBtn.style.display = "none";
         }
 
-        /** 💡 [추가] 기수 셀렉트박스 옵션(1기 1차 ~ 4기 4차) 동적 생성 함수 */
+        /** 💡 [추가] 기수 셀렉트박스 옵션 동적 생성 함수 */
         function initThSelectOptions() {
             const thSelect = document.getElementById("form-app-th");
             if (!thSelect) return;
-            thSelect.innerHTML = "";
-            for (let gi = 1; gi <= 4; gi++) {
-                for (let cha = 1; cha <= 4; cha++) {
-                    const valueText = `${gi}기(${cha}차)`; // 🎯 데이터 스토어와 일치화 ("1기(1차)")
-                    const optionText = `${gi}기 ${cha}차`; // 화면 노출용 텍스트
-                    const opt = document.createElement("option");
-                    opt.value = valueText;
-                    opt.textContent = optionText;
-                    thSelect.appendChild(opt);
-                }
-            }
+            filterTh.innerHTML = `
+        <option value="ALL">— 전체 기수 —</option>
+        <option value="1기">1기</option>
+        <option value="2기">2기</option>
+        <option value="3기">3기</option>
+        <option value="4기">4기</option>
+    `;
         }
 
         function enableInlineEditMode(id) { currentEditingUid = id; refreshApplicantView(); }
